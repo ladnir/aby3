@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -e
+
+if [ ! -d eigen ]; then
+    wget -c 'http://bitbucket.org/eigen/eigen/get/3.3.4.tar.bz2' -O ./eigen.tar.bz2
+    tar xfj eigen.tar.bz2
+    mv eigen-eigen-5a0156e40feb eigen
+    rm  eigen.tar.bz2
+fi
+
