@@ -89,7 +89,7 @@ namespace aby3
         comm.mPrev.recv(ret.mShares[1].data(), ret.mShares[1].size());
     }
 
-    void Sh3Encryptor::localPackedBinary(Sh3::CommPkg & comm, Sh3::i64Matrix m, Sh3::sPackedBin & dest)
+    void Sh3Encryptor::localPackedBinary(Sh3::CommPkg & comm, const Sh3::i64Matrix& m, Sh3::sPackedBin & dest)
     {
         if (dest.bitCount() != m.cols() * sizeof(i64) * 8)
             throw std::runtime_error(LOCATION);
@@ -103,8 +103,8 @@ namespace aby3
         oc::MatrixView<u8> out((u8*)dest.mShares[0].data(), outRows, outCols * sizeof(i64));
         oc::sse_transpose(in, out);
 
-        for (u64 i = 0; i < m.size(); ++i)
-            dest.mShares[0](i) = dest.mShares[0](i); // ^ mShareGen.getBinaryShare()
+        for (u64 i = 0; i < dest.mShares[0].size(); ++i)
+            dest.mShares[0](i) = dest.mShares[0](i) ^ mShareGen.getBinaryShare();
 
         comm.mNext.asyncSendCopy(dest.mShares[0].data(), dest.mShares[0].size());
         comm.mPrev.recv(dest.mShares[1].data(), dest.mShares[1].size());
@@ -112,8 +112,8 @@ namespace aby3
 
     void Sh3Encryptor::remotePackedBinary(Sh3::CommPkg & comm, Sh3::sPackedBin & dest)
     {
-        for (u64 i = 0; i < dest.mShares.size(); ++i)
-            dest.mShares[0](i) = 0;// mShareGen.getBinaryShare();
+        for (u64 i = 0; i < dest.mShares[0].size(); ++i)
+            dest.mShares[0](i) =  mShareGen.getBinaryShare();
 
         comm.mNext.asyncSendCopy(dest.mShares[0].data(), dest.mShares[0].size());
         comm.mPrev.recv(dest.mShares[1].data(), dest.mShares[1].size());
@@ -237,5 +237,34 @@ namespace aby3
             comm.mPrev.asyncSendCopy(A.mShares[0].data(), A.mShares[0].size());
     }
 
+    void Sh3Encryptor::rand(Sh3::CommPkg & comm, Sh3::si64Matrix & dest)
+    {
+        for (u64 i = 0; i < dest.size(); ++i)
+        {
+            auto s = mShareGen.getRandIntShare();
+            dest.mShares[0](i) = s[0];
+            dest.mShares[1](i) = s[1];
+        }
+    }
+
+    void Sh3Encryptor::rand(Sh3::CommPkg & comm, Sh3::sb64Matrix & dest)
+    {
+        for (u64 i = 0; i < dest.size(); ++i)
+        {
+            auto s = mShareGen.getRandBinaryShare();
+            dest.mShares[0](i) = s[0];
+            dest.mShares[1](i) = s[1];
+        }
+    }
+
+    void Sh3Encryptor::rand(Sh3::CommPkg & comm, Sh3::sPackedBin & dest)
+    {
+        for (u64 i = 0; i < dest.mShares[0].size(); ++i)
+        {
+            auto s = mShareGen.getRandBinaryShare();
+            dest.mShares[0](i) = s[0];
+            dest.mShares[1](i) = s[1];
+        }
+    }
 }
 

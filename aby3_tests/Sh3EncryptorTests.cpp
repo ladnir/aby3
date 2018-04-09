@@ -129,17 +129,19 @@ void Sh3Encryptor_Integer_tests()
             failed = true;
         }
 
-        Sh3::sPackedBin pShr(trials, trials * sizeof(i64) * 8), pShr1(trials, trials * sizeof(i64) * 8), pShr2(trials, trials * sizeof(i64) * 8);
+        //m.setZero();
+
+        Sh3::sPackedBin pShr(trials, trials * sizeof(i64) * 8);// , pShr1(trials, trials * sizeof(i64) * 8), pShr2(trials, trials * sizeof(i64) * 8);
         e.localPackedBinary(c, m, pShr);
         e.reveal(c, pShr, mm);
 
-        c.mNext.recv(pShr1.mShares[0].data(), pShr1.mShares[0].size());
-        c.mNext.recv(pShr1.mShares[1].data(), pShr1.mShares[1].size());
-        c.mPrev.recv(pShr2.mShares[0].data(), pShr2.mShares[0].size());
-        c.mPrev.recv(pShr2.mShares[1].data(), pShr2.mShares[1].size());
+        //c.mNext.recv(pShr1.mShares[0].data(), pShr1.mShares[0].size());
+        //c.mNext.recv(pShr1.mShares[1].data(), pShr1.mShares[1].size());
+        //c.mPrev.recv(pShr2.mShares[0].data(), pShr2.mShares[0].size());
+        //c.mPrev.recv(pShr2.mShares[1].data(), pShr2.mShares[1].size());
 
-        pShr = pShr ^ pShr1;
-        pShr = pShr ^ pShr2;
+        //pShr = pShr ^ pShr1;
+        //pShr = pShr ^ pShr2;
 
         if (mm != m)
         {
@@ -201,16 +203,16 @@ void Sh3Encryptor_Integer_tests()
         e.remotePackedBinary(c, pShr);
         e.reveal(c, pShr, 0);
 
-        Channel chl;
-        if (i == 1)
-            chl = c.mPrev;
-        else
-            chl = c.mNext;
+        //Channel chl;
+        //if (i == 1)
+        //    chl = c.mPrev;
+        //else
+        //    chl = c.mNext;
 
-        chl.asyncSend(pShr.mShares[0].data(), pShr.mShares[0].size());
-        chl.asyncSend(pShr.mShares[1].data(), pShr.mShares[1].size());
-
+        //chl.asyncSend(pShr.mShares[0].data(), pShr.mShares[0].size());
+        //chl.asyncSend(pShr.mShares[1].data(), pShr.mShares[1].size());
     };
+
     auto t1 = std::thread(rr, 1);
     auto t2 = std::thread(rr, 2);
 

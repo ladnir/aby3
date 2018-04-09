@@ -40,6 +40,7 @@ namespace aby3
         }
 
 
+
         i64 getShare()
         {
             if (mShareIdx + sizeof(i64) > mShareBuff[0].size() * sizeof(block))
@@ -74,5 +75,27 @@ namespace aby3
             return ret;
         }
 
+
+        Sh3::si64 getRandIntShare()
+        {
+            if (mShareIdx + sizeof(i64) > mShareBuff[0].size() * sizeof(block))
+            {
+                refillBuffer();
+            }
+
+            Sh3::si64 r;
+            r[0] = *(u64*)((u8*)mShareBuff[1].data() + mShareIdx);
+            r[1] = *(u64*)((u8*)mShareBuff[0].data() + mShareIdx);
+
+            mShareIdx += sizeof(i64);
+
+            return r;
+        }
+
+        Sh3::sb64 getRandBinaryShare()
+        {
+            auto i = getRandIntShare();
+            return { { i[0], i[1] } };
+        }
     };
 }

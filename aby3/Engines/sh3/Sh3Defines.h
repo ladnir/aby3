@@ -191,6 +191,8 @@ namespace aby3
                 mShares[1].resize(bitCount, wordCount);
             }
 
+            u64 size() const { return mShares[0].size(); }
+
             // the number of si64s that are stored in this packed (si64d) binary matrix.
             u64 ShareCount() const { return mShareCount; }
 

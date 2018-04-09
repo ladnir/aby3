@@ -33,7 +33,7 @@ namespace aby3
         void remoteBinMatrix(Sh3::CommPkg& comm, Sh3::sb64Matrix& dest);
 
         // generates a sPackedBin from the given matrix.
-        void localPackedBinary(Sh3::CommPkg& comm, Sh3::i64Matrix m, Sh3::sPackedBin& dest);
+        void localPackedBinary(Sh3::CommPkg& comm, const Sh3::i64Matrix& m, Sh3::sPackedBin& dest);
 
         // generates a sPackedBin from the given matrix.
         void remotePackedBinary(Sh3::CommPkg& comm, Sh3::sPackedBin& dest);
@@ -59,9 +59,13 @@ namespace aby3
         void reveal(Sh3::CommPkg& comm, const Sh3::sPackedBin& x, u64 partyIdx);
 
 
+        void rand(Sh3::CommPkg& comm, Sh3::si64Matrix& dest);
+        void rand(Sh3::CommPkg& comm, Sh3::sb64Matrix& dest);
+        void rand(Sh3::CommPkg& comm, Sh3::sPackedBin& dest);
+
+
         u64 mPartyIdx = -1;
         Sh3ShareGen mShareGen;
-
 
         void complateSharing(Sh3::CommPkg& comm, span<i64> send, span<i64> recv);
     };
