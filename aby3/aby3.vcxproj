@@ -20,19 +20,25 @@
     <ClCompile Include="Circuit\BetaLibrary.cpp" />
     <ClCompile Include="Engines\LynxEngine.cpp" />
     <ClCompile Include="Engines\PlainEngine.cpp" />
+    <ClCompile Include="Engines\sh3\Sh3Encryptor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Circuit\Garble.h" />
+    <ClInclude Include="Common\Defines.h" />
     <ClInclude Include="Engines\Lynx\LynxBinaryEngine.h" />
     <ClInclude Include="Engines\Lynx\LynxDefines.h" />
     <ClInclude Include="Engines\Lynx\LynxEncryptor.h" />
     <ClInclude Include="Engines\Lynx\LynxPiecewise.h" />
+    <ClInclude Include="Engines\sh3\Sh3ShareGen.h" />
+    <ClInclude Include="Engines\sh3\Sh3Defines.h" />
+    <ClInclude Include="Engines\sh3\Sh3Runtime.h" />
     <ClInclude Include="OT\SharedOT.h" />
     <ClInclude Include="Circuit\BetaCircuit.h" />
     <ClInclude Include="Circuit\BetaLibrary.h" />
     <ClInclude Include="Circuit\Gate.h" />
     <ClInclude Include="Engines\LynxEngine.h" />
     <ClInclude Include="Engines\PlainEngine.h" />
+    <ClInclude Include="Engines\sh3\Sh3Encryptor.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

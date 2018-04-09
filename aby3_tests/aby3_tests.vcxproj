@@ -78,6 +78,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\libs\eigen\;C:\libs\NTL\include;C:\libs\boost;$(ProjectDir)/../../libOTe/;$(ProjectDir)/../../libOTe/cryptoTools;C:\libs\eigen;C:\Users\peter\repo\relic\include;C:\libs\mpir\lib\x64\$(Configuration);$(ProjectDir)..;</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalOptions>-D_SCL_SECURE_NO_WARNINGS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -112,6 +113,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\libs\eigen\;C:\libs\NTL\include;C:\libs\boost;$(ProjectDir)/../../libOTe/;$(ProjectDir)/../../libOTe/cryptoTools;C:\libs\eigen;C:\Users\peter\repo\relic\include;C:\libs\mpir\lib\x64\$(Configuration);$(ProjectDir)..;</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalOptions>-D_SCL_SECURE_NO_WARNINGS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -122,11 +124,13 @@
     <ClCompile Include="aby3_tests.cpp" />
     <ClCompile Include="CircuitTests.cpp" />
     <ClCompile Include="LynxTests.cpp" />
+    <ClCompile Include="Sh3EncryptorTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aby3_tests.h" />
     <ClInclude Include="CircuitTests.h" />
     <ClInclude Include="LynxTests.h" />
+    <ClInclude Include="Sh3EncryptorTests.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -19,4 +19,6 @@ oc::TestCollection aby3_tests([](oc::TestCollection& tc) {
     tc.add("Lynx_asyncPubArithBinMul_test     ", Lynx_asyncPubArithBinMul_test);
     tc.add("Lynx_asyncInputBinary_test        ", Lynx_asyncInputBinary_test);
     tc.add("Lynx_ConvertToPackedBinary_test   ", Lynx_asyncConvertToPackedBinary_test);
+
+    tc.add("Sh3Encryptor_Integer_tests        ", Sh3Encryptor_Integer_tests);
 });
