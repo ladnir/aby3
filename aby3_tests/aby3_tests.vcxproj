@@ -125,12 +125,14 @@
     <ClCompile Include="CircuitTests.cpp" />
     <ClCompile Include="LynxTests.cpp" />
     <ClCompile Include="Sh3EncryptorTests.cpp" />
+    <ClCompile Include="Sh3EvaluatorTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aby3_tests.h" />
     <ClInclude Include="CircuitTests.h" />
     <ClInclude Include="LynxTests.h" />
     <ClInclude Include="Sh3EncryptorTests.h" />
+    <ClInclude Include="Sh3EvaluatorTests.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

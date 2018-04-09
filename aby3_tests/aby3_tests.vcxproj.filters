@@ -27,6 +27,9 @@
     <ClCompile Include="Sh3EncryptorTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Sh3EvaluatorTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CircuitTests.h">
@@ -39,6 +42,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Sh3EncryptorTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Sh3EvaluatorTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

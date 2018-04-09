@@ -13,6 +13,15 @@ namespace aby3
             oc::Channel mPrev, mNext;
         };
 
+        class CompletionHandle
+        {
+        public:
+            std::function<void()> mGet;
+
+            void get() { mGet(); };
+        };
+
+
         template<typename T>
         using eMatrix = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>;
 
@@ -167,7 +176,7 @@ namespace aby3
 
 
         // Represents a packed set of binary secrets. Data is stored in a tranposed format. 
-        // The 'ith bit of all the si64s are packed together into the i'th row. This allows 
+        // The 'ith bit of all the shares are packed together into the i'th row. This allows 
         // efficient SIMD operations. E.g. applying bit[0] = bit[1] ^ bit[2] to all the shares
         // can be performed to 64 shares using one instruction.
         struct sPackedBin
@@ -193,21 +202,21 @@ namespace aby3
 
             u64 size() const { return mShares[0].size(); }
 
-            // the number of si64s that are stored in this packed (si64d) binary matrix.
-            u64 ShareCount() const { return mShareCount; }
+            // the number of shares that are stored in this packed (shared) binary matrix.
+            u64 shareCount() const { return mShareCount; }
 
-            // the number of bits that each si64 has.
+            // the number of bits that each share has.
             u64 bitCount() const { return mShares[0].rows(); }
 
-            // the number of i64s in each row = divCiel(msi64Count, 8 * sizeof(i64))
+            // the number of i64s in each row = divCiel(mShareCount, 8 * sizeof(i64))
             u64 simdWidth() const { return mShares[0].cols(); }
 
             sPackedBin operator^(const sPackedBin& rhs)
             {
-                if (ShareCount() != rhs.ShareCount() || bitCount() != rhs.bitCount())
+                if (shareCount() != rhs.shareCount() || bitCount() != rhs.bitCount())
                     throw std::runtime_error(LOCATION);
 
-                sPackedBin r(ShareCount(), bitCount());
+                sPackedBin r(shareCount(), bitCount());
                 for (u64 i = 0; i < 2; ++i)
                 {
                     for (u64 j = 0; j < mShares[0].size(); ++j)

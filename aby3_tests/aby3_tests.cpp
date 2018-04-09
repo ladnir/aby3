@@ -21,4 +21,6 @@ oc::TestCollection aby3_tests([](oc::TestCollection& tc) {
     tc.add("Lynx_ConvertToPackedBinary_test   ", Lynx_asyncConvertToPackedBinary_test);
 
     tc.add("Sh3Encryptor_Integer_tests        ", Sh3Encryptor_Integer_tests);
+    tc.add("Sh3Evaluator_mul_tests            ", Sh3Evaluator_mul_tests);
+    tc.add("Sh3Evaluator_asyncMul_tests       ", Sh3Evaluator_asyncMul_tests);
 });

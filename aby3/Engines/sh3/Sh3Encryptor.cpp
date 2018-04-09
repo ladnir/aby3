@@ -93,12 +93,12 @@ namespace aby3
     {
         if (dest.bitCount() != m.cols() * sizeof(i64) * 8)
             throw std::runtime_error(LOCATION);
-        if (dest.ShareCount() != m.rows())
+        if (dest.shareCount() != m.rows())
             throw std::runtime_error(LOCATION);
 
         auto bits = sizeof(i64) * 8;
         auto outRows = dest.bitCount(); 
-        auto outCols = (dest.ShareCount() + bits - 1) / bits;
+        auto outCols = (dest.shareCount() + bits - 1) / bits;
         oc::MatrixView<u8> in((u8*)m.data(), m.rows(), m.cols() * sizeof(i64));
         oc::MatrixView<u8> out((u8*)dest.mShares[0].data(), outRows, outCols * sizeof(i64));
         oc::sse_transpose(in, out);
