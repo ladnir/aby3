@@ -205,9 +205,9 @@ namespace aby3
         }
     }
     Sh3Task Sh3BinaryEvaluator::asyncEvaluate(
-        Sh3Task dependency, 
-        oc::BetaCircuit * cir, 
-        std::vector<const Sh3::sb64Matrix*> inputs, 
+        Sh3Task dep,
+        oc::BetaCircuit * cir,
+        std::vector<const Sh3::sb64Matrix*> inputs,
         std::vector<Sh3::sb64Matrix*> outputs)
     {
         if (cir->mInputs.size() != inputs.size())
@@ -215,18 +215,22 @@ namespace aby3
         if (cir->mOutputs.size() != outputs.size())
             throw std::runtime_error(LOCATION);
 
-        auto width = inputs[0]->rows();
-        setCir(cir, width);
+        return dep.then([this, cir, inputs = std::move(inputs)](Sh3::CommPkg& comm, Sh3Task& self)
+        {        
+            auto width = inputs[0]->rows();
+            setCir(cir, width);
 
-        for (u64 i = 0; i < inputs.size(); ++i)
-        {
-            if (inputs[i]->rows() != width)
-                throw std::runtime_error(LOCATION);
+            for (u64 i = 0; i < inputs.size(); ++i)
+            {
+                if (inputs[i]->rows() != width)
+                    throw std::runtime_error(LOCATION);
 
-            setInput(i, *inputs[i]);
-        }
+                setInput(i, *inputs[i]);
+            }
 
-        return asyncEvaluate(dependency).then([this, outputs = std::move(outputs)](Sh3Task& self)
+            roundCallback(comm, self);
+
+        }).then([this, outputs = std::move(outputs)](Sh3Task& self)
         {
             for (u64 i = 0; i < outputs.size(); ++i)
             {

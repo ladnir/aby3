@@ -3,6 +3,7 @@
 #include "aby3/Engines/sh3/Sh3Defines.h"
 #include <cryptoTools/Network/Session.h>
 #include <boost/variant.hpp>
+#include <function2/function2.hpp>
 
 namespace aby3
 {
@@ -13,8 +14,8 @@ namespace aby3
     {
     public:
 
-        using RoundFunc = std::function<void(Sh3::CommPkg& comm, Sh3Task& self)>;
-        using ContinuationFunc = std::function<void(Sh3Task& self)>;
+        using RoundFunc = fu2::unique_function<void(Sh3::CommPkg& comm, Sh3Task& self)>;
+        using ContinuationFunc = fu2::unique_function<void(Sh3Task& self)>;
 
         // returns the associated runtime.
         Sh3Runtime& getRuntime() { return *mRuntime; }
@@ -192,7 +193,7 @@ namespace aby3
         }
 
 
-        u64 mPopIdx = 0, mPushIdx = 0;
+        i64 mPopIdx = 0, mPushIdx = 0;
         std::vector<Sh3TaskBase> mTasks;
 
         Sh3TaskBase* modGet(u64 idx)

@@ -28,7 +28,7 @@ i64 extract(const Sh3::sPackedBin& A, u64 share, u64 packIdx, u64 wordIdx)
     return v;
 }
 
-void Sh3_Encryptor_Integer_test()
+void Sh3_Encryptor_IO_test()
 {
 
     IOService ios;
@@ -182,26 +182,26 @@ void Sh3_Encryptor_Integer_test()
 
         for (int i = 0; i < trials; ++i)
         {
-            e.reveal(c, shrs[i], 0);
-            e.reveal(c, bshrs[i], 0);
+            e.reveal(c, 0, shrs[i]);
+            e.reveal(c, 0, bshrs[i]);
         }
-        e.reveal(c, sum, 0);
-        e.reveal(c, XOR, 0);
+        e.reveal(c, 0, sum);
+        e.reveal(c, 0, XOR);
 
 
 
 
         Sh3::si64Matrix mShr(trials, trials);
         e.remoteIntMatrix(c, mShr);
-        e.reveal(c, mShr, 0);
+        e.reveal(c, 0, mShr);
 
         Sh3::sb64Matrix bShr(trials, trials);
         e.remoteBinMatrix(c, bShr);
-        e.reveal(c, bShr, 0);
+        e.reveal(c, 0, bShr);
         
         Sh3::sPackedBin pShr(trials, trials * sizeof(i64) * 8);
         e.remotePackedBinary(c, pShr);
-        e.reveal(c, pShr, 0);
+        e.reveal(c, 0, pShr);
 
         //Channel chl;
         //if (i == 1)
@@ -211,6 +211,199 @@ void Sh3_Encryptor_Integer_test()
 
         //chl.asyncSend(pShr.mShares[0].data(), pShr.mShares[0].size());
         //chl.asyncSend(pShr.mShares[1].data(), pShr.mShares[1].size());
+    };
+
+    auto t1 = std::thread(rr, 1);
+    auto t2 = std::thread(rr, 2);
+
+    t0.join();
+    t1.join();
+    t2.join();
+
+    if (failed)
+        throw std::runtime_error(LOCATION);
+}
+
+
+void Sh3_Encryptor_asyncIO_test()
+{
+
+    IOService ios;
+    auto chl01 = Session(ios, "127.0.0.1:1313", SessionMode::Server, "01").addChannel();
+    auto chl10 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "01").addChannel();
+    auto chl02 = Session(ios, "127.0.0.1:1313", SessionMode::Server, "02").addChannel();
+    auto chl20 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "02").addChannel();
+    auto chl12 = Session(ios, "127.0.0.1:1313", SessionMode::Server, "12").addChannel();
+    auto chl21 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "12").addChannel();
+
+
+    int trials = 10;
+    CommPkg comm[3];
+    comm[0] = { chl02, chl01 };
+    comm[1] = { chl10, chl12 };
+    comm[2] = { chl21, chl20 };
+
+    Sh3Encryptor enc[3];
+    enc[0].init(0, toBlock(0, 0), toBlock(1, 1));
+    enc[1].init(1, toBlock(1, 1), toBlock(2, 2));
+    enc[2].init(2, toBlock(2, 2), toBlock(0, 0));
+
+    bool failed = false;
+    auto t0 = std::thread([&]() {
+        setThreadName("t_0");
+        auto i = 0;
+        auto& e = enc[i];
+        //auto& c = comm[i];
+        Sh3Runtime rt(i, comm[i]);
+        PRNG prng(ZeroBlock);
+
+        i64 s = 0, x = 0;
+        std::vector<i64> vals(trials);
+        std::vector<si64> shrs(trials);
+        std::vector<sb64> bshrs(trials);
+        std::vector<std::array<Sh3Task,2>> tasks(trials);
+        si64 sum{ { 0,0 } };
+        sb64 XOR{ { 0,0 } };
+
+        for (int i = 0; i < trials; ++i)
+        {
+            vals[i] = i * 325143121;
+            shrs[i] = { {0,0} };
+            tasks[i][0] = e.localInt(rt.noDependencies(), vals[i], shrs[i]).then([&sum, &shrs, i](Sh3Task& _) mutable {
+                //std::cout <<i<< " (" << shrs[i][0] <<", "<<shrs[i][1] <<")" << std::endl;
+                sum = sum + shrs[i];
+            });
+
+            tasks[i][1] = e.localBinary(rt.noDependencies(), vals[i], bshrs[i]).then([&XOR, &bshrs, i](Sh3Task& _) mutable {
+                XOR = XOR ^ bshrs[i];
+            });
+
+            s += vals[i];
+            x ^= vals[i];
+        }
+
+        for (int i = 0; i < trials; ++i)
+        {
+            std::array<i64, 2> v;
+            tasks[i][0] = e.reveal(tasks[i][0], shrs[i], v[0]);
+            tasks[i][1] = e.reveal(tasks[i][1], bshrs[i], v[1]);
+
+            for (u64 j = 0; j < v.size(); ++j)
+            {
+                tasks[i][j].get();
+                if (v[j] != vals[i]) {
+                    std::cout << "localInt[" << i << ", " << j << "] " << v[j] << " " << vals[i] << " failed" << std::endl;
+                    failed = true;
+                }
+            }
+        }
+
+        i64 v1, v2;
+        e.reveal(rt.noDependencies(), sum, v1).get();
+        e.reveal(rt.noDependencies(), XOR, v2).get();
+
+        if (v1 != s)
+        {
+            std::cout << "sum" << std::endl;
+            failed = true;
+        }
+
+        if (v2 != x)
+        {
+            std::cout << "xor" << std::endl;
+            failed = true;
+        }
+
+
+        Sh3::i64Matrix m(trials, trials), mm(trials, trials);
+        for (u64 i = 0; i < m.size(); ++i)
+            m(i) = i;
+
+        Sh3::si64Matrix mShr(trials, trials);
+        Sh3Task task = rt.noDependencies();
+        task = e.localIntMatrix(task, m, mShr);
+        e.reveal(task, mShr, mm).get();
+
+        if (mm != m)
+        {
+            std::cout << "int mtx" << std::endl;
+            failed = true;
+        }
+
+        Sh3::sb64Matrix bShr(trials, trials);
+        task = e.localBinMatrix(task, m, bShr);
+        e.reveal(task, bShr, mm).get();
+
+        if (mm != m)
+        {
+            std::cout << "bin mtx" << std::endl;
+            failed = true;
+        }
+
+        Sh3::sPackedBin pShr(trials, trials * sizeof(i64) * 8);
+        task = e.localPackedBinary(task, m, pShr);
+        e.reveal(task, pShr, mm).get();
+
+        if (mm != m)
+        {
+            std::cout << "pac mtx" << std::endl;
+            std::cout << m << std::endl;
+            std::cout << mm << std::endl;
+            
+            failed = true;
+        }
+
+    });
+
+
+    auto rr = [&](int i)
+    {
+        setThreadName("t_"+ToString(i));
+        auto& e = enc[i];
+        //auto& c = comm[i];
+        Sh3Runtime rt(i, comm[i]);
+        std::vector<si64> shrs(trials);
+        std::vector<sb64> bshrs(trials);
+        std::vector<std::array<Sh3Task, 2>> tasks(trials);
+        si64 sum{ { 0,0 } };
+        sb64 XOR{ { 0,0 } };
+
+        for (int i = 0; i < trials; ++i)
+        {
+            tasks[i][0] = e.remoteInt(rt.noDependencies(), shrs[i]).then([&sum, &shrs, i](Sh3Task& _) mutable {
+                sum = sum + shrs[i];
+            });
+
+            tasks[i][1] = e.remoteBinary(rt.noDependencies(), bshrs[i]).then([&XOR, &bshrs, i](Sh3Task& _) mutable {
+                XOR = XOR ^ bshrs[i];
+            });
+
+        }
+
+        for (int i = 0; i < trials; ++i)
+        {
+            e.reveal(tasks[i][0], 0, shrs[i]);
+            e.reveal(tasks[i][1], 0, bshrs[i]);
+        }
+        e.reveal(rt.noDependencies(), 0, sum);
+        e.reveal(rt.noDependencies(), 0, XOR);
+
+
+
+
+        Sh3::si64Matrix mShr(trials, trials);
+        Sh3Task task = rt.noDependencies();
+        e.remoteIntMatrix(task, mShr);
+        e.reveal(task, 0, mShr);
+
+        Sh3::sb64Matrix bShr(trials, trials);
+        e.remoteBinMatrix(task, bShr);
+        e.reveal(task, 0, bShr);
+
+        Sh3::sPackedBin pShr(trials, trials * sizeof(i64) * 8);
+        e.remotePackedBinary(task, pShr);
+        e.reveal(task, 0, pShr).get();
+
     };
 
     auto t1 = std::thread(rr, 1);

@@ -117,7 +117,7 @@ void Sh3_Evaluator_asyncMul_test()
             }
             task.get();
 
-            enc.reveal(comm, C, 0);
+            enc.reveal(comm, 0, C);
         }
     };
 
@@ -209,7 +209,7 @@ void Sh3_Evaluator_mul_test()
 
             eval.mul(comm, A, B, C);
 
-            enc.reveal(comm, C, 0);
+            enc.reveal(comm, 0, C);
         }
     };
 

@@ -62,9 +62,10 @@ namespace aby3
 
         for (u64 i = 0; i < deps.size(); ++i)
         {
-            if (deps[i].mTaskIdx != -1)
+            auto dIdx = deps[i].mTaskIdx;
+            if (dIdx >= mTasks.mPopIdx)
             {
-                auto depBase = mTasks.get(deps[i].mTaskIdx);
+                auto depBase = mTasks.get(dIdx);
                 if (depBase == nullptr)
                     throw std::runtime_error(LOCATION);
                 depBase->addChild(base);

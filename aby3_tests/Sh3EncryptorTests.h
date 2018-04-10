@@ -3,4 +3,5 @@
 
 
 
-void Sh3_Encryptor_Integer_test();
+void Sh3_Encryptor_IO_test();
+void Sh3_Encryptor_asyncIO_test();
