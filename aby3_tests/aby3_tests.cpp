@@ -20,7 +20,10 @@ oc::TestCollection aby3_tests([](oc::TestCollection& tc) {
     tc.add("Lynx_asyncInputBinary_test        ", Lynx_asyncInputBinary_test);
     tc.add("Lynx_ConvertToPackedBinary_test   ", Lynx_asyncConvertToPackedBinary_test);
 
-    tc.add("Sh3Encryptor_Integer_tests        ", Sh3Encryptor_Integer_tests);
-    tc.add("Sh3Evaluator_mul_tests            ", Sh3Evaluator_mul_tests);
-    tc.add("Sh3Evaluator_asyncMul_tests       ", Sh3Evaluator_asyncMul_tests);
+    tc.add("Sh3_Encryptor_Integer_test        ", Sh3_Encryptor_Integer_test);
+    tc.add("Sh3_Evaluator_mul_test            ", Sh3_Evaluator_mul_test);
+    tc.add("Sh3_Evaluator_asyncMul_test       ", Sh3_Evaluator_asyncMul_test);
+    tc.add("Sh3_BinaryEngine_and_test         ", Sh3_BinaryEngine_and_test);
+    tc.add("Sh3_BinaryEngine_add_test         ", Sh3_BinaryEngine_add_test);
+    tc.add("Sh3_BinaryEngine_add_msb_test;    ", Sh3_BinaryEngine_add_msb_test);
 });

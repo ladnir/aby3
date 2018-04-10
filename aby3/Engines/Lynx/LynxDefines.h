@@ -8,15 +8,38 @@
 #include "aby3/Circuit/BetaLibrary.h"
 #include <functional>
 
-using namespace oc;
 
 namespace Lynx
 {
+    using u64 = oc::u64;
+    using u32 = oc::u32;
+    using u16 = oc::u16;
+    using u8  = oc::u8;
+    using i64 = oc::i64;
+    using i32 = oc::i32;
+    using i16 = oc::i16;
+    using i8  = oc::i8;
+    using block = oc::block;
+    using Channel = oc::Channel;
 
-	typedef i64 Word;
-	typedef double value_type;
-	typedef Eigen::Matrix<value_type, Eigen::Dynamic, Eigen::Dynamic> value_type_matrix;
-	typedef Eigen::Matrix<Word, Eigen::Dynamic, Eigen::Dynamic> word_matrix;
+	using Word = i64;
+	using value_type = double;
+
+	using value_type_matrix = Eigen::Matrix<value_type, Eigen::Dynamic, Eigen::Dynamic>;
+    using word_matrix = Eigen::Matrix<Word, Eigen::Dynamic, Eigen::Dynamic>;
+
+    using PRNG = oc::PRNG;
+    using Session = oc::Session;
+    using BetaLibrary = oc::BetaLibrary;
+    using AES = oc::AES;
+
+    using BetaCircuit = oc::BetaCircuit;
+    using BetaGate = oc::BetaGate;
+    using BetaWire = oc::BetaWire;
+    using GateType = oc::GateType;
+
+    template<typename T>
+    using span = oc::span<T>;
 
     struct CommPackage
     {

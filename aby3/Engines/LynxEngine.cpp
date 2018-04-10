@@ -13,7 +13,7 @@
 
 namespace Lynx
 {
-
+    using namespace oc;
     Engine::Engine()
     {
     }

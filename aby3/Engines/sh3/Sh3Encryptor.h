@@ -1,17 +1,17 @@
 #pragma once
 #include "Sh3Defines.h"
 #include "Sh3ShareGen.h"
+#include "Sh3Runtime.h"
 
 namespace aby3
 {
-
     class Sh3Encryptor
     {
     public:
 
-
+        //Sh3Task init(Sh3Task& dep);
         void init(u64 partyIdx, block prevSeed, block nextSeed, u64 buffSize = 256) { mShareGen.init(prevSeed, nextSeed, buffSize); mPartyIdx = partyIdx; }
-        void init(u64 partyIdx, Sh3::CommPkg& comm, block& seed, u64 buffSize = 256) { mShareGen.init(comm, seed, buffSize); mPartyIdx = partyIdx; }
+        void init(u64 partyIdx, Sh3::CommPkg& comm, block seed, u64 buffSize = 256) { mShareGen.init(comm, seed, buffSize); mPartyIdx = partyIdx; }
 
         Sh3::si64 localInt(Sh3::CommPkg& comm, i64 val);
         Sh3::si64 remoteInt(Sh3::CommPkg& comm);

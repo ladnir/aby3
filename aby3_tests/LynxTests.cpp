@@ -19,7 +19,7 @@
 //{
 //
 //}
-
+using namespace oc;
 void Lynx_matrixOperations_tests()
 {
 

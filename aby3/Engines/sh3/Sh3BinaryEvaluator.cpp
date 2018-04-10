@@ -1,21 +1,21 @@
-#include "LynxBinaryEngine.h"
+#include "Sh3BinaryEvaluator.h"
 #include <cryptoTools/Common/Matrix.h>
 #include <cryptoTools/Common/Log.h>
 #include <libOTe/Tools/Tools.h>
 #include <cryptoTools/Crypto/sha1.h>
-namespace Lynx
-{
 
+namespace aby3
+{
     using namespace oc;
 
-    void BinaryEngine::setCir(BetaCircuit * cir, u64 width)
+    void Sh3BinaryEvaluator::setCir(BetaCircuit * cir, u64 width)
     {
         if (cir->mLevelCounts.size() == 0) cir->levelByAndDepth();
 
         //if (cir->mInputs.size() != 2) throw std::runtime_error(LOCATION);
 
         mCir = cir;
-        //auto bits = sizeof(Word) * 8;
+        //auto bits = sizeof(i64) * 8;
         //auto simdWidth = (width + bits - 1) / bits;
 
         // each row of mem corresponds to a wire. Each column of mem corresponds to 64 SIMD bits
@@ -36,13 +36,13 @@ namespace Lynx
 #endif
     }
 
-    void BinaryEngine::setReplicatedInput(u64 idx, const Matrix & in)
+    void Sh3BinaryEvaluator::setReplicatedInput(u64 idx, const Sh3::sb64Matrix & in)
     {
         mLevel = 0;
         auto& inWires = mCir->mInputs[idx].mWires;
         auto simdWidth = mMem.simdWidth();
         auto inCols = in.cols();
-        auto bits = sizeof(Word) * 8;
+        auto bits = sizeof(i64) * 8;
 
         if (mCir == nullptr)
             throw std::runtime_error(LOCATION);
@@ -59,7 +59,7 @@ namespace Lynx
         for (u64 i = 0; i < 2; ++i)
         {
             auto& shares = mMem.mShares[i];
-            oc::BitIterator iter((u8*)in.mShares[0].data(), 0);
+            BitIterator iter((u8*)in.mShares[0].data(), 0);
 
             for (u64 j = 0; j < inWires.size(); ++j, ++iter)
             {
@@ -67,17 +67,17 @@ namespace Lynx
                     throw std::runtime_error(LOCATION);
 
                 char v = vals[*iter];
-                memset(shares.data() + simdWidth * inWires[j], v, simdWidth * sizeof(Word));
+                memset(shares.data() + simdWidth * inWires[j], v, simdWidth * sizeof(i64));
             }
         }
     }
 
-    void BinaryEngine::setInput(u64 idx, const Matrix & in)
+    void Sh3BinaryEvaluator::setInput(u64 idx, const Sh3::sb64Matrix  & in)
     {
         mLevel = 0;
         auto& inWires = mCir->mInputs[idx].mWires;
         auto simdWidth = mMem.simdWidth();
-        auto bits = sizeof(Word) * 8;
+        auto bits = sizeof(i64) * 8;
 
         auto inCols = in.cols();
         auto inRows = in.rows();
@@ -105,7 +105,7 @@ namespace Lynx
             MatrixView<u8> inView(
                 (u8*)(in.mShares[i].data()),
                 (u8*)(in.mShares[i].data() + in.mShares[i].size()),
-                sizeof(Word));
+                sizeof(i64));
 
             if (inWires.back() > shares.rows())
                 throw std::runtime_error(LOCATION);
@@ -113,12 +113,12 @@ namespace Lynx
             MatrixView<u8> memView(
                 (u8*)(shares.data() + simdWidth * inWires.front()),
                 (u8*)(shares.data() + simdWidth * (inWires.back() + 1)),
-                sizeof(Word) * simdWidth);
+                sizeof(i64) * simdWidth);
 
             if (memView.data() + memView.size() > (u8*)(shares.data() + shares.size()))
                 throw std::runtime_error(LOCATION);
 
-            oc::sse_transpose(inView, memView);
+            sse_transpose(inView, memView);
             //std::cout << " in* " << std::endl;
             //for (u64 r = 0; r < inView.bounds()[0]; ++r)
             //{
@@ -149,14 +149,16 @@ namespace Lynx
 
         for (u64 r = 0; r < mPlainWires_DEBUG.size(); ++r)
         {
+
+            auto prevIdx = (mDebugPartyIdx + 2) % 3;
             auto& m = mPlainWires_DEBUG[r];
             auto bv0 = BitVector((u8*)in.mShares[0].row(r).data(), inWires.size());
             auto bv1 = BitVector((u8*)in.mShares[1].row(r).data(), inWires.size());
 
             for (u64 i = 0; i < inWires.size(); ++i)
             {
-                m[inWires[i]].mBits[mPartyIdx] = bv0[i];
-                m[inWires[i]].mBits[mPrevIdx] = bv1[i];
+                m[inWires[i]].mBits[mDebugPartyIdx] = bv0[i];
+                m[inWires[i]].mBits[prevIdx] = bv1[i];
 
                 //if (inWires[i] < 10)
                 //	ostreamLock(std::cout) << mPartyIdx << " w[" << inWires[i] << "] = "
@@ -178,7 +180,7 @@ namespace Lynx
 
     }
 
-    void BinaryEngine::setInput(u64 idx, const PackedBinMatrix & in)
+    void Sh3BinaryEvaluator::setInput(u64 idx, const Sh3::sPackedBin & in)
     {
         auto simdWidth = mMem.simdWidth();
 
@@ -198,17 +200,52 @@ namespace Lynx
 
             for (u64 j = 0; j < wires.size(); ++j)
             {
-                memcpy(share.data() + simdWidth * wires[j], in.mShares[i].data() + simdWidth * j, simdWidth * sizeof(Word));
+                memcpy(share.data() + simdWidth * wires[j], in.mShares[i].data() + simdWidth * j, simdWidth * sizeof(i64));
             }
         }
     }
+    Sh3Task Sh3BinaryEvaluator::asyncEvaluate(
+        Sh3Task dependency, 
+        oc::BetaCircuit * cir, 
+        std::vector<const Sh3::sb64Matrix*> inputs, 
+        std::vector<Sh3::sb64Matrix*> outputs)
+    {
+        if (cir->mInputs.size() != inputs.size())
+            throw std::runtime_error(LOCATION);
+        if (cir->mOutputs.size() != outputs.size())
+            throw std::runtime_error(LOCATION);
 
-    void BinaryEngine::evaluate()
+        auto width = inputs[0]->rows();
+        setCir(cir, width);
+
+        for (u64 i = 0; i < inputs.size(); ++i)
+        {
+            if (inputs[i]->rows() != width)
+                throw std::runtime_error(LOCATION);
+
+            setInput(i, *inputs[i]);
+        }
+
+        return asyncEvaluate(dependency).then([this, outputs = std::move(outputs)](Sh3Task& self)
+        {
+            for (u64 i = 0; i < outputs.size(); ++i)
+            {
+                getOutput(i, *outputs[i]);
+            }
+        });
+    }
+
+    Sh3Task Sh3BinaryEvaluator::asyncEvaluate(Sh3Task dependency)
     {
 #ifdef BINARY_ENGINE_DEBUG
 
         if (mDebug)
         {
+            if (mDebugPartyIdx != dependency.getRuntime().mPartyIdx)
+                throw std::runtime_error(LOCATION);
+
+            auto prevIdx = (mDebugPartyIdx + 2) % 3;
+            auto nextIdx = (mDebugPartyIdx + 1) % 3;
             for (u64 r = 0; r < mPlainWires_DEBUG.size(); ++r)
             {
                 auto& m = mPlainWires_DEBUG[r];
@@ -216,34 +253,34 @@ namespace Lynx
                 std::vector<u8> s0(m.size()), s1;
                 for (u64 i = 0; i < s0.size(); ++i)
                 {
-                    s0[i] = m[i].mBits[mPartyIdx];
+                    s0[i] = m[i].mBits[mDebugPartyIdx];
                 }
-                mPrev.asyncSendCopy(s0);
-                mNext.asyncSendCopy(s0);
-                mPrev.recv(s0);
-                mNext.recv(s1);
+                mDebugPrev.asyncSendCopy(s0);
+                mDebugNext.asyncSendCopy(s0);
+                mDebugPrev.recv(s0);
+                mDebugNext.recv(s1);
                 if (s0.size() != m.size())
                     throw std::runtime_error(LOCATION);
 
                 for (u64 i = 0; i < m.size(); ++i)
                 {
-                    if (m[i].mBits[mPrevIdx] != s0[i])
+                    if (m[i].mBits[prevIdx] != s0[i])
                         throw std::runtime_error(LOCATION);
 
-                    m[i].mBits[mNextIdx] = s1[i];
+                    m[i].mBits[nextIdx] = s1[i];
                 }
             }
         }
 #endif
-
-        while (hasMoreRounds())
+        return dependency.then([this](Sh3::CommPkg& comm, Sh3Task& self)
         {
-            evaluateRound();
-        }
+            roundCallback(comm, self);
+        });
     }
 
-    void BinaryEngine::evaluateRound()
+    void Sh3BinaryEvaluator::roundCallback(Sh3::CommPkg& comm, Sh3Task task)
     {
+
 
         auto simdWidth = mMem.simdWidth();
 
@@ -256,20 +293,16 @@ namespace Lynx
 
         if (mLevel)
         {
-            if (mUpdateLocations.size())
+            if (mRecvLocs.size())
             {
-                // recv the data for the previous level
-                std::vector<Word> updates(mUpdateLocations.size() * simdWidth);
-                auto iter = updates.begin();
+                mRecvFutr.get();
 
+                auto iter = mRecvData.begin();
 
-                mPrev.recv(updates);
-                iter = updates.begin();
-
-                for (u64 j = 0; j < mUpdateLocations.size(); ++j)
+                for (u64 j = 0; j < mRecvLocs.size(); ++j)
                 {
-                    auto out = mUpdateLocations[j];
-                    memcpy(&mMem.mShares[1](out), &*iter, simdWidth * sizeof(Word));
+                    auto out = mRecvLocs[j];
+                    memcpy(&mMem.mShares[1](out), &*iter, simdWidth * sizeof(i64));
                     iter += simdWidth;
                 }
             }
@@ -277,22 +310,21 @@ namespace Lynx
         else {
             mGateIter = mCir->mGates.data();
         }
-        Word ccWord;
-        memset(&ccWord, 0xCC, sizeof(Word));
-
-        Word allOnesIfP0 = 0;
+        i64 ccWord;
+        memset(&ccWord, 0xCC, sizeof(i64));
 
         auto& shares = mMem.mShares;
+        //ostreamLock(std::cout) << "P" << mDebugPartyIdx << " l" << mLevel << " : " << hashState() << std::endl;
 
         if (mLevel < mCir->mLevelCounts.size())
         {
             auto andGateCount = mCir->mLevelAndCounts[mLevel];
             auto gateCount = mCir->mLevelCounts[mLevel];
 
-            mUpdateLocations.resize(andGateCount);
-            auto updateIter = mUpdateLocations.data();
-            std::vector<Word> updates(andGateCount * simdWidth);
-            auto iter = updates.begin();
+            mRecvLocs.resize(andGateCount);
+            auto updateIter = mRecvLocs.data();
+            std::vector<i64> mSendData(andGateCount * simdWidth);
+            auto sendIter = mSendData.begin();
 
             for (u64 j = 0; j < gateCount; ++j, ++mGateIter)
             {
@@ -302,31 +334,6 @@ namespace Lynx
                 auto in1 = gate.mInput[1] * simdWidth;
                 auto out = gate.mOutput * simdWidth;
 
-                //#ifdef BINARY_ENGINE_DEBUG
-                //			{
-                //				std::vector<Word> in0Share, in1Share;
-                //				mPrev.asyncSendCopy(&shares[0](in0), simdWidth);
-                //				mPrev.asyncSendCopy(&shares[0](in1), simdWidth);
-                //				mNext.recv(in0Share);
-                //				mNext.recv(in1Share);
-                //
-                //				for (u64 k = 0; k < simdWidth; ++k)
-                //				{
-                //					in0Share[k] ^= shares[0](in0 + k) ^ shares[1](in0 + k);
-                //					in1Share[k] ^= shares[0](in1 + k) ^ shares[1](in1 + k);
-                //				}
-                //
-                //				for (u64 r = 0; r < mPlainWires_DEBUG.size(); ++r)
-                //				{
-                //					auto& m = mPlainWires_DEBUG[r];
-                //
-                //					auto k = r / (sizeof(Word) * 8);
-                //					auto j = r % (sizeof(Word) * 8);
-                //					auto mem0 = (s0[k] >> j) & 1;
-                //				}
-                //
-                //			}
-                //#endif
 
                 switch (gate.mType)
                 {
@@ -347,7 +354,7 @@ namespace Lynx
                     {
 
                         TODO("add the randomization back");
-                        *iter = shares[0](out)
+                        *sendIter = shares[0](out)
                             = (shares[0](in0) & shares[0](in1))
                             ^ (shares[0](in0) & shares[1](in1))
                             ^ (shares[1](in0) & shares[0](in1))
@@ -358,7 +365,7 @@ namespace Lynx
                             throw std::runtime_error(LOCATION);
                         shares[1](out) = ccWord;
 #endif
-                        ++iter;
+                        ++sendIter;
                         ++in0;
                         ++in1;
                         ++out;
@@ -374,7 +381,7 @@ namespace Lynx
                         auto mem11 = shares[1](in1) ^ -1;
 
                         TODO("add the randomization back");
-                        *iter = shares[0](out)
+                        *sendIter = shares[0](out)
                             = (mem00 & mem01)
                             ^ (mem00 & mem11)
                             ^ (mem10 & mem01)
@@ -385,7 +392,7 @@ namespace Lynx
                             throw std::runtime_error(LOCATION);
                         shares[1](out) = ccWord;
 #endif
-                        ++iter;
+                        ++sendIter;
                         ++in0;
                         ++in1;
                         ++out;
@@ -424,7 +431,7 @@ namespace Lynx
                     {
 
                         TODO("add the randomization back");
-                        *iter = shares[0](out)
+                        *sendIter = shares[0](out)
                             = ((~shares[0](in0)) & shares[0](in1))
                             ^ ((~shares[0](in0)) & shares[1](in1))
                             ^ ((~shares[1](in0)) & shares[0](in1))
@@ -435,7 +442,7 @@ namespace Lynx
                             throw std::runtime_error(LOCATION);
                         shares[1](out) = ccWord;
 #endif
-                        ++iter;
+                        ++sendIter;
                         ++in0;
                         ++in1;
                         ++out;
@@ -465,22 +472,22 @@ namespace Lynx
 
                     out = gate.mOutput * simdWidth;
 
-                    mNext.asyncSendCopy(&shares[0](out), simdWidth);
-                    mPrev.asyncSendCopy(&shares[0](out), simdWidth);
+                    mDebugNext.asyncSendCopy(&shares[0](out), simdWidth);
+                    mDebugPrev.asyncSendCopy(&shares[0](out), simdWidth);
 
-                    std::vector<Word> s0(simdWidth), s1(simdWidth);
-                    mPrev.recv(s0);
-                    mNext.recv(s1);
+                    std::vector<i64> s0(simdWidth), s1(simdWidth);
+                    mDebugPrev.recv(s0);
+                    mDebugNext.recv(s1);
 
                     for (u64 k = 0; k < simdWidth; ++k)
                         s0[k] ^= s1[k] ^ shares[0](out + k);
 
                     for (u64 r = 0; r < mPlainWires_DEBUG.size(); ++r)
                     {
-                        auto k = r / (sizeof(Word) * 8);
-                        auto j = r % (sizeof(Word) * 8);
-                        Word plain = (s0[k] >> j) & 1;
-                        Word zeroShare = (shares[0](out + k) >> j) & 1;
+                        auto k = r / (sizeof(i64) * 8);
+                        auto j = r % (sizeof(i64) * 8);
+                        i64 plain = (s0[k] >> j) & 1;
+                        i64 zeroShare = (shares[0](out + k) >> j) & 1;
 
                         auto gIn0 = gate.mInput[0];
                         auto gIn1 = gate.mInput[1];
@@ -491,7 +498,7 @@ namespace Lynx
 
                         m[gOut].assign(m[gIn0], m[gIn1], gate.mType);
 
-                        if (zeroShare != m[gOut].mBits[mPartyIdx])
+                        if (zeroShare != m[gOut].mBits[mDebugPartyIdx])
                             throw std::runtime_error(LOCATION);
 
 
@@ -505,21 +512,46 @@ namespace Lynx
                             throw std::runtime_error(LOCATION);
                         }
 
+                        //if (r == 0)
+                        //{
+                        //    ostreamLock(std::cout)
+                        //        << "\n g" << gIdx << " act: " << plain << "   exp: " << (int)m[gate.mOutput].val() << std::endl
+                        //        << m[gIn0].val() << " " << gateToString(type) << " " << m[gIn1].val() << " -> " << m[gOut].val() << std::endl
+                        //        << gIn0 << " " << gateToString(type) << " " << gIn1 << " -> " << int(gOut) << std::endl;
+                        //}
                     }
+
                 }
 #endif
             }
 
-            if (iter != updates.end()) throw std::runtime_error(LOCATION);
+            if (sendIter != mSendData.end()) throw std::runtime_error(LOCATION);
 
-            if (updates.size())
-                mNext.asyncSend(std::move(updates));
+            mRecvData.resize(mSendData.size());
+
+            if (mSendData.size())
+            {
+                comm.mNext.asyncSend(std::move(mSendData));
+
+                mRecvFutr = comm.mPrev.asyncRecv(mRecvData);
+            }
         }
+
         mLevel++;
         if (mGateIter > mCir->mGates.data() + mCir->mGates.size()) throw std::runtime_error(LOCATION);
+
+
+        if (hasMoreRounds())
+        {
+            task.nextRound([this](Sh3::CommPkg& comm, Sh3Task& task)
+            {
+                roundCallback(comm, task);
+            }
+            );
+        }
     }
 
-    void BinaryEngine::getOutput(u64 i, Matrix & out)
+    void Sh3BinaryEvaluator::getOutput(u64 i, Sh3::sb64Matrix & out)
     {
         if (mCir->mOutputs.size() <= i) throw std::runtime_error(LOCATION);
 
@@ -528,9 +560,9 @@ namespace Lynx
         getOutput(outWires, out);
     }
 
-    void BinaryEngine::getOutput(u64 idx, PackedBinMatrix & out)
+    void Sh3BinaryEvaluator::getOutput(u64 idx, Sh3::sPackedBin & out)
     {
-        auto bits = sizeof(Word) * 8;
+        auto bits = sizeof(i64) * 8;
         const auto& outWires = mCir->mOutputs[idx].mWires;
 
         out.resize(mMem.shareCount(), outWires.size());
@@ -538,7 +570,8 @@ namespace Lynx
 
         for (u64 j = 0; j < 2; ++j)
         {
-            auto jj = !j ? mPartyIdx : mPrevIdx;
+            auto prevIdx = (mDebugPartyIdx + 2) % 3;
+            auto jj = !j ? mDebugPartyIdx : prevIdx;
             auto dest = out.mShares[j].data();
 
             for (u64 wireIdx = 0; wireIdx < outWires.size(); ++wireIdx)
@@ -550,7 +583,7 @@ namespace Lynx
                 auto md = mMem.mShares[j].data();
                 auto ms = mMem.mShares[j].size();
                 auto src = md + wire * simdWidth;
-                auto size = simdWidth * sizeof(Word);
+                auto size = simdWidth * sizeof(i64);
 
                 //if (src + simdWidth > md + ms)
                 //    throw std::runtime_error(LOCATION);
@@ -575,9 +608,9 @@ namespace Lynx
                 for (u64 r = 0; r < mPlainWires_DEBUG.size(); ++r)
                 {
                     auto m = mPlainWires_DEBUG[r];
-                    auto k = r / (sizeof(Word) * 8);
-                    auto l = r % (sizeof(Word) * 8);
-                    Word plain = (src[k] >> l) & 1;
+                    auto k = r / (sizeof(i64) * 8);
+                    auto l = r % (sizeof(i64) * 8);
+                    i64 plain = (src[k] >> l) & 1;
 
                     if (m[wire].mBits[jj] != plain)
                         throw std::runtime_error(LOCATION);
@@ -587,8 +620,10 @@ namespace Lynx
         }
     }
 
-    void BinaryEngine::getOutput(const std::vector<BetaWire>& outWires, Matrix & out)
+    void Sh3BinaryEvaluator::getOutput(const std::vector<BetaWire>& outWires, Sh3::sb64Matrix & out)
     {
+
+        using Word = i64;
         auto bits = sizeof(Word) * 8;
         if (outWires.size() > out.cols() * bits) throw std::runtime_error(LOCATION);
         //auto outCols = roundUpTo(outWires.size(), 8);
@@ -599,7 +634,6 @@ namespace Lynx
 
         for (u64 j = 0; j < 2; ++j)
         {
-            auto jj = !j ? mPartyIdx : mPrevIdx;
             auto dest = outMem.data();
 
             for (u64 i = 0; i < outWires.size(); ++i)
@@ -632,15 +666,32 @@ namespace Lynx
                 dest += simdWidth;
 
 #ifdef BINARY_ENGINE_DEBUG
-                for (u64 r = 0; r < mPlainWires_DEBUG.size(); ++r)
+                if (mDebug)
                 {
-                    auto m = mPlainWires_DEBUG[r];
-                    auto k = r / (sizeof(Word) * 8);
-                    auto l = r % (sizeof(Word) * 8);
-                    Word plain = (src[k] >> l) & 1;
+                    auto prev = (mDebugPartyIdx + 2) % 3;
+                    auto jj = !j ? mDebugPartyIdx : prev;
+                    for (u64 r = 0; r < mPlainWires_DEBUG.size(); ++r)
+                    {
+                        auto m = mPlainWires_DEBUG[r];
+                        auto k = r / (sizeof(Word) * 8);
+                        auto l = r % (sizeof(Word) * 8);
+                        Word plain = (src[k] >> l) & 1;
 
-                    if (m[outWires[i]].mBits[jj] != plain)
-                        throw std::runtime_error(LOCATION);
+                        //if (j == 1 && mDebugPartyIdx == 1 && i == 0 && r == 0)
+                        //{
+                        //    ostreamLock o(std::cout);
+                        //    o << "hashState " << hashState() << std::endl;
+
+                        //    for (u64 hh = 0; hh < simdWidth; ++hh)
+                        //    {
+                        //        o << " SS[" << hh << "] " << src[hh] << std::endl;
+                        //    }
+
+                        //    o << "ss " << int(m[outWires[i]].mBits[jj]) << " != " << plain << " = (" << src[k] <<" >> " << l<< ") & 1  : " << k << std::endl;
+                        //}
+                        if (m[outWires[i]].mBits[jj] != plain)
+                            throw std::runtime_error(LOCATION);
+                    }
                 }
 #endif
             }
@@ -654,6 +705,9 @@ namespace Lynx
 #ifdef BINARY_ENGINE_DEBUG
             if (mDebug)
             {
+
+                auto prev = (mDebugPartyIdx + 2) % 3;
+                auto jj = !j ? mDebugPartyIdx : prev;
 
                 for (u64 i = 0; i < outWires.size(); ++i)
                 {
@@ -687,7 +741,7 @@ namespace Lynx
 
 #ifdef BINARY_ENGINE_DEBUG
 
-    void BinaryEngine::DEBUG_Triple::assign(
+    void Sh3BinaryEvaluator::DEBUG_Triple::assign(
         const DEBUG_Triple & in0,
         const DEBUG_Triple & in1,
         GateType type)
@@ -814,3 +868,250 @@ namespace Lynx
     }
 #endif
 }
+//
+//auto simdWidth = mMem.simdWidth();
+//
+//if (mLevel > mCir->mLevelCounts.size())
+//throw std::runtime_error("evaluateRound() was called but no rounds remain... " LOCATION);
+//
+//if (mCir->mLevelCounts.size() == 0 && mCir->mNonXorGateCount)
+//throw std::runtime_error("the level by and gate function must be called first." LOCATION);
+//
+//if (mLevel == 0) {
+//    mGateIter = mCir->mGates.data();
+//    mRecvData.resize(0);
+//}
+//
+//if (mRecvData.size())
+//{
+//    mRecvFutr.get();
+//    auto iter = mRecvData.begin();
+//    for (u64 j = 0; j < mRecvLocs.size(); ++j)
+//    {
+//        auto out = mRecvLocs[j];
+//        memcpy(&mMem.mShares[1](out), &*iter, simdWidth * sizeof(i64));
+//        iter += simdWidth;
+//    }
+//}
+//
+//if (mLevel < mCir->mLevelCounts.size())
+//{
+//    i64 ccWord;
+//    memset(&ccWord, 0xCC, sizeof(i64));
+//
+//    auto& shares = mMem.mShares;
+//    auto andGateCount = mCir->mLevelAndCounts[mLevel];
+//    auto gateCount = mCir->mLevelCounts[mLevel];
+//    mRecvLocs.resize(andGateCount);
+//    std::vector<i64> sendData(andGateCount * simdWidth);
+//
+//    auto recvLocIter = mRecvLocs.data();
+//    auto sendIter = sendData.begin();
+//
+//
+//    for (u64 j = 0; j < gateCount; ++j, ++mGateIter)
+//    {
+//        const auto& gate = *mGateIter;
+//        const auto& type = gate.mType;
+//        auto in0 = gate.mInput[0] * simdWidth;
+//        auto in1 = gate.mInput[1] * simdWidth;
+//        auto out = gate.mOutput * simdWidth;
+//
+//
+//        switch (gate.mType)
+//        {
+//        case GateType::Xor:
+//            for (u64 k = 0; k < simdWidth; ++k)
+//            {
+//                shares[0](out) = shares[0](in0) ^ shares[0](in1);
+//                shares[1](out) = shares[1](in0) ^ shares[1](in1);
+//
+//                ++in0;
+//                ++in1;
+//                ++out;
+//            }
+//            break;
+//        case GateType::And:
+//            *recvLocIter++ = out;
+//            for (u64 k = 0; k < simdWidth; ++k)
+//            {
+//
+//                TODO("add the randomization back");
+//                *sendIter = shares[0](out)
+//                    = (shares[0](in0) & shares[0](in1))
+//                    ^ (shares[0](in0) & shares[1](in1))
+//                    ^ (shares[1](in0) & shares[0](in1))
+//                    /*^ getBinaryShare()*/;
+//
+//#ifndef NDEBUG
+//                if (shares[1](in0) == ccWord || shares[1](in1) == ccWord)
+//                    throw std::runtime_error(LOCATION);
+//                shares[1](out) = ccWord;
+//#endif
+//                ++sendIter;
+//                ++in0;
+//                ++in1;
+//                ++out;
+//            }
+//            break;
+//        case GateType::Nor:
+//            *recvLocIter++ = out;
+//            for (u64 k = 0; k < simdWidth; ++k)
+//            {
+//                auto mem00 = shares[0](in0) ^ -1;
+//                auto mem01 = shares[0](in1) ^ -1;
+//                auto mem10 = shares[1](in0) ^ -1;
+//                auto mem11 = shares[1](in1) ^ -1;
+//
+//                TODO("add the randomization back");
+//                *sendIter = shares[0](out)
+//                    = (mem00 & mem01)
+//                    ^ (mem00 & mem11)
+//                    ^ (mem10 & mem01)
+//                    /*^ getBinaryShare()*/;
+//
+//#ifndef NDEBUG
+//                if (shares[1](in0) == ccWord || shares[1](in1) == ccWord)
+//                    throw std::runtime_error(LOCATION);
+//                shares[1](out) = ccWord;
+//#endif
+//                ++sendIter;
+//                ++in0;
+//                ++in1;
+//                ++out;
+//            }
+//            break;
+//        case GateType::Nxor:
+//            for (u64 k = 0; k < simdWidth; ++k)
+//            {
+//                shares[0](out) = ~(shares[0](in0) ^ shares[0](in1));
+//                shares[1](out) = ~(shares[1](in0) ^ shares[1](in1));
+//
+//                ++in0;
+//                ++in1;
+//                ++out;
+//            }
+//            break;
+//        case GateType::a:
+//            //memcpy(&shares[0](out), &shares[0](in0), simdWidth * sizeof(Word));
+//            //memcpy(&shares[1](out), &shares[1](in0), simdWidth * sizeof(Word));
+//            for (u64 k = 0; k < simdWidth; ++k)
+//            {
+//                if (shares[1](in0) == ccWord)
+//                    throw std::runtime_error(LOCATION);
+//
+//                shares[0](out) = shares[0](in0);
+//                shares[1](out) = shares[1](in0);
+//
+//                ++in0;
+//                ++in1;
+//                ++out;
+//            }
+//            break;
+//        case GateType::na_And:
+//            *recvLocIter++ = out;
+//            for (u64 k = 0; k < simdWidth; ++k)
+//            {
+//
+//                TODO("add the randomization back");
+//                *sendIter = shares[0](out)
+//                    = ((~shares[0](in0)) & shares[0](in1))
+//                    ^ ((~shares[0](in0)) & shares[1](in1))
+//                    ^ ((~shares[1](in0)) & shares[0](in1))
+//                    /*^ getBinaryShare()*/;
+//
+//#ifndef NDEBUG
+//                if (shares[1](in0) == ccWord || shares[1](in1) == ccWord)
+//                    throw std::runtime_error(LOCATION);
+//                shares[1](out) = ccWord;
+//#endif
+//                ++sendIter;
+//                ++in0;
+//                ++in1;
+//                ++out;
+//            }
+//            break;
+//        case GateType::Zero:
+//        case GateType::nb_And:
+//        case GateType::nb:
+//        case GateType::na:
+//        case GateType::Nand:
+//        case GateType::nb_Or:
+//        case GateType::b:
+//        case GateType::na_Or:
+//        case GateType::Or:
+//        case GateType::One:
+//        default:
+//
+//            throw std::runtime_error("Sh3BinaryEvaluator unsupported GateType " LOCATION);
+//            break;
+//        }
+//
+//
+//
+//#ifdef BINARY_ENGINE_DEBUG
+//        if (mDebug)
+//        {
+//
+//            out = gate.mOutput * simdWidth;
+//
+//            mDebugNext.asyncSendCopy(&shares[0](out), simdWidth);
+//            mDebugPrev.asyncSendCopy(&shares[0](out), simdWidth);
+//
+//            std::vector<i64> s0(simdWidth), s1(simdWidth);
+//            mDebugPrev.recv(s0);
+//            mDebugNext.recv(s1);
+//
+//            for (u64 k = 0; k < simdWidth; ++k)
+//                s0[k] ^= s1[k] ^ shares[0](out + k);
+//
+//            for (u64 r = 0; r < mPlainWires_DEBUG.size(); ++r)
+//            {
+//                auto k = r / (sizeof(i64) * 8);
+//                auto j = r % (sizeof(i64) * 8);
+//                i64 plain = (s0[k] >> j) & 1;
+//                i64 zeroShare = (shares[0](out + k) >> j) & 1;
+//
+//                auto gIn0 = gate.mInput[0];
+//                auto gIn1 = gate.mInput[1];
+//                auto gOut = gate.mOutput;
+//
+//                auto& m = mPlainWires_DEBUG[r];
+//                auto gIdx = mGateIter - mCir->mGates.data();
+//
+//                m[gOut].assign(m[gIn0], m[gIn1], gate.mType);
+//
+//                if (zeroShare != m[gOut].mBits[mDebugPartyIdx])
+//                    throw std::runtime_error(LOCATION);
+//
+//
+//                if (plain != m[gOut].val())
+//                {
+//                    ostreamLock(std::cout)
+//                        << "\n g" << gIdx << " act: " << plain << "   exp: " << (int)m[gate.mOutput].val() << std::endl
+//                        << m[gIn0].val() << " " << gateToString(type) << " " << m[gIn1].val() << " -> " << m[gOut].val() << std::endl
+//                        << gIn0 << " " << gateToString(type) << " " << gIn1 << " -> " << int(gOut) << std::endl;
+//                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+//                    throw std::runtime_error(LOCATION);
+//                }
+//
+//            }
+//        }
+//#endif
+//    }
+//
+//    if (sendIter != sendData.end()) throw std::runtime_error(LOCATION);
+//
+//    if (sendData.size())
+//    {
+//        comm.mNext.asyncSend(std::move(sendData));
+//
+//        mRecvData.resize(mRecvLocs.size() * simdWidth);
+//        mRecvFutr = comm.mPrev.asyncRecv(mRecvData.data(), mRecvData.size());
+//
+//    }
+//}
+//
+//mLevel++;
+//if (mGateIter > mCir->mGates.data() + mCir->mGates.size())
+//throw std::runtime_error(LOCATION);

@@ -2,22 +2,33 @@
 #include "aby3/Common/Defines.h"
 #include "aby3/Engines/sh3/Sh3Defines.h"
 #include <cryptoTools/Network/Session.h>
+#include <boost/variant.hpp>
 
 namespace aby3
 {
 
     class Sh3Runtime;
-    //class Sh3TaskBase;
 
     class Sh3Task
     {
     public:
+
+        using RoundFunc = std::function<void(Sh3::CommPkg& comm, Sh3Task& self)>;
+        using ContinuationFunc = std::function<void(Sh3Task& self)>;
+
+        // returns the associated runtime.
         Sh3Runtime& getRuntime() { return *mRuntime; }
 
-        Sh3Task then(std::function<void(Sh3::CommPkg& comm, Sh3Task& self)> task);
+        // schedules a task that can be executed in the following round.
+        Sh3Task then(RoundFunc task);
 
-        void nextRound(std::function<void(Sh3::CommPkg& comm, Sh3Task& self)> task);
+        // schedule a task that can be executed in the same round as this task.
+        Sh3Task then(ContinuationFunc task);
 
+        // mark this task as not completed and perform the provided function in the following round.
+        void nextRound(RoundFunc task);
+
+        // blocks until this task is completed. 
         void get();
 
         Sh3Runtime* mRuntime = nullptr;
@@ -27,6 +38,8 @@ namespace aby3
     class Sh3TaskBase
     {
     public:
+        struct EmptyState {};
+
         i64 mIdx = -1;
         u64 mDepCount;
 
@@ -34,7 +47,7 @@ namespace aby3
         {
             mIdx = -1;
             mChildren.clear();
-            mFunc = nullptr;
+            mFunc = EmptyState{};
         }
 
         void addChild(Sh3TaskBase* child)
@@ -44,21 +57,37 @@ namespace aby3
 
 
         std::vector<i64> mChildren;
-        std::function<void(Sh3::CommPkg& comm, Sh3Task& self)> mFunc;
 
+
+        boost::variant<
+            EmptyState,
+            Sh3Task::RoundFunc,
+            Sh3Task::ContinuationFunc>
+            mFunc = EmptyState{};
+
+
+        // returns true if this task is initialized.
         bool isValid() const
         {
             return mIdx != -1;
         }
 
+        // returns true if this task is ready to be performed
         bool isReady() const
         {
             return isValid() && mDepCount == 0;
         }
 
+        // returns true if this task has completed all of its work
         bool isCompleted()
         {
-            return !mFunc;
+            return boost::get<EmptyState>(&mFunc);
+        }
+
+        // returns true if this task can be executed in the same round as its parent/dependent tasks.
+        bool isContinuationTask()
+        {
+            return boost::get<Sh3Task::ContinuationFunc>(&mFunc);
         }
     };
 
@@ -175,6 +204,15 @@ namespace aby3
     class Sh3Runtime
     {
     public:
+
+        Sh3Runtime() = default;
+        Sh3Runtime(const Sh3Runtime&) = default;
+        Sh3Runtime(Sh3Runtime&&) = default;
+        Sh3Runtime(u64 partyIdx, Sh3::CommPkg& comm)
+        {
+            init(partyIdx, comm);
+        }
+
         u64 mPartyIdx = -1;
         Sh3::CommPkg mComm;
 
@@ -183,20 +221,24 @@ namespace aby3
             mPartyIdx = partyIdx;
             mComm = comm;
 
-            mTasks.reserve(1024);
+            mTasks.reserve(64);
             mNullTask.mRuntime = this;
             mNullTask.mTaskIdx = -1;
             //mActiveTasks.resize(1024, nullptr);
         }
         
-        const Sh3Task& nullTask() const { return mNullTask; }
+        const Sh3Task& noDependencies() const { return mNullTask; }
 
-        void addTask(span<Sh3Task> deps, Sh3Task& handle, std::function<void(Sh3::CommPkg& comm, Sh3Task& self)> func);
+        void addTask(span<Sh3Task> deps, Sh3Task& handle, Sh3Task::RoundFunc&& func);
 
+        void addTask(span<Sh3Task> deps, Sh3Task& handle, Sh3Task::ContinuationFunc&& func);
+        void configureTask(span<Sh3Task> deps, Sh3Task& handle, Sh3TaskBase* base);
 
         void runUntilTaskCompletes(i64 taskIdx);
         void runOne();
         void runAll();
+
+        void runTask(Sh3TaskBase* task);
 
         TaskDeque mTasks;
         Sh3Task mNullTask;

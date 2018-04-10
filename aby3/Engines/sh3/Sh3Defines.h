@@ -162,7 +162,7 @@ namespace aby3
 
 
             u64 rows() const { return mShares[0].rows(); }
-            u64 cols() const { return mShares[0].stride(); }
+            u64 cols() const { return mShares[0].cols(); }
             u64 size() const { return mShares[0].size(); }
 
             Ref<sb64>  operator()(u64 x, u64 y) const;

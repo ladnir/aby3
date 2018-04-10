@@ -28,7 +28,7 @@ i64 extract(const Sh3::sPackedBin& A, u64 share, u64 packIdx, u64 wordIdx)
     return v;
 }
 
-void Sh3Encryptor_Integer_tests()
+void Sh3_Encryptor_Integer_test()
 {
 
     IOService ios;

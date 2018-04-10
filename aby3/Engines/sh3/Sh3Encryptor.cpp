@@ -5,6 +5,12 @@
 namespace aby3
 {
 
+    //Sh3Task Sh3Encryptor::init(Sh3Runtime& rt)
+    //{
+    //    auto task = rt.nullTask();
+    //    task.then
+    //}
+
     void Sh3Encryptor::complateSharing(Sh3::CommPkg& comm, span<i64> send, span<i64> recv)
     {
         comm.mNext.asyncSendCopy(send);
@@ -70,7 +76,9 @@ namespace aby3
 
     void Sh3Encryptor::localBinMatrix(Sh3::CommPkg & comm, const Sh3::i64Matrix & m, Sh3::sb64Matrix & ret)
     {
-        if (ret.cols() != m.cols() || ret.size() != m.size())
+        auto b0 = ret.cols() != m.cols();
+        auto b1 = ret.size() != m.size();
+        if (b0 || b1)
             throw std::runtime_error(LOCATION);
 
         for (u64 i = 0; i < ret.mShares[0].size(); ++i)

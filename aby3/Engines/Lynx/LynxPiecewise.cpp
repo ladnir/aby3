@@ -229,7 +229,7 @@ namespace Lynx
 
         for (u64 i = 0; i < inputs.size(); ++i)
         {
-            ostreamLock oo(std::cout);
+            oc::ostreamLock oo(std::cout);
 
             if (print) oo << i << ":  ";
 
@@ -251,7 +251,7 @@ namespace Lynx
         if (print)
         {
             auto c = 1;
-            ostreamLock(std::cout) << "f" << eng.mPartyIdx << " c=" << c << ": " << inputRegions[c].mShares[0](0) << " " << inputRegions[c].mShares[1](0) << std::endl;
+            oc::ostreamLock(std::cout) << "f" << eng.mPartyIdx << " c=" << c << ": " << inputRegions[c].mShares[0](0) << " " << inputRegions[c].mShares[1](0) << std::endl;
         }
 
         //// Phase 3: ...
@@ -313,7 +313,7 @@ namespace Lynx
                 outputs = outputs + functionOutputs[c];
 
                 if (print && c == 1)
-                    ostreamLock(std::cout) << "f" << eng.mPartyIdx << " c=" << c << ": " << functionOutputs[c].mShares[0](0) << " " << functionOutputs[c].mShares[1](0) << std::endl;
+                    oc::ostreamLock(std::cout) << "f" << eng.mPartyIdx << " c=" << c << ": " << functionOutputs[c].mShares[0](0) << " " << functionOutputs[c].mShares[1](0) << std::endl;
             }
         }
     }

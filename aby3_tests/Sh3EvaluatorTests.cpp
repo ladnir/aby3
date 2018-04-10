@@ -15,7 +15,7 @@ void rand(Sh3::i64Matrix& A, PRNG& prng)
     prng.get(A.data(), A.size());
 }
 
-void Sh3Evaluator_asyncMul_tests()
+void Sh3_Evaluator_asyncMul_test()
 {
 
     IOService ios;
@@ -64,7 +64,7 @@ void Sh3Evaluator_asyncMul_tests()
             enc.localIntMatrix(comm, a, A);
             enc.localIntMatrix(comm, b, B);
 
-            auto task = rt.nullTask();
+            auto task = rt.noDependencies();
 
             for (u64 j = 0; j < trials; ++j)
             {
@@ -107,7 +107,7 @@ void Sh3Evaluator_asyncMul_tests()
             enc.remoteIntMatrix(comm, A);
             enc.remoteIntMatrix(comm, B);
 
-            auto task = rt.nullTask();
+            auto task = rt.noDependencies();
             for (u64 j = 0; j < trials; ++j)
             {
                 task = eval.asyncMul(task, A, B, C);
@@ -133,7 +133,7 @@ void Sh3Evaluator_asyncMul_tests()
 }
 
 
-void Sh3Evaluator_mul_tests()
+void Sh3_Evaluator_mul_test()
 {
 
     IOService ios;

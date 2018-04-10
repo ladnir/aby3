@@ -1,10 +1,11 @@
 #pragma once
 #include "LynxDefines.h"
+#include <cryptoTools/Crypto/sha1.h>
 
-using namespace oc;
 
 namespace Lynx
 {
+
 
 	class BinaryEngine
 	{
@@ -64,6 +65,17 @@ namespace Lynx
 		bool hasMoreRounds() const {
 			return mLevel <= mCir->mLevelCounts.size();
 		}
+
+        oc::block hashState()
+        {
+            oc::SHA1 h(sizeof(block));
+            h.Update(mMem.mShares[0].data(), mMem.mShares[0].size());
+            h.Update(mMem.mShares[1].data(), mMem.mShares[1].size());
+
+            block b;
+            h.Final(b);
+            return b;
+        }
 	};
 
 }
