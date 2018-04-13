@@ -281,7 +281,7 @@ namespace aby3
 
     void Sh3BinaryEvaluator::validateWire(u64 wireIdx)
     {
-        if (mPlainWires_DEBUG[0][wireIdx].mIsSet)
+        if (mDebug && mPlainWires_DEBUG[0][wireIdx].mIsSet)
         {
             auto shareCount = mPlainWires_DEBUG.size();
             auto prevIdx = (mDebugPartyIdx + 2) % 3;
@@ -312,56 +312,11 @@ namespace aby3
             }
         }
     }
-#endif
-
-
-    Sh3Task Sh3BinaryEvaluator::asyncEvaluate(
-        Sh3Task dep,
-        oc::BetaCircuit * cir,
-        std::vector<const Sh3::sbMatrix*> inputs,
-        std::vector<Sh3::sbMatrix*> outputs)
+    void Sh3BinaryEvaluator::distributeInputs()
     {
-        if (cir->mInputs.size() != inputs.size())
-            throw std::runtime_error(LOCATION);
-        if (cir->mOutputs.size() != outputs.size())
-            throw std::runtime_error(LOCATION);
-
-        return dep.then([this, cir, inputs = std::move(inputs)](Sh3::CommPkg& comm, Sh3Task& self)
-        {
-            auto width = inputs[0]->rows();
-            setCir(cir, width);
-
-            for (u64 i = 0; i < inputs.size(); ++i)
-            {
-                if (inputs[i]->rows() != width)
-                    throw std::runtime_error(LOCATION);
-
-                setInput(i, *inputs[i]);
-            }
-
-#ifdef BINARY_ENGINE_DEBUG
-            validateMemory();
-#endif
-
-            roundCallback(comm, self);
-
-        }).then([this, outputs = std::move(outputs)](Sh3Task& self)
-        {
-            for (u64 i = 0; i < outputs.size(); ++i)
-            {
-                getOutput(i, *outputs[i]);
-            }
-        });
-    }
-
-    Sh3Task Sh3BinaryEvaluator::asyncEvaluate(Sh3Task dependency)
-    {
-#ifdef BINARY_ENGINE_DEBUG
 
         if (mDebug)
         {
-            if (mDebugPartyIdx != dependency.getRuntime().mPartyIdx)
-                throw std::runtime_error(LOCATION);
             SHA1 sha(sizeof(block));
 
             auto prevIdx = (mDebugPartyIdx + 2) % 3;
@@ -397,9 +352,59 @@ namespace aby3
 
             block b;
             sha.Final(b);
-            ostreamLock(std::cout) << "b" << mDebugPartyIdx << " " << b << std::endl;
+            //ostreamLock(std::cout) << "b" << mDebugPartyIdx << " " << b << std::endl;
         }
+    }
 #endif
+
+
+    Sh3Task Sh3BinaryEvaluator::asyncEvaluate(
+        Sh3Task dep,
+        oc::BetaCircuit * cir,
+        std::vector<const Sh3::sbMatrix*> inputs,
+        std::vector<Sh3::sbMatrix*> outputs)
+    {
+        if (cir->mInputs.size() != inputs.size())
+            throw std::runtime_error(LOCATION);
+        if (cir->mOutputs.size() != outputs.size())
+            throw std::runtime_error(LOCATION);
+
+        return dep.then([this, cir, inputs = std::move(inputs)](Sh3::CommPkg& comm, Sh3Task& self)
+        {
+            auto width = inputs[0]->rows();
+            setCir(cir, width);
+
+            for (u64 i = 0; i < inputs.size(); ++i)
+            {
+                if (inputs[i]->rows() != width)
+                    throw std::runtime_error(LOCATION);
+
+                setInput(i, *inputs[i]);
+            }
+
+#ifdef BINARY_ENGINE_DEBUG
+            validateMemory();
+            distributeInputs();
+#endif
+
+            roundCallback(comm, self);
+
+        }).then([this, outputs = std::move(outputs)](Sh3Task& self)
+        {
+            for (u64 i = 0; i < outputs.size(); ++i)
+            {
+                getOutput(i, *outputs[i]);
+            }
+        });
+    }
+
+    Sh3Task Sh3BinaryEvaluator::asyncEvaluate(Sh3Task dependency)
+    {
+#ifdef BINARY_ENGINE_DEBUG
+        validateMemory();
+        distributeInputs();
+#endif
+
         return dependency.then([this](Sh3::CommPkg& comm, Sh3Task& self)
         {
             roundCallback(comm, self);

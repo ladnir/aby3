@@ -133,7 +133,7 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
     cir->levelByAndDepth();
     u64 width = 100;
     bool failed = false;
-    bool manual = true;
+    bool manual = false;
 
     auto t0 = std::thread([&]() {
         auto i = 0;
@@ -152,7 +152,7 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
         Sh3::sbMatrix A(width, 64), B(width, 64), C(width, 64);
 
         Sh3Encryptor enc;
-        Sh3BinaryEvaluator eval;
+        Sh3BinaryEvaluator eval, eval2;
         eval.enableDebug(i, debugComm[i].mPrev, debugComm[i].mNext);
 
         enc.init(i, toBlock(i), toBlock(i + 1));
@@ -168,19 +168,30 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
             eval.setCir(cir, width);
             eval.setInput(0, A);
             eval.setInput(1, B);
-            eval.asyncEvaluate(task).get();
+            eval.asyncEvaluate(rt.noDependencies()).get();
             eval.getOutput(0, C);
         }
         else
         {
+            //task.get();
+
+            //eval2.setCir(cir, width);
+            //eval2.setInput(0, A);
+            //eval2.setInput(1, B);
+            //eval2.asyncEvaluate(rt.noDependencies()).get();
+            //eval2.getOutput(0, C);
+            //eval.asyncEvaluate(rt.noDependencies(), cir, { &A, &B }, { &C }).get();
+
+            //if (eval.mMem != eval2.mMem)
+            //{
+            //    throw std::runtime_error("");
+            //}
+
             task = eval.asyncEvaluate(task, cir, { &A, &B }, { &C });
         }
 
         task = enc.reveal(task, C, c);
 
-        auto row66 = A.mShares[0].row(66);
-
-        std::cout << "row 66  " << row66 << std::endl;
 
         task.get();
 
@@ -204,7 +215,7 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
 
         Sh3Encryptor enc;
         enc.init(i, toBlock(i), toBlock((i + 1) % 3));
-        Sh3BinaryEvaluator eval;
+        Sh3BinaryEvaluator eval, eval2;
         eval.enableDebug(i, debugComm[i].mPrev, debugComm[i].mNext);
 
         auto task = rt.noDependencies();
@@ -223,6 +234,20 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
         }
         else
         {
+            //task.get();
+
+            //eval2.setCir(cir, width);
+            //eval2.setInput(0, A);
+            //eval2.setInput(1, B);
+            //eval2.asyncEvaluate(rt.noDependencies()).get();
+            //eval2.getOutput(0, C);
+            //eval.asyncEvaluate(rt.noDependencies(), cir, { &A, &B }, { &C }).get();
+
+            //if (eval.mMem != eval2.mMem)
+            //{
+            //    throw std::runtime_error("");
+            //}
+
             task = eval.asyncEvaluate(task, cir, { &A, &B }, { &C });
         }
 

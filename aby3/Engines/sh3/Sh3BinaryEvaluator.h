@@ -43,6 +43,7 @@ namespace aby3
 
         void validateMemory();
         void validateWire(u64 wireIdx);
+        void distributeInputs();
 #endif
 
         oc::BetaCircuit* mCir;
