@@ -133,6 +133,7 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
     cir->levelByAndDepth();
     u64 width = 100;
     bool failed = false;
+    bool manual = true;
 
     auto t0 = std::thread([&]() {
         auto i = 0;
@@ -161,7 +162,20 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
         enc.localBinMatrix(rt.noDependencies(), a, A).get();
         task = enc.localBinMatrix(rt.noDependencies(), b, B);
 
-        task = eval.asyncEvaluate(task, cir, { &A, &B }, { &C });
+        if (manual)
+        {
+            task.get();
+            eval.setCir(cir, width);
+            eval.setInput(0, A);
+            eval.setInput(1, B);
+            eval.asyncEvaluate(task).get();
+            eval.getOutput(0, C);
+        }
+        else
+        {
+            task = eval.asyncEvaluate(task, cir, { &A, &B }, { &C });
+        }
+
         task = enc.reveal(task, C, c);
 
         auto row66 = A.mShares[0].row(66);
@@ -198,7 +212,20 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
         enc.remoteBinMatrix(rt.noDependencies(), A).get();
         task = enc.remoteBinMatrix(rt.noDependencies(), B);
 
-        task = eval.asyncEvaluate(task, cir, { &A,&B }, { &C });
+        if (manual)
+        {
+            task.get();
+            eval.setCir(cir, width);
+            eval.setInput(0, A);
+            eval.setInput(1, B);
+            eval.asyncEvaluate(task).get();
+            eval.getOutput(0, C);
+        }
+        else
+        {
+            task = eval.asyncEvaluate(task, cir, { &A, &B }, { &C });
+        }
+
         task = enc.reveal(task, 0, C);
 
         // actually execute the computation

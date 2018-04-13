@@ -3,6 +3,7 @@
 #include <cryptoTools/Common/Log.h>
 #include <libOTe/Tools/Tools.h>
 #include <cryptoTools/Crypto/sha1.h>
+#include "Sh3Converter.h"
 
 namespace aby3
 {
@@ -31,7 +32,10 @@ namespace aby3
         {
             mPlainWires_DEBUG.resize(width);
             for (auto& m : mPlainWires_DEBUG)
+            {
                 m.resize(cir->mWireCount);
+                memset(m.data(), 0, m.size() * sizeof(DEBUG_Triple));
+            }
         }
 #endif
     }
@@ -72,6 +76,7 @@ namespace aby3
 
 
 #ifdef BINARY_ENGINE_DEBUG
+        throw std::runtime_error("");
         if (mDebug)
         {
             for (u64 i = 0; i < inWires.size(); ++i)
@@ -160,29 +165,45 @@ namespace aby3
 
 #ifdef BINARY_ENGINE_DEBUG
 
-        for (u64 r = 0; r < mPlainWires_DEBUG.size(); ++r)
+        if (mDebug)
         {
-
-            auto prevIdx = (mDebugPartyIdx + 2) % 3;
-            auto& m = mPlainWires_DEBUG[r];
-            auto bv0 = BitVector((u8*)in.mShares[0].row(r).data(), inWires.size());
-            auto bv1 = BitVector((u8*)in.mShares[1].row(r).data(), inWires.size());
-
+            Sh3Converter convt;
+            Sh3::sPackedBin pack;
+            convt.toPackedBin(in, pack);
             for (u64 i = 0; i < inWires.size(); ++i)
             {
-                m[inWires[i]].mBits[mDebugPartyIdx] = bv0[i];
-                m[inWires[i]].mBits[prevIdx] = bv1[i];
+                if (pack.mShares[0].row(i) != mMem.mShares[0].row(inWires[i]))
+                    throw std::runtime_error("");
+                if (pack.mShares[1].row(i) != mMem.mShares[1].row(inWires[i]))
+                    throw std::runtime_error("");
+            }
 
-                //if (inWires[i] < 10)
-                //	ostreamLock(std::cout) << mPartyIdx << " w[" << inWires[i] << "] = "
-                //	<< (int)m[inWires[i]].mBits[mPartyIdx] << std::endl;
+            for (u64 r = 0; r < mPlainWires_DEBUG.size(); ++r)
+            {
+
+
+
+                auto prevIdx = (mDebugPartyIdx + 2) % 3;
+                auto& m = mPlainWires_DEBUG[r];
+                auto bv0 = BitVector((u8*)in.mShares[0].row(r).data(), inWires.size());
+                auto bv1 = BitVector((u8*)in.mShares[1].row(r).data(), inWires.size());
+
+                for (u64 i = 0; i < inWires.size(); ++i)
+                {
+                    m[inWires[i]].mBits[mDebugPartyIdx] = bv0[i];
+                    m[inWires[i]].mBits[prevIdx] = bv1[i];
+                    m[inWires[i]].mIsSet = true;
+                    //if (inWires[i] < 10)
+                    //	ostreamLock(std::cout) << mPartyIdx << " w[" << inWires[i] << "] = "
+                    //	<< (int)m[inWires[i]].mBits[mPartyIdx] << std::endl;
+                }
             }
         }
-        if (mDebugPartyIdx == 0)
-            for (u64 i = 0; i < inWires.size(); ++i)
-            {
-                validateWire(inWires[i]);
-            }
+        //if (mDebugPartyIdx == 0)
+        //    for (u64 i = 0; i < inWires.size(); ++i)
+        //    {
+        //        validateWire(inWires[i]);
+        //    }
         //Matrix nn(in);
         //getOutput(inWires, nn);
 
@@ -223,6 +244,7 @@ namespace aby3
 #ifdef BINARY_ENGINE_DEBUG
         if (mDebug)
         {
+            throw std::runtime_error("");
             for (u64 i = 0; i < inWires.size(); ++i)
             {
                 auto shareCount = mPlainWires_DEBUG.size();
@@ -238,6 +260,7 @@ namespace aby3
 
                     triple.mBits[mDebugPartyIdx] = bv0[r];
                     triple.mBits[prevIdx] = bv1[r];
+                    triple.mIsSet = true;
                 }
 
                 validateWire(inWires[i]);
@@ -258,31 +281,34 @@ namespace aby3
 
     void Sh3BinaryEvaluator::validateWire(u64 wireIdx)
     {
-        auto shareCount = mPlainWires_DEBUG.size();
-        auto prevIdx = (mDebugPartyIdx + 2) % 3;
-
-        for (u64 r = 0; r < shareCount; ++r)
+        if (mPlainWires_DEBUG[0][wireIdx].mIsSet)
         {
-            auto& triple = mPlainWires_DEBUG[r][wireIdx];
+            auto shareCount = mPlainWires_DEBUG.size();
+            auto prevIdx = (mDebugPartyIdx + 2) % 3;
 
-            auto bit0 = extractBitShare(r, wireIdx, 0);
-            auto bit1 = extractBitShare(r, wireIdx, 1);
-            if (triple.mBits[mDebugPartyIdx] != bit0)
+            for (u64 r = 0; r < shareCount; ++r)
             {
-                std::cout << "party " << mDebugPartyIdx << " wire " << wireIdx << " row " << r << " s " << 0 << " ~~"
-                    << " exp:" << int(triple.mBits[mDebugPartyIdx])
-                    << " act:" << int(bit0) << std::endl;
+                auto& triple = mPlainWires_DEBUG[r][wireIdx];
 
-                throw std::runtime_error(LOCATION);
-                
-            }
-            if (triple.mBits[prevIdx] != bit1)
-            {
+                auto bit0 = extractBitShare(r, wireIdx, 0);
+                auto bit1 = extractBitShare(r, wireIdx, 1);
+                if (triple.mBits[mDebugPartyIdx] != bit0)
+                {
+                    std::cout << "party " << mDebugPartyIdx << " wire " << wireIdx << " row " << r << " s " << 0 << " ~~"
+                        << " exp:" << int(triple.mBits[mDebugPartyIdx])
+                        << " act:" << int(bit0) << std::endl;
 
-                std::cout << "party " << mDebugPartyIdx << " wire " << wireIdx << " row " << r << " s " << 1 << " ~~"
-                    << " exp:" << int(triple.mBits[prevIdx])
-                    << " act:" << int(bit1) << std::endl;
-                throw std::runtime_error(LOCATION);
+                    throw std::runtime_error(LOCATION);
+
+                }
+                if (triple.mBits[prevIdx] != bit1)
+                {
+
+                    std::cout << "party " << mDebugPartyIdx << " wire " << wireIdx << " row " << r << " s " << 1 << " ~~"
+                        << " exp:" << int(triple.mBits[prevIdx])
+                        << " act:" << int(bit1) << std::endl;
+                    throw std::runtime_error(LOCATION);
+                }
             }
         }
     }
@@ -312,6 +338,10 @@ namespace aby3
 
                 setInput(i, *inputs[i]);
             }
+
+#ifdef BINARY_ENGINE_DEBUG
+            validateMemory();
+#endif
 
             roundCallback(comm, self);
 
@@ -854,6 +884,7 @@ namespace aby3
         const DEBUG_Triple & in1,
         GateType type)
     {
+        mIsSet = true;
         auto vIn0 = int(in0.val());
         auto vIn1 = int(in1.val());
 

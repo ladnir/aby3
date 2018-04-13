@@ -30,6 +30,7 @@ namespace aby3
 		struct DEBUG_Triple
 		{
 			std::array<u8, 3> mBits;
+            bool mIsSet;
 			u16 val()const { return mBits[0] ^ mBits[1] ^ mBits[2]; }
 
 			void assign(const DEBUG_Triple& in0, const DEBUG_Triple& in1, oc::GateType type);
