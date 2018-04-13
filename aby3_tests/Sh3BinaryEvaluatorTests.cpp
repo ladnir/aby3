@@ -41,9 +41,10 @@ using namespace Sh3;
 //    s1.mShares[1] = s0.mShares[0];
 //    s2.mShares[1] = s1.mShares[0];
 //}
-Lynx::Matrix toLynx(const Sh3::sb64Matrix& A)
+
+Lynx::Matrix toLynx(const Sh3::sbMatrix& A)
 {
-    Lynx::Matrix r(A.rows(), A.cols());
+    Lynx::Matrix r(A.rows(), A.i64Cols());
     r.mShares[0] = A.mShares[0];
     r.mShares[1] = A.mShares[1];
     return r;
@@ -147,7 +148,7 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
 
         Sh3Runtime rt(i, comms[i]);
 
-        Sh3::sb64Matrix A(width, 1), B(width, 1), C(width, 1);
+        Sh3::sbMatrix A(width, 64), B(width, 64), C(width, 64);
 
         Sh3Encryptor enc;
         Sh3BinaryEvaluator eval;
@@ -185,7 +186,7 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
 
         Sh3Runtime rt(i, comms[i]);
 
-        Sh3::sb64Matrix A(width, 1), B(width, 1), C(width, 1);
+        Sh3::sbMatrix A(width, 64), B(width, 64), C(width, 64);
 
         Sh3Encryptor enc;
         enc.init(i, toBlock(i), toBlock((i + 1) % 3));

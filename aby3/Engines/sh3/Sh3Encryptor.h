@@ -35,12 +35,12 @@ namespace aby3
         Sh3Task remoteIntMatrix(Sh3Task dep, Sh3::si64Matrix& dest);
 
         // generates a binary sharing of the matrix m and places the result in dest
-        void localBinMatrix(Sh3::CommPkg& comm, const Sh3::i64Matrix& m, Sh3::sb64Matrix& dest);
-        Sh3Task localBinMatrix(Sh3Task dep, const Sh3::i64Matrix& m, Sh3::sb64Matrix& dest);
+        void localBinMatrix(Sh3::CommPkg& comm, const Sh3::i64Matrix& m, Sh3::sbMatrix& dest);
+        Sh3Task localBinMatrix(Sh3Task dep, const Sh3::i64Matrix& m, Sh3::sbMatrix& dest);
 
         // generates a binary sharing of the matrix ibput by the remote party and places the result in dest
-        void remoteBinMatrix(Sh3::CommPkg& comm, Sh3::sb64Matrix& dest);
-        Sh3Task remoteBinMatrix(Sh3Task dep, Sh3::sb64Matrix& dest);
+        void remoteBinMatrix(Sh3::CommPkg& comm, Sh3::sbMatrix& dest);
+        Sh3Task remoteBinMatrix(Sh3Task dep, Sh3::sbMatrix& dest);
 
         // generates a sPackedBin from the given matrix.
         void localPackedBinary(Sh3::CommPkg& comm, const Sh3::i64Matrix& m, Sh3::sPackedBin& dest);
@@ -66,9 +66,9 @@ namespace aby3
         void revealAll(Sh3::CommPkg& comm, const Sh3::si64Matrix& x, Sh3::i64Matrix& dest);
         void reveal(Sh3::CommPkg& comm, u64 partyIdx, const Sh3::si64Matrix& x);
 
-        void reveal(Sh3::CommPkg& comm, const Sh3::sb64Matrix& x, Sh3::i64Matrix& dest);
-        void revealAll(Sh3::CommPkg& comm, const Sh3::sb64Matrix& x, Sh3::i64Matrix& dest);
-        void reveal(Sh3::CommPkg& comm, u64 partyIdx, const Sh3::sb64Matrix& x);
+        void reveal(Sh3::CommPkg& comm, const Sh3::sbMatrix& x, Sh3::i64Matrix& dest);
+        void revealAll(Sh3::CommPkg& comm, const Sh3::sbMatrix& x, Sh3::i64Matrix& dest);
+        void reveal(Sh3::CommPkg& comm, u64 partyIdx, const Sh3::sbMatrix& x);
 
         void reveal(Sh3::CommPkg& comm, const Sh3::sPackedBin& x, Sh3::i64Matrix& dest);
         void revealAll(Sh3::CommPkg& comm, const Sh3::sPackedBin& x, Sh3::i64Matrix& dest);
@@ -83,16 +83,16 @@ namespace aby3
         Sh3Task revealAll(Sh3Task dep, const Sh3::si64Matrix& x, Sh3::i64Matrix& dest);
         Sh3Task reveal(Sh3Task dep, u64 partyIdx, const Sh3::si64Matrix& x);
 
-        Sh3Task reveal(Sh3Task dep, const Sh3::sb64Matrix& x, Sh3::i64Matrix& dest);
-        Sh3Task revealAll(Sh3Task dep, const Sh3::sb64Matrix& x, Sh3::i64Matrix& dest);
-        Sh3Task reveal(Sh3Task dep, u64 partyIdx, const Sh3::sb64Matrix& x);
+        Sh3Task reveal(Sh3Task dep, const Sh3::sbMatrix& x, Sh3::i64Matrix& dest);
+        Sh3Task revealAll(Sh3Task dep, const Sh3::sbMatrix& x, Sh3::i64Matrix& dest);
+        Sh3Task reveal(Sh3Task dep, u64 partyIdx, const Sh3::sbMatrix& x);
 
         Sh3Task reveal(Sh3Task dep, const Sh3::sPackedBin& x, Sh3::i64Matrix& dest);
         Sh3Task revealAll(Sh3Task dep, const Sh3::sPackedBin& x, Sh3::i64Matrix& dest);
         Sh3Task reveal(Sh3Task dep, u64 partyIdx, const Sh3::sPackedBin& x);
 
         void rand(Sh3::si64Matrix& dest);
-        void rand(Sh3::sb64Matrix& dest);
+        void rand(Sh3::sbMatrix& dest);
         void rand(Sh3::sPackedBin& dest);
 
 

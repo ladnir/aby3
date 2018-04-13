@@ -1,0 +1,253 @@
+#include "Sh3ConverterTests.h"
+#include "aby3/Engines/sh3/Sh3Converter.h"
+#include "aby3/Engines/sh3/Sh3Encryptor.h"
+#include <cryptoTools/Crypto/PRNG.h>
+#include <cryptoTools/Common/BitIterator.h>
+using namespace aby3;
+using namespace oc;
+
+std::array<u8, 2> getBitShare(u64 row, u64 bitIdx, const Sh3::sbMatrix& x)
+{
+    std::array<u8, 2> ret;
+
+    for (u64 i = 0; i < 2; ++i)
+    {
+        auto word = bitIdx / 64;
+        auto offset = bitIdx % 64;
+
+        ret[i] = (x.mShares[i](row, word) >> offset) & 1;
+    }
+
+    return ret;
+}
+
+std::array<u8, 2> getBitShare(u64 row, u64 bitIdx, const Sh3::sPackedBin& x)
+{
+
+    std::array<u8, 2> ret;
+
+    for (u64 i = 0; i < 2; ++i)
+    {
+        auto word = row / 64;
+        auto offset = row % 64;
+
+        ret[i] = (x.mShares[i](bitIdx, word) >> offset) & 1;
+    }
+
+    return ret;
+}
+//u64 getMask(u64 bits)
+//{
+//    if (bits == 0)
+//        return ~0ull;
+//
+//    return (1ull << bits) -1;
+//}
+
+//bool eq(const Sh3::sPackedBin& a, const Sh3::sPackedBin& b)
+//{
+//    return a.shareCount() == b.shareCount()
+//        && a.bitCount() == b.bitCount()
+//        && a.mShares == b.mShares;
+//}
+//
+////
+//
+//void trim(Sh3::sPackedBin& a)
+//{
+//    auto shares = a.mShareCount;
+//    auto packLast = (shares + 63) / 64 - 1;
+//    auto packMask = getMask(shares % 64);
+//    for (u64 i = 0; i < a.bitCount(); ++i)
+//    {
+//        a.mShares[0](i, packLast) &= packMask;
+//        a.mShares[1](i, packLast) &= packMask;
+//    }
+//}
+//
+//
+//void trim(Sh3::sbMatrix& a)
+//{
+//    auto bits = a.bitCount();
+//    auto mtxLast = (bits + 63) / 64 - 1;
+//    auto mtxMask = getMask(bits % 64);
+//    for (u64 i = 0; i < a.rows(); ++i)
+//    {
+//        a.mShares[0](i, mtxLast) &= mtxMask;
+//        a.mShares[1](i, mtxLast) &= mtxMask;
+//    }
+//}
+
+void printBits(Sh3::eMatrix<i64>& a, u64 bits)
+{
+    std::string b(bits, '0');
+    //b.back() = '\n';
+    auto total = a.cols() * 64 ;
+    std::string c(total - bits, '0');
+    std::cout << "    ";
+    for (u64 j = 0; j < bits; ++j)
+        std::cout << (j%10);
+    std::cout << '\n';
+
+    for (u64 i = 0; i < a.rows(); ++i)
+    {
+        auto& r = a(i, 0);
+        auto base = (u8*)&r;
+        BitIterator iter(base, 0);
+
+        for (u64 j = 0; j < bits; ++j)
+        {
+            b[j] = '0' + *iter;
+            ++iter;
+        }
+        for (u64 j = 0; j < c.size(); ++j)
+        {
+            c[j] = '0' + *iter;
+            ++iter;
+        }
+
+        std::cout << (i % 10) << " | " << b << " | " << c;// << '\n';
+        //for (u64 j = 0; j < a.cols(); ++j)
+        //    std::cout << std::hex << a(i, j) << ' ';
+
+        std::cout <<'\n';
+    }
+
+    std::cout << std::flush;
+}
+
+void pattern(Sh3::eMatrix<i64>& a)
+{
+    auto bits = a.cols() * 64;
+    for (u64 i = 0; i < a.rows(); ++i)
+    {
+        u64 k = i;
+        BitIterator iter((u8*)&a(i,0), 0);
+
+        for (u64 j = 0; j < bits; ++j, ++k)
+        {
+            *iter = (k & 4);
+
+            ++iter;
+        }
+    }
+}
+
+
+void corner(Sh3::eMatrix<i64>& a, u64 bits)
+{
+    a.setZero();
+
+    //a(0, 0) = -1;
+    //a(3, 0) = -1;
+
+    //printBits(a, bits);
+    for (u64 i = bits / 2; i < a.rows(); ++i)
+    {
+        BitIterator iter((u8*)&a(i,0), 0);
+        //a(i, 0) = -1;
+
+
+        for (u64 j = bits / 2; j < bits; ++j)
+        {
+            *iter = 1;
+            //printBits(a, bits);
+
+            ++iter;
+        }
+        //printBits(a, bits);
+
+    }
+}
+
+
+void Sh3_convert_b64Matrix_PackedBin_test()
+{
+    auto trials = 10;
+    auto mod = 256;
+
+    for (u64 t = 0; t < trials; ++t)
+    {
+        PRNG prng(ZeroBlock);
+        auto shares =  prng.get<u64>() % mod + 1;
+        auto bits = prng.get<u64>() % mod + 1;
+        Sh3Encryptor enc;
+
+        Sh3::sbMatrix mtx(shares, bits), mtxDest;
+        Sh3::sPackedBin pack(shares, bits), packDest;
+
+        enc.init(0, ZeroBlock, OneBlock);
+        enc.rand(mtx);
+        enc.rand(pack);
+
+        //pattern(mtx.mShares[0]);
+        corner(mtx.mShares[0], bits);
+        mtx.trim();
+
+        //trim(pack);
+
+        Sh3Converter convt;
+        packDest.mShares[0].setZero();
+        packDest.mShares[1].setZero();
+        mtxDest.mShares[0].setZero();
+        mtxDest.mShares[1].setZero();
+        convt.toPackedBin(mtx, packDest);
+
+        //std::cout << std::endl;
+        //printBits(mtx.mShares[0], mtx.bitCount());
+        //std::cout << std::endl;
+        //printBits(packDest.mShares[0], mtx.bitCount());
+        //std::cout << std::endl;
+
+        for (u64 r = 0; r < pack.shareCount(); ++r)
+        {
+            for (u64 b = 0; b < pack.bitCount(); ++b)
+            {
+                if (getBitShare(r, b, mtx) != getBitShare(r, b, packDest))
+                {
+
+                    throw std::runtime_error("");
+                }
+            }
+        }
+
+        convt.toBinaryMatrix(packDest, mtxDest);
+        //trim(mtxDest);
+
+        if (mtx != mtxDest)
+            throw std::runtime_error(LOCATION);
+
+        mtxDest.trim();
+
+        if (mtx.mShares != mtxDest.mShares)
+        {
+            std::cout << mtx.mShares[0] << std::endl;
+            std::cout << mtxDest.mShares[0] << std::endl;
+            throw std::runtime_error(LOCATION);
+        }
+
+
+        convt.toBinaryMatrix(pack, mtxDest);
+
+        for (u64 r = 0; r < pack.shareCount(); ++r)
+        {
+            for (u64 b = 0; b < pack.bitCount(); ++b)
+            {
+                if (getBitShare(r, b, pack) != getBitShare(r, b, mtxDest))
+                    throw std::runtime_error("");
+            }
+        }
+
+        convt.toPackedBin(mtxDest, packDest);
+
+        if (pack != packDest)
+        {
+            std::cout << pack.mShares[0] << std::endl << std::endl;
+            std::cout << packDest.mShares[0] << std::endl;
+
+            throw std::runtime_error(LOCATION);
+        }
+    }
+
+
+}

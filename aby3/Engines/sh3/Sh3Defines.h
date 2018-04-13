@@ -8,25 +8,59 @@ namespace aby3
 {
     namespace Sh3
     {
-        struct CommPkg
-        {
+        struct CommPkg{
             oc::Channel mPrev, mNext;
         };
 
-        class CompletionHandle
-        {
-        public:
-            std::function<void()> mGet;
-
-            void get() { mGet(); };
-        };
-
-
         template<typename T>
-        using eMatrix = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>;
-
+        using eMatrix = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
         using i64Matrix = eMatrix<i64>;
 
+        namespace details
+        {
+            inline bool areEqual(
+                const std::array<eMatrix<i64>, 2>& a,
+                const std::array<eMatrix<i64>, 2>& b,
+                u64 bitCount)
+            {
+                if (bitCount % 64)
+                {
+                    auto last = a[0].cols() - 1;
+                    auto mask = (1ull << bitCount) - 1;
+                    for (u64 i = 0; i < a[0].rows(); ++i)
+                    {
+                        for (u64 j = 0; j < last; ++j)
+                        {
+                            if (a[0](i, j) ^ b[0](i, j) |
+                                a[1](i, j) ^ b[1](i, j))
+                                return false;
+                        }
+                        if ((a[0](i, last) ^ b[0](i, last) |
+                            a[1](i, last) ^ b[1](i, last)) &
+                            mask)
+                            return false;
+                    }
+                    return true;
+                }
+
+                return a == b;
+            }
+
+            inline void trim(std::array<eMatrix<i64>, 2>& a, i64 bits)
+            {
+                bits = bits % 64;
+                if (bits)
+                {
+                    auto mtxLast = a[0].cols() - 1;
+                    auto mtxMask = (1ull << bits) - 1;
+                    for (u64 i = 0; i < a[0].rows(); ++i)
+                    {
+                        a[0](i, mtxLast) &= mtxMask;
+                        a[1](i, mtxLast) &= mtxMask;
+                    }
+                }
+            }
+        }
         struct si64;
 
         // a reference to a si64 64 bit integer (stored in a matrix).
@@ -37,7 +71,7 @@ namespace aby3
             using ref_value_type = typename ShareType::value_type;
 
             std::array<ref_value_type*, 2> mData;
-        
+
 
             Ref(ref_value_type& a0, ref_value_type& a1)
             {
@@ -74,7 +108,7 @@ namespace aby3
             value_type& operator[](u64 i) { return mData[i]; }
             const value_type& operator[](u64 i) const { return mData[i]; }
         };
-        
+
         // a shared 64 binary value
         struct sb64
         {
@@ -119,7 +153,7 @@ namespace aby3
 
 
             u64 rows() const { return mShares[0].rows(); }
-            u64 cols() const { return mShares[0].stride(); }
+            u64 cols() const { return mShares[0].cols(); }
             u64 size() const { return mShares[0].size(); }
 
             Ref<si64> operator()(u64 x, u64 y) const;
@@ -135,43 +169,68 @@ namespace aby3
             Col col(u64 i);
             ConstRow row(u64 i) const;
             ConstCol col(u64 i) const;
+
+            bool operator !=(const si64Matrix& b) const
+            {
+                return !(*this == b);
+            }
+
+            bool operator ==(const si64Matrix& b) const
+            {
+                return (rows() == b.rows() &&
+                    cols() == b.cols() &&
+                    mShares == b.mShares);
+            }
+
         };
 
 
-        struct sb64Matrix
+        struct sbMatrix
         {
             std::array<eMatrix<i64>, 2> mShares;
-
+            u64 mBitCount = 0;
             //struct ConstRow { const si64Matrix& mMtx; const u64 mIdx; };
             //struct Row { si64Matrix& mMtx; const u64 mIdx; const Row& operator=(const Row& row); const ConstRow& operator=(const ConstRow& row); };
 
             //struct ConstCol { const si64Matrix& mMtx; const u64 mIdx; };
             //struct Col { si64Matrix& mMtx; const u64 mIdx; const Col& operator=(const Col& col); const ConstCol& operator=(const ConstCol& row); };
 
-            sb64Matrix() = default;
-            sb64Matrix(u64 xSize, u64 ySize)
+            sbMatrix() = default;
+            sbMatrix(u64 xSize, u64 ySize)
             {
-                resize(xSize, ySize);
+                resize2(xSize, ySize);
             }
 
-            void resize(u64 xSize, u64 ySize)
+            void resize2(u64 xSize, u64 bitCount)
             {
+                mBitCount = bitCount;
+                auto ySize = (bitCount + 63) / 64;
                 mShares[0].resize(xSize, ySize);
                 mShares[1].resize(xSize, ySize);
             }
 
 
             u64 rows() const { return mShares[0].rows(); }
-            u64 cols() const { return mShares[0].cols(); }
-            u64 size() const { return mShares[0].size(); }
+            u64 i64Size() const { return mShares[0].size(); }
+            u64 i64Cols() const { return mShares[0].cols(); }
+            u64 bitCount() const { return mBitCount; }
 
-            Ref<sb64>  operator()(u64 x, u64 y) const;
-            Ref<sb64>  operator()(u64 xy) const;
+            bool operator !=(const sbMatrix& b) const
+            {
+                return !(*this == b);
+            }
 
-            //Row row(u64 i);
-            //Col col(u64 i);
-            //ConstRow row(u64 i) const;
-            //ConstCol col(u64 i) const;
+            bool operator ==(const sbMatrix& b) const
+            {
+                return (rows() == b.rows() &&
+                    bitCount() == b.bitCount() &&
+                    details::areEqual(mShares, b.mShares, bitCount()));
+            }
+
+            void trim()
+            {
+                details::trim(mShares, bitCount());
+            }
         };
 
 
@@ -225,6 +284,23 @@ namespace aby3
                     }
                 }
                 return r;
+            }
+
+            bool operator!=(const sPackedBin& b) const
+            {
+                return !(*this == b);
+            }
+
+            bool operator==(const sPackedBin& b) const
+            {
+                return (shareCount() == b.shareCount() &&
+                    bitCount() == b.bitCount() &&
+                    details::areEqual(mShares, b.mShares, bitCount()));
+            }
+
+            void trim()
+            {
+                details::trim(mShares, bitCount());
             }
 
         };

@@ -8,5 +8,6 @@
 #include "Sh3EncryptorTests.h"
 #include "Sh3EvaluatorTests.h"
 #include "Sh3BinaryEvaluatorTests.h"
+#include "Sh3ConverterTests.h"
 
 extern oc::TestCollection aby3_tests;

@@ -23,11 +23,11 @@ namespace aby3
             const Sh3::si64Matrix & B,
             Sh3::si64Matrix& C);
 
-        Sh3::CompletionHandle asyncMul(
-            Sh3::CommPkg& comm,
-            const Sh3::si64Matrix& A,
-            const Sh3::si64Matrix& B,
-            Sh3::si64Matrix& C);
+        //Sh3::CompletionHandle asyncMul(
+        //    Sh3::CommPkg& comm,
+        //    const Sh3::si64Matrix& A,
+        //    const Sh3::si64Matrix& B,
+        //    Sh3::si64Matrix& C);
 
         Sh3Task asyncMul(
             Sh3Task& dependency,

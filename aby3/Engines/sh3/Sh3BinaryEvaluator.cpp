@@ -36,19 +36,18 @@ namespace aby3
 #endif
     }
 
-    void Sh3BinaryEvaluator::setReplicatedInput(u64 idx, const Sh3::sb64Matrix & in)
+    void Sh3BinaryEvaluator::setReplicatedInput(u64 idx, const Sh3::sbMatrix & in)
     {
         mLevel = 0;
         auto& inWires = mCir->mInputs[idx].mWires;
         auto simdWidth = mMem.simdWidth();
-        auto inCols = in.cols();
-        auto bits = sizeof(i64) * 8;
+        auto bitCount = in.bitCount();
 
         if (mCir == nullptr)
             throw std::runtime_error(LOCATION);
         if (idx >= mCir->mInputs.size())
             throw std::invalid_argument("input index out of bounds");
-        if (inCols != (inWires.size() + bits - 1) / bits)
+        if (bitCount != inWires.size())
             throw std::invalid_argument("input data wrong size");
         if (in.rows() != 1)
             throw std::invalid_argument("incorrect number of simd rows");
@@ -83,25 +82,24 @@ namespace aby3
 #endif
     }
 
-    void Sh3BinaryEvaluator::setInput(u64 idx, const Sh3::sb64Matrix  & in)
+    void Sh3BinaryEvaluator::setInput(u64 idx, const Sh3::sbMatrix  & in)
     {
         mLevel = 0;
         auto& inWires = mCir->mInputs[idx].mWires;
         auto simdWidth = mMem.simdWidth();
         auto bits = sizeof(i64) * 8;
 
-        auto inCols = in.cols();
+        auto bitCount = in.bitCount();
         auto inRows = in.rows();
-        auto inSimdWidth = (inRows + bits - 1) / bits;
 
         if (mCir == nullptr)
             throw std::runtime_error(LOCATION);
         if (idx >= mCir->mInputs.size())
             throw std::invalid_argument("input index out of bounds");
-        if (inCols != (inWires.size() + bits - 1) / bits)
+        if (bitCount != inWires.size())
             throw std::invalid_argument("input data wrong size");
-        if (simdWidth < inSimdWidth)
-            throw std::invalid_argument("incorrect number of simd rows");
+        if (inRows != mMem.shareCount())
+            throw std::invalid_argument("incorrect number of rows");
 
         for (u64 i = 0; i < inWires.size() - 1; ++i)
         {
@@ -115,7 +113,7 @@ namespace aby3
 
             MatrixView<u8> inView(
                 (u8*)(in.mShares[i].data()),
-                (u8*)(in.mShares[i].data() + in.mShares[i].rows()),
+                (u8*)(in.mShares[i].data() + in.mShares[i].size()),
                 sizeof(i64) * in.mShares[i].cols());
 
             if (inWires.back() > shares.rows())
@@ -294,8 +292,8 @@ namespace aby3
     Sh3Task Sh3BinaryEvaluator::asyncEvaluate(
         Sh3Task dep,
         oc::BetaCircuit * cir,
-        std::vector<const Sh3::sb64Matrix*> inputs,
-        std::vector<Sh3::sb64Matrix*> outputs)
+        std::vector<const Sh3::sbMatrix*> inputs,
+        std::vector<Sh3::sbMatrix*> outputs)
     {
         if (cir->mInputs.size() != inputs.size())
             throw std::runtime_error(LOCATION);
@@ -662,7 +660,7 @@ namespace aby3
         }
     }
 
-    void Sh3BinaryEvaluator::getOutput(u64 i, Sh3::sb64Matrix & out)
+    void Sh3BinaryEvaluator::getOutput(u64 i, Sh3::sbMatrix & out)
     {
         if (mCir->mOutputs.size() <= i) throw std::runtime_error(LOCATION);
 
@@ -731,12 +729,11 @@ namespace aby3
         }
     }
 
-    void Sh3BinaryEvaluator::getOutput(const std::vector<BetaWire>& outWires, Sh3::sb64Matrix & out)
+    void Sh3BinaryEvaluator::getOutput(const std::vector<BetaWire>& outWires, Sh3::sbMatrix & out)
     {
 
         using Word = i64;
-        auto bits = sizeof(Word) * 8;
-        if (outWires.size() > out.cols() * bits) throw std::runtime_error(LOCATION);
+        if (outWires.size() != out.bitCount()) throw std::runtime_error(LOCATION);
         //auto outCols = roundUpTo(outWires.size(), 8);
 
         auto simdWidth = mMem.simdWidth();

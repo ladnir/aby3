@@ -125,6 +125,7 @@
     <ClCompile Include="CircuitTests.cpp" />
     <ClCompile Include="LynxTests.cpp" />
     <ClCompile Include="Sh3BinaryEvaluatorTests.cpp" />
+    <ClCompile Include="Sh3ConverterTests.cpp" />
     <ClCompile Include="Sh3EncryptorTests.cpp" />
     <ClCompile Include="Sh3EvaluatorTests.cpp" />
   </ItemGroup>
@@ -133,6 +134,7 @@
     <ClInclude Include="CircuitTests.h" />
     <ClInclude Include="LynxTests.h" />
     <ClInclude Include="Sh3BinaryEvaluatorTests.h" />
+    <ClInclude Include="Sh3ConverterTests.h" />
     <ClInclude Include="Sh3EncryptorTests.h" />
     <ClInclude Include="Sh3EvaluatorTests.h" />
   </ItemGroup>

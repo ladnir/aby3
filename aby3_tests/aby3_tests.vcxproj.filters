@@ -33,6 +33,9 @@
     <ClCompile Include="Sh3BinaryEvaluatorTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Sh3ConverterTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CircuitTests.h">
@@ -51,6 +54,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Sh3BinaryEvaluatorTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Sh3ConverterTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

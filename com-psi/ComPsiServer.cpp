@@ -42,7 +42,7 @@ namespace osuCrypto
         SharedTable ret;
         //ret.mKeys.resize(t.mKeys.rows(), mKeyBitCount);
         //mEnc.localPackedBinary(mRt.mComm, t.mKeys, ret.mKeys);
-        ret.mKeys.resize(t.mKeys.rows(), mKeyBitCount / 64);
+        ret.mKeys.resize2(t.mKeys.rows(), mKeyBitCount);
         mEnc.localBinMatrix(mRt.mComm, t.mKeys, ret.mKeys);
 
         return ret;
@@ -53,7 +53,7 @@ namespace osuCrypto
         SharedTable ret;
         //ret.mKeys.resize(numRows, mKeyBitCount);
         //mEnc.remotePackedBinary(mRt.mComm, ret.mKeys);
-        ret.mKeys.resize(numRows, mKeyBitCount / 64);
+        ret.mKeys.resize2(numRows, mKeyBitCount);
         mEnc.remoteBinMatrix(mRt.mComm, ret.mKeys);
         return ret;
     }
@@ -76,7 +76,7 @@ namespace osuCrypto
         auto blockSize = mLowMCCir.mInputs[0].size();
         auto rounds = mLowMCCir.mInputs.size() - 1;
 
-        aby3::Sh3::sb64Matrix oprfRoundKey(1, blockSize / 64), temp;
+        aby3::Sh3::sbMatrix oprfRoundKey(1, blockSize), temp;
         for (u64 i = 0; i < tables.size(); ++i)
         {
             //auto shareCount = tables[i]->mKeys.shareCount();
@@ -93,7 +93,7 @@ namespace osuCrypto
             for (u64 j = 0; j < rounds; ++j)
             {
                 mEnc.rand(oprfRoundKey);
-                temp.resize(shareCount, blockSize / 64);
+                temp.resize2(shareCount, blockSize);
                 for (u64 k = 0; k < shareCount; ++k)
                 {
                     temp.mShares[0].row(k) = oprfRoundKey.mShares[0].row(0);

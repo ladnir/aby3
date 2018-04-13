@@ -30,7 +30,7 @@ namespace osuCrypto
 
         // shared keys are stored in packed binary format. i.e. XOR shared and trasposed.
         //aby3::Sh3::sPackedBin mKeys;
-        aby3::Sh3::sb64Matrix mKeys;
+        aby3::Sh3::sbMatrix mKeys;
 
         u64 rows();
     };

@@ -152,10 +152,10 @@ namespace aby3
     }
 
 
-    void Sh3Encryptor::localBinMatrix(Sh3::CommPkg & comm, const Sh3::i64Matrix & m, Sh3::sb64Matrix & ret)
+    void Sh3Encryptor::localBinMatrix(Sh3::CommPkg & comm, const Sh3::i64Matrix & m, Sh3::sbMatrix & ret)
     {
-        auto b0 = ret.cols() != m.cols();
-        auto b1 = ret.size() != m.size();
+        auto b0 = ret.i64Cols() != m.cols();
+        auto b1 = ret.i64Size() != m.size();
         if (b0 || b1)
             throw std::runtime_error(LOCATION);
 
@@ -166,12 +166,12 @@ namespace aby3
         comm.mPrev.recv(ret.mShares[1].data(), ret.mShares[1].size());
     }
 
-    Sh3Task Sh3Encryptor::localBinMatrix(Sh3Task dep, const Sh3::i64Matrix & m, Sh3::sb64Matrix & ret)
+    Sh3Task Sh3Encryptor::localBinMatrix(Sh3Task dep, const Sh3::i64Matrix & m, Sh3::sbMatrix & ret)
     {
         return dep.then([this, &m, &ret](Sh3::CommPkg& comm, Sh3Task self) {
 
-            auto b0 = ret.cols() != m.cols();
-            auto b1 = ret.size() != m.size();
+            auto b0 = ret.i64Cols() != m.cols();
+            auto b1 = ret.i64Size() != m.size();
             if (b0 || b1)
                 throw std::runtime_error(LOCATION);
 
@@ -187,7 +187,7 @@ namespace aby3
         });
     }
 
-    void Sh3Encryptor::remoteBinMatrix(Sh3::CommPkg & comm, Sh3::sb64Matrix & ret)
+    void Sh3Encryptor::remoteBinMatrix(Sh3::CommPkg & comm, Sh3::sbMatrix & ret)
     {
         for (u64 i = 0; i < ret.mShares[0].size(); ++i)
             ret.mShares[0](i) = mShareGen.getBinaryShare();
@@ -196,7 +196,7 @@ namespace aby3
         comm.mPrev.recv(ret.mShares[1].data(), ret.mShares[1].size());
     }
 
-    Sh3Task Sh3Encryptor::remoteBinMatrix(Sh3Task dep, Sh3::sb64Matrix & ret)
+    Sh3Task Sh3Encryptor::remoteBinMatrix(Sh3Task dep, Sh3::sbMatrix & ret)
     {
         return dep.then([this, &ret](Sh3::CommPkg& comm, Sh3Task& self) mutable {
 
@@ -382,7 +382,7 @@ namespace aby3
         });
     }
 
-    Sh3Task Sh3Encryptor::reveal(Sh3Task dep, const Sh3::sb64Matrix& x, Sh3::i64Matrix& dest)
+    Sh3Task Sh3Encryptor::reveal(Sh3Task dep, const Sh3::sbMatrix& x, Sh3::i64Matrix& dest)
     {
         return dep.then([&x, &dest](Sh3::CommPkg& comm, Sh3Task& self) {
             comm.mNext.recv(dest.data(), dest.size());
@@ -393,12 +393,12 @@ namespace aby3
             }
         });
     }
-    Sh3Task Sh3Encryptor::revealAll(Sh3Task dep, const Sh3::sb64Matrix& x, Sh3::i64Matrix& dest)
+    Sh3Task Sh3Encryptor::revealAll(Sh3Task dep, const Sh3::sbMatrix& x, Sh3::i64Matrix& dest)
     {
         reveal(dep, (mPartyIdx + 2) % 3, x);
         return reveal(dep, x, dest);
     }
-    Sh3Task Sh3Encryptor::reveal(Sh3Task dep, u64 partyIdx, const Sh3::sb64Matrix& x)
+    Sh3Task Sh3Encryptor::reveal(Sh3Task dep, u64 partyIdx, const Sh3::sbMatrix& x)
     {
         TODO("decide if we can move the if outside the call to then(...)");
         bool send = ((mPartyIdx + 2) % 3) == partyIdx;
@@ -458,9 +458,9 @@ namespace aby3
             comm.mPrev.asyncSendCopy(x.mShares[0].data(), x.mShares[0].size());
     }
 
-    void Sh3Encryptor::reveal(Sh3::CommPkg & comm, const Sh3::sb64Matrix & x, Sh3::i64Matrix & dest)
+    void Sh3Encryptor::reveal(Sh3::CommPkg & comm, const Sh3::sbMatrix & x, Sh3::i64Matrix & dest)
     {
-        if (dest.rows() != x.rows() || dest.cols() != x.cols())
+        if (dest.rows() != x.rows() || dest.cols() != x.i64Cols())
             throw std::runtime_error(LOCATION);
 
         comm.mNext.recv(dest.data(), dest.size());
@@ -470,13 +470,13 @@ namespace aby3
         }
     }
 
-    void Sh3Encryptor::revealAll(Sh3::CommPkg & comm, const Sh3::sb64Matrix & x, Sh3::i64Matrix & dest)
+    void Sh3Encryptor::revealAll(Sh3::CommPkg & comm, const Sh3::sbMatrix & x, Sh3::i64Matrix & dest)
     {
         reveal(comm, (mPartyIdx + 2) % 3, x);
         reveal(comm, x, dest);
     }
 
-    void Sh3Encryptor::reveal(Sh3::CommPkg & comm, u64 partyIdx, const Sh3::sb64Matrix & x)
+    void Sh3Encryptor::reveal(Sh3::CommPkg & comm, u64 partyIdx, const Sh3::sbMatrix & x)
     {
         if ((mPartyIdx + 2) % 3 == partyIdx)
             comm.mPrev.asyncSendCopy(x.mShares[0].data(), x.mShares[0].size());
@@ -565,9 +565,9 @@ namespace aby3
         }
     }
 
-    void Sh3Encryptor::rand(Sh3::sb64Matrix & dest)
+    void Sh3Encryptor::rand(Sh3::sbMatrix & dest)
     {
-        for (u64 i = 0; i < dest.size(); ++i)
+        for (u64 i = 0; i < dest.i64Size(); ++i)
         {
             auto s = mShareGen.getRandBinaryShare();
             dest.mShares[0](i) = s[0];

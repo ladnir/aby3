@@ -55,19 +55,19 @@ namespace aby3
         
         void setCir(oc::BetaCircuit* cir, u64 width);
 
-        void setReplicatedInput(u64 i, const Sh3::sb64Matrix& in);
-        void setInput(u64 i, const Sh3::sb64Matrix& in);
+        void setReplicatedInput(u64 i, const Sh3::sbMatrix& in);
+        void setInput(u64 i, const Sh3::sbMatrix& in);
         void setInput(u64 i, const Sh3::sPackedBin& in);
 
-        Sh3Task asyncEvaluate(Sh3Task dependency, oc::BetaCircuit* cir, std::vector<const Sh3::sb64Matrix*> inputs, std::vector<Sh3::sb64Matrix*> outputs);
+        Sh3Task asyncEvaluate(Sh3Task dependency, oc::BetaCircuit* cir, std::vector<const Sh3::sbMatrix*> inputs, std::vector<Sh3::sbMatrix*> outputs);
         Sh3Task asyncEvaluate(Sh3Task dependency);
         
         
         void roundCallback(Sh3::CommPkg& comms, Sh3Task task);
 
-        void getOutput(u64 i, Sh3::sb64Matrix& out);
+        void getOutput(u64 i, Sh3::sbMatrix& out);
         void getOutput(u64 i, Sh3::sPackedBin& out);
-		void getOutput(const std::vector<oc::BetaWire>& wires, Sh3::sb64Matrix& out);
+		void getOutput(const std::vector<oc::BetaWire>& wires, Sh3::sbMatrix& out);
 
 		bool hasMoreRounds() const {
 			return mLevel <= mCir->mLevelCounts.size();
