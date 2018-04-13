@@ -617,23 +617,23 @@ namespace aby3
                     in1 = gIn1 * simdWidth;
                     out = gOut * simdWidth;
 
-                    mDebugNext.asyncSendCopy(&shares[0](out), simdWidth);
-                    mDebugPrev.asyncSendCopy(&shares[0](out), simdWidth);
-
-                    std::vector<i64> s0(simdWidth), s1(simdWidth);
-                    mDebugPrev.recv(s0);
-                    mDebugNext.recv(s1);
-
-                    for (u64 k = 0; k < simdWidth; ++k)
-                        s0[k] ^= s1[k] ^ shares[0](out + k);
-
+                    //mDebugNext.asyncSendCopy(&shares[0](out), simdWidth);
+                    //mDebugPrev.asyncSendCopy(&shares[0](out), simdWidth);
+                    //
+                    //std::vector<i64> s0(simdWidth), s1(simdWidth);
+                    //mDebugPrev.recv(s0);
+                    //mDebugNext.recv(s1);
+                    //
+                    //for (u64 k = 0; k < simdWidth; ++k)
+                    //    s0[k] ^= s1[k] ^ shares[0](out + k);
+                    auto prevIdx = (mDebugPartyIdx + 2) % 3;
                     for (u64 r = 0; r < mPlainWires_DEBUG.size(); ++r)
                     {
-                        auto zeroShare = extractBitShare(r, gOut, 0);
-
-                        auto k = r / (sizeof(i64) * 8);
-                        auto j = r % (sizeof(i64) * 8);
-                        i64 plain = (s0[k] >> j) & 1;
+                        auto bit0 = extractBitShare(r, gOut, 0);
+                        //auto bit1 = extractBitShare(r, gOut, 1);
+                        //auto k = r / (sizeof(i64) * 8);
+                        //auto j = r % (sizeof(i64) * 8);
+                        //i64 plain = (s0[k] >> j) & 1;
 
 
 
@@ -642,14 +642,12 @@ namespace aby3
 
                         m[gOut].assign(m[gIn0], m[gIn1], gate.mType);
 
-                        if (zeroShare != m[gOut].mBits[mDebugPartyIdx])
-                            throw std::runtime_error(LOCATION);
-
-
-                        if (plain != m[gOut].val())
+                        if (bit0 != m[gOut].mBits[mDebugPartyIdx]) //||
+                        //    bit1 != m[gOut].mBits[prevIdx])
+                        //if (plain != m[gOut].val())
                         {
                             ostreamLock(std::cout)
-                                << "\n g" << gIdx << " act: " << plain << "   exp: " << (int)m[gate.mOutput].val() << std::endl
+                                << "\n g" << gIdx << " act: _  exp: " << (int)m[gate.mOutput].val() << std::endl
                                 << m[gIn0].val() << " " << gateToString(type) << " " << m[gIn1].val() << " -> " << m[gOut].val() << std::endl
                                 << gIn0 << " " << gateToString(type) << " " << gIn1 << " -> " << int(gOut) << std::endl;
                             std::this_thread::sleep_for(std::chrono::milliseconds(100));
