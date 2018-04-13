@@ -151,6 +151,8 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
 
         Sh3Encryptor enc;
         Sh3BinaryEvaluator eval;
+        eval.enableDebug(i, debugComm[i].mPrev, debugComm[i].mNext);
+
         enc.init(i, toBlock(i), toBlock(i + 1));
 
         auto task = rt.noDependencies();
@@ -160,6 +162,10 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
 
         task = eval.asyncEvaluate(task, cir, { &A, &B }, { &C });
         task = enc.reveal(task, C, c);
+
+        auto row66 = A.mShares[0].row(66);
+
+        std::cout << "row 66  " << row66 << std::endl;
 
         task.get();
 
@@ -184,6 +190,7 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
         Sh3Encryptor enc;
         enc.init(i, toBlock(i), toBlock((i + 1) % 3));
         Sh3BinaryEvaluator eval;
+        eval.enableDebug(i, debugComm[i].mPrev, debugComm[i].mNext);
 
         auto task = rt.noDependencies();
         // queue up the operations

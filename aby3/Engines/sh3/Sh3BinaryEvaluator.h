@@ -18,10 +18,13 @@ namespace aby3
         bool mDebug = false;
     public:
 
-        void enableDebug(u64 partyIdx)
+        void enableDebug(u64 partyIdx, oc::Channel debugPrev, oc::Channel debugNext)
         {
             mDebug = true;
             mDebugPartyIdx = partyIdx;
+
+            mDebugPrev = debugPrev;
+            mDebugNext = debugNext;
         }
 
 		struct DEBUG_Triple
@@ -35,7 +38,10 @@ namespace aby3
         u64 mDebugPartyIdx=-1;
         oc::Channel mDebugPrev, mDebugNext;
 
+        u8 extractBitShare(u64 rowIdx, u64 wireIdx, u64 shareIdx);
 
+        void validateMemory();
+        void validateWire(u64 wireIdx);
 #endif
 
         oc::BetaCircuit* mCir;

@@ -251,7 +251,7 @@ namespace Lynx
         {
             throw std::runtime_error("evaluateRound() was called but no rounds remain... " LOCATION);
         }
-        if (mCir->mLevelCounts.size() == 0 && mCir->mNonXorGateCount)
+        if (mCir->mLevelCounts.size() == 0 && mCir->mNonlinearGateCount)
             throw std::runtime_error("the level by and gate function must be called first." LOCATION);
 
         if (mLevel)

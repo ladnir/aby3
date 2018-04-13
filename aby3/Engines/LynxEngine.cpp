@@ -1027,7 +1027,7 @@ namespace Lynx
 
         lib.int_int_add_build_so(cd, a, b1, c1, t);
 
-        if (cd.mNonXorGateCount != 2 * (size - 1) - dec)
+        if (cd.mNonlinearGateCount != 2 * (size - 1) - dec)
             throw std::runtime_error(LOCATION);
 
         return std::move(cd);
@@ -1080,7 +1080,7 @@ namespace Lynx
 
                 mAesFixedKey.ecbEncCounterMode(0, inputSize * 2, sharedMem.data());
 
-                std::vector<GarbledGate<2>>gates(mArgMax.mNonXorGateCount);
+                std::vector<GarbledGate<2>>gates(mArgMax.mNonlinearGateCount);
                 std::vector<u8> shareAuxBits;
 
                 Garble::garble(mArgMax, sharedMem, tt, gates, zeroAndDelta, shareAuxBits);
@@ -1107,10 +1107,10 @@ namespace Lynx
 
                 std::vector<GarbledGate<2>> gates;
 
-                if (mArgMax.mNonXorGateCount)
+                if (mArgMax.mNonlinearGateCount)
                 {
                     mPrev.recv(gates);
-                    Expects(gates.size() == mArgMax.mNonXorGateCount);
+                    Expects(gates.size() == mArgMax.mNonlinearGateCount);
                 }
 
                 auto mRecvBit = ([this]() {bool b; mPrev.recv((u8*)&b, 1); return b; });
@@ -1152,7 +1152,7 @@ namespace Lynx
 
                 mAesFixedKey.ecbEncCounterMode(0, inputSize * 2, sharedMem.data());
 
-                std::vector<GarbledGate<2>>gates(cir->mNonXorGateCount);
+                std::vector<GarbledGate<2>>gates(cir->mNonlinearGateCount);
                 std::vector<u8> shareAuxBits;
 
                 Garble::garble(*cir, sharedMem, tt, gates, zeroAndDelta, shareAuxBits);
@@ -1179,10 +1179,10 @@ namespace Lynx
 
                 std::vector<GarbledGate<2>> gates;
 
-                if (cir->mNonXorGateCount)
+                if (cir->mNonlinearGateCount)
                 {
                     mPrev.recv(gates);
-                    Expects(gates.size() == cir->mNonXorGateCount);
+                    Expects(gates.size() == cir->mNonlinearGateCount);
                 }
 
                 auto mRecvBit = ([this]() {bool b; mPrev.recv((u8*)&b, 1); return b; });

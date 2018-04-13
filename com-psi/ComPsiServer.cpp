@@ -2,27 +2,59 @@
 
 namespace osuCrypto
 {
-    void ComPsiServer::init(u64 idx, Session & next, Session & prev)
+    void ComPsiServer::init(u64 idx, Session & prev, Session & next)
     {
         mIdx = idx;
         mNext = next.addChannel();
         mPrev = prev.addChannel();
+
+        aby3::Sh3::CommPkg comm{ prev.addChannel(), next.addChannel() };
+        mRt.init(idx, comm);
+
         mPrng.SetSeed(ZeroBlock);
-        mEng.init(idx, prev, next, 0, mPrng.get<block>());
-        //mBinEng.init(idx, prev, next);
+        mEnc.init(idx, toBlock(idx), toBlock((idx + 1) % 3));
+
+        std::string filename = "./lowMCCircuit_b" + ToString(sizeof(LowMC2<>::block)) + "_k" + ToString(sizeof(LowMC2<>::keyblock)) + ".bin";
+
+        std::ifstream in;
+        in.open(filename, std::ios::in | std::ios::binary);
+
+        if (in.is_open() == false)
+        {
+            LowMC2<> cipher1(1);
+            cipher1.to_enc_circuit(mLowMCCir);
+
+            std::ofstream out;
+            out.open(filename, std::ios::trunc | std::ios::out | std::ios::binary);
+            mLowMCCir.levelByAndDepth();
+
+            mLowMCCir.writeBin(out);
+        }
+        else
+        {
+            mLowMCCir.readBin(in);
+        }
+
     }
 
-    SharedTable ComPsiServer::input(Table & t)
+    SharedTable ComPsiServer::localInput(Table & t)
     {
         SharedTable ret;
-        mEng.localInput(t.mKeys, ret.mKeys);
+        //ret.mKeys.resize(t.mKeys.rows(), mKeyBitCount);
+        //mEnc.localPackedBinary(mRt.mComm, t.mKeys, ret.mKeys);
+        ret.mKeys.resize(t.mKeys.rows(), mKeyBitCount / 64);
+        mEnc.localBinMatrix(mRt.mComm, t.mKeys, ret.mKeys);
+
         return ret;
-    }
+    } 
 
-    SharedTable ComPsiServer::input(u64 idx)
+    SharedTable ComPsiServer::remoteInput(u64 partyIdx, u64 numRows)
     {
         SharedTable ret;
-        mEng.remoteInput(idx, ret.mKeys);
+        //ret.mKeys.resize(numRows, mKeyBitCount);
+        //mEnc.remotePackedBinary(mRt.mComm, ret.mKeys);
+        ret.mKeys.resize(numRows, mKeyBitCount / 64);
+        mEnc.remoteBinMatrix(mRt.mComm, ret.mKeys);
         return ret;
     }
 
@@ -30,67 +62,83 @@ namespace osuCrypto
     {
         std::array<SharedTable*, 2> AB{ &A,&B };
         std::array<u64, 2> reveals{ 0,1 };
-        std::vector<block> keys = computeKeys(AB, reveals);
+        aby3::Sh3::i64Matrix keys = computeKeys(AB, reveals);
 
 
 
         throw std::runtime_error(LOCATION);
     }
-    std::vector<block> ComPsiServer::computeKeys(span<SharedTable*> tables, span<u64> reveals)
+    aby3::Sh3::i64Matrix ComPsiServer::computeKeys(span<SharedTable*> tables, span<u64> reveals)
     {
-        std::vector<block> ret;
-        std::vector<Lynx::BinaryEngine> binEng(tables.size());
+        aby3::Sh3::i64Matrix ret;
+        std::vector<aby3::Sh3BinaryEvaluator> binEvals(tables.size());
 
-        std::vector<Lynx::Matrix> oprfKey = getRandOprfKey();
-        std::vector<Lynx::PackedBinMatrix> binKeys(tables.size());
-        std::vector<Lynx::CompletionHandle> handles(tables.size());
+        auto blockSize = mLowMCCir.mInputs[0].size();
+        auto rounds = mLowMCCir.mInputs.size() - 1;
 
+        aby3::Sh3::sb64Matrix oprfRoundKey(1, blockSize / 64), temp;
         for (u64 i = 0; i < tables.size(); ++i)
-            handles[i] = mEng.asyncConvertToPackedBinary(tables[i]->mKeys, binKeys[i], { mNext, mPrev});
+        {
+            //auto shareCount = tables[i]->mKeys.shareCount();
+            auto shareCount = tables[i]->mKeys.rows();
 
+            if (i == 0)
+            {
+                binEvals[i].enableDebug(mIdx, mPrev, mNext);
+            }
+            binEvals[i].setCir(&mLowMCCir, shareCount);
+
+            binEvals[i].setInput(0, tables[i]->mKeys);
+
+            for (u64 j = 0; j < rounds; ++j)
+            {
+                mEnc.rand(oprfRoundKey);
+                temp.resize(shareCount, blockSize / 64);
+                for (u64 k = 0; k < shareCount; ++k)
+                {
+                    temp.mShares[0].row(k) = oprfRoundKey.mShares[0].row(0);
+                    temp.mShares[1].row(k) = oprfRoundKey.mShares[1].row(0);
+                }
+
+                binEvals[i].setInput(j + 1, temp);
+            }
+
+
+            binEvals[i].asyncEvaluate(mRt.noDependencies());
+        }
+
+        // actaully runs the computations
+        mRt.runAll();
+
+
+        std::vector<aby3::Sh3::sPackedBin> temps(tables.size());
 
         for (u64 i = 0; i < tables.size(); ++i)
         {
-            binEng[i].init(mIdx, mPrev, mNext);
-            binEng[i].setCir(&mLowMCCir, tables[i]->rows());
+            //auto shareCount = tables[i]->mKeys.shareCount();
+            auto shareCount = tables[i]->mKeys.rows();
+            temps[i].resize(shareCount, blockSize);
 
-            for (u64 j = 0; j < mLowMC.roundkeys.size(); ++j)
+            if (reveals[i] == mIdx)
             {
-                binEng[i].setReplicatedInput(j, oprfKey[j]);
+                if (ret.size())
+                    throw std::runtime_error("only one output per party. " LOCATION);
+                ret.resize(shareCount, blockSize / 64);
+
+
+                binEvals[i].getOutput(0, temps[i]);
+                mEnc.reveal(mRt.noDependencies(), temps[i], ret);
+            }
+            else
+            {
+                binEvals[i].getOutput(0, temps[i]);
+                mEnc.reveal(mRt.noDependencies(), reveals[i], temps[i]);
             }
         }
 
-        for (u64 i = 0; i < tables.size(); ++i)
-        {
-            handles[i].get();
-            binEng[i].setInput(mLowMC.roundkeys.size(), binKeys[i]);
-        }
+        // actaully perform the reveals
+        mRt.runAll();
 
-        while (binEng[0].hasMoreRounds())
-        {
-            for (u64 i = 0; i < tables.size(); ++i)
-            {
-                binEng[i].evaluateRound();
-            }
-        }
-
-        std::vector<Lynx::PackedBinMatrix> outs(tables.size());
-        for (u64 i = 0; i < tables.size(); ++i)
-        {
-            binEng[i].getOutput(0, outs[i]);
-            auto r = mEng.reconstructShare(outs[i], reveals[i]);
-
-            if (r.size() != 0 && r.cols() != 2)
-                throw std::runtime_error(LOCATION);
-
-            for (u64 j = 0; j < r.rows(); ++j)
-            {
-                auto& b = *(block*)&r(j * 2);
-                ret.push_back(b);
-            }
-
-        }
-
-
+        return ret;
     }
 }

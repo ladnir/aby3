@@ -32,6 +32,9 @@ namespace osuCrypto
         class LowMC2 {
         public:
 
+
+            size_t getBlockSize() { return blocksize; };
+
             using block = std::bitset<blocksize>; // Store messages and states
             using keyblock = std::bitset<keysize>;
 
@@ -353,26 +356,97 @@ namespace osuCrypto
                 return;
             }
 
+
+            template<typename block_type>
+            std::vector<block_type> loadMatrix(std::istream& in)
+            {
+                std::vector<block_type> mat(blocksize);
+                char c;
+
+                for (int i = 0; i < mat.size(); ++i)
+                {
+                    for (int j = 0; j < mat[i].size(); ++j)
+                    {
+                        in.read(&c, 1);
+                        if (c == '0')
+                            mat[i][j] = 0;
+                        else if (c == '1')
+                            mat[i][j] = 1;
+                        else
+                            throw std::runtime_error(LOCATION);
+                    }
+
+                    in.read(&c, 1);
+                    if(c != '\n')
+                        throw std::runtime_error(LOCATION);
+                }
+                return mat;
+            }
+
+            template<typename block_type>
+            void writeMatrix(std::ostream& out, const std::vector<block_type>& mat)
+            {
+                char c;
+                for (int i = 0; i < mat.size(); ++i)
+                {
+                    for (int j = 0; j < mat[i].size(); ++j)
+                    {
+                        c = '0' + mat[i][j];
+                        out.write(&c, 1);
+                    }
+
+                    c = '\n';
+                    out.write(&c, 1);
+                }
+            }
+
+
+
             //Fills the matrices and roundconstants with pseudorandom bits 
             void instantiate_LowMC()
             {
+
                 // Create LinMatrices and invLinMatrices
                 LinMatrices.clear();
                 invLinMatrices.clear();
                 for (unsigned r = 0; r < rounds; ++r) {
-                    // Create matrix
+
                     std::vector<block> mat;
-                    // Fill matrix with random bits
-                    do {
-                        mat.clear();
-                        for (unsigned i = 0; i < blocksize; ++i) {
-                            mat.push_back(getrandblock());
-                        }
-                        // Repeat if matrix is not invertible
-                    } while (rank_of_Matrix(mat) != blocksize);
+
+                    std::string fileName("./linMtx_" + ToString(r) + ".txt");
+                    std::ifstream in;
+                    in.open(fileName, std::ios::in);
+
+                    if (in.is_open() == false)
+                    {
+
+                        // Create matrix
+                        // Fill matrix with random bits
+                        do {
+                            mat.clear();
+                            for (unsigned i = 0; i < blocksize; ++i) {
+                                mat.push_back(getrandblock());
+                            }
+                            // Repeat if matrix is not invertible
+                        } while (rank_of_Matrix(mat) != blocksize);
+
+                        std::ofstream out;
+                        out.open(fileName, std::ios::out | std::ios::binary | std::ios::trunc);
+                        writeMatrix(out, mat);
+                    }
+                    else
+                    {
+                        mat = loadMatrix<block>(in);
+
+                        if (rank_of_Matrix(mat) != blocksize)
+                            throw std::runtime_error(LOCATION);
+                    }
+
                     LinMatrices.push_back(mat);
                     invLinMatrices.push_back(invert_Matrix(LinMatrices.back()));
                 }
+
+
 
                 // Create roundconstants
                 roundconstants.clear();
@@ -385,14 +459,36 @@ namespace osuCrypto
                 for (unsigned r = 0; r <= rounds; ++r) {
                     // Create matrix
                     std::vector<keyblock> mat;
-                    // Fill matrix with random bits
-                    do {
-                        mat.clear();
-                        for (unsigned i = 0; i < blocksize; ++i) {
-                            mat.push_back(getrandkeyblock());
-                        }
-                        // Repeat if matrix is not of maximal rank
-                    } while (rank_of_Matrix(mat) < std::min(blocksize, keysize));
+
+
+                    std::string fileName("./keyMtx_" + ToString(r) + ".txt");
+                    std::ifstream in;
+                    in.open(fileName, std::ios::in);
+
+                    if (in.is_open() == false)
+                    {
+
+                        // Fill matrix with random bits
+                        do {
+                            mat.clear();
+                            for (unsigned i = 0; i < blocksize; ++i) {
+                                mat.push_back(getrandkeyblock());
+                            }
+                            // Repeat if matrix is not of maximal rank
+                        } while (rank_of_Matrix(mat) < std::min(blocksize, keysize));
+
+                        std::ofstream out;
+                        out.open(fileName, std::ios::out | std::ios::binary | std::ios::trunc);
+                        writeMatrix(out, mat);
+                    }
+                    else
+                    {
+                        mat = loadMatrix<keyblock>(in);
+
+                        if (rank_of_Matrix(mat) < std::min(blocksize, keysize))
+                            throw std::runtime_error(LOCATION);
+                    }
+
                     KeyMatrices.push_back(mat);
                 }
 

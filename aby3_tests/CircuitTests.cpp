@@ -5,6 +5,7 @@
 #include <cryptoTools/Crypto/PRNG.h>
 #include <cryptoTools/Common/Log.h>
 #include <random>
+#include <fstream>
 
 using namespace oc;
 
@@ -309,3 +310,65 @@ void BetaCircuit_int_piecewise_Test()
 //
 //	cd.toFormula();
 //}
+
+
+void BetaCircuit_json_Tests()
+{
+    std::string filename = "./test_add_cir.json";
+    BetaLibrary lib;
+    
+    BetaCircuit cir = *lib.int_int_mult(64, 64, 64);
+    cir.levelByAndDepth();
+
+    std::ofstream out;
+    out.open(filename, std::ios::out | std::ios::trunc | std::ios::binary);
+
+    cir.writeJson(out);
+    out.close();
+
+    BetaCircuit cir2;
+    std::ifstream in;
+    in.open(filename, std::ios::in | std::ios::binary);
+
+    if (in.is_open() == false)
+        throw std::runtime_error(LOCATION);
+
+    cir2.readJson(in);
+
+    if (cir != cir2)
+    {
+        throw std::runtime_error(LOCATION);
+    }
+
+}
+
+
+void BetaCircuit_bin_Tests()
+{
+    std::string filename = "./test_mul_cir.bin";
+    BetaLibrary lib;
+
+    BetaCircuit cir = *lib.int_int_mult(64, 64, 64);
+    cir.levelByAndDepth();
+
+    std::ofstream out;
+    out.open(filename, std::ios::out | std::ios::trunc | std::ios::binary);
+
+    cir.writeBin(out);
+    out.close();
+
+    BetaCircuit cir2;
+    std::ifstream in;
+    in.open(filename, std::ios::in | std::ios::binary);
+
+    if (in.is_open() == false)
+        throw std::runtime_error(LOCATION);
+
+    cir2.readBin(in);
+
+    if (cir != cir2)
+    {
+        throw std::runtime_error(LOCATION);
+    }
+
+}

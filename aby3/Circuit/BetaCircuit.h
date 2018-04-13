@@ -46,6 +46,13 @@ namespace osuCrypto
 		BetaWire mOutput;
 		GateType mType;
 		u8 mAAlpha, mBAlpha, mCAlpha;
+
+        bool operator!=(const BetaGate& r) const {
+            return mInput[0] != r.mInput[0]
+                || mInput[1] != r.mInput[1]
+                || mOutput != r.mOutput
+                || mType != r.mType;
+        }
 	};
 
 	static_assert(sizeof(GateType) == 1, "");
@@ -69,12 +76,15 @@ namespace osuCrypto
 		~BetaCircuit();
 
 
-
-		u64 mNonXorGateCount;
+        std::string mName;
+		u64 mNonlinearGateCount;
         BetaWire mWireCount;
         std::vector<BetaGate> mGates;
         std::vector<std::tuple<u64, BetaWire, std::string, bool>> mPrints;
         std::vector<BetaWireFlag> mWireFlags;
+
+        std::vector<BetaBundle> mInputs, mOutputs;
+		std::vector<u64> mLevelCounts, mLevelAndCounts;
 
 		void addTempWireBundle(BetaBundle& in);
 		void addInputBundle(BetaBundle& in);
@@ -96,38 +106,24 @@ namespace osuCrypto
         void addPrint(BetaWire wire);
         void addPrint(std::string);
 
-        std::vector<BetaBundle> mInputs, mOutputs;
-
 		void evaluate(span<BitVector> input, span<BitVector> output, bool print = true);
-		//void levelEvaluate(span<BitVector> input, span<BitVector> output, bool print = true);
 
-		//BetaCircuit toFormula() const;
-
-
-		std::vector<u64> mLevelCounts, mLevelAndCounts;
 
 		void levelByAndDepth();
 
-		//class LevelIterator
-		//{
-		//	BetaCircuit& mCir;
-		//	u64 mLevel;
 
-		//public:
+        void writeJson(std::ostream& out);
+        void readJson(std::istream& in);
 
-		//	LevelIterator(BetaCircuit& cir) : mCir(cir), mLevel(0) {}
+        void writeBin(std::ostream& out);
+        void readBin(std::istream& in);
 
-		//	bool isLinear() const { return !(mLevel % 2); }
-		//	const span<BetaGate> operator*() const
-		//	{
-		//		return isLinear() ?
-		//			mCir.mLevels[mLevel / 2].mLinearGates :
-		//			mCir.mLevels[mLevel / 2].mNonlinearGates;
-		//	}
+        bool operator==(const BetaCircuit& rhs)const {
+            return *this != rhs;
+        }
+        bool operator!=(const BetaCircuit& rhs)const;
 
-		//	void operator++() { ++mLevel; }
-		//};
-
+        block hash() const;
 
 	};
 

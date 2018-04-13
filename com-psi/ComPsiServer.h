@@ -3,8 +3,9 @@
 #include <cryptoTools/Network/Channel.h>
 #include <cryptoTools/Crypto/PRNG.h>
 #include <cryptoTools/Common/MatrixView.h>
-#include "aby3/Engines/LynxEngine.h"
-#include "aby3/Engines/Lynx/LynxBinaryEngine.h"
+#include "aby3/Engines/sh3/Sh3BinaryEvaluator.h"
+#include "aby3/Engines/sh3/Sh3Encryptor.h"
+#include "aby3/Engines/sh3/Sh3Evaluator.h"
 #include "LowMC.h"
 
 namespace osuCrypto
@@ -17,18 +18,19 @@ namespace osuCrypto
         struct Column
         {
             u64 mBitLenth;
-            std::vector<Lynx::Word> mData;
+            aby3::Sh3::i64Matrix mData;
         };
 
-        //u64 mKeyBitLength;
-        Lynx::word_matrix mKeys;
-        //std::vector<Column> mCols;
+        aby3::Sh3::i64Matrix mKeys;
     };
 
     class SharedTable
     {
     public:
-        Lynx::Matrix mKeys;
+
+        // shared keys are stored in packed binary format. i.e. XOR shared and trasposed.
+        //aby3::Sh3::sPackedBin mKeys;
+        aby3::Sh3::sb64Matrix mKeys;
 
         u64 rows();
     };
@@ -37,17 +39,18 @@ namespace osuCrypto
     class ComPsiServer
     {
     public:
-        u64 mIdx;
+        u64 mIdx, mKeyBitCount = 256;
         Channel mNext, mPrev;
         PRNG mPrng;
 
-        Lynx::Engine mEng;
+        aby3::Sh3Runtime mRt;
+        aby3::Sh3Encryptor mEnc;
 
-        void init(u64 idx, Session& next, Session& prev);
+        void init(u64 idx, Session& prev, Session& next);
 
 
-        SharedTable input(Table& t);
-        SharedTable input(u64 idx);
+        SharedTable localInput(Table& t);
+        SharedTable remoteInput(u64 partyIdx, u64 numRows);
 
 
         SharedTable intersect(SharedTable& A, SharedTable& B);
@@ -55,13 +58,11 @@ namespace osuCrypto
 
 
 
-        std::vector<block> computeKeys(span<SharedTable*> tables, span<u64> reveals);
+        aby3::Sh3::i64Matrix computeKeys(span<SharedTable*> tables, span<u64> reveals);
 
 
-        std::vector<Lynx::Matrix> getRandOprfKey();
 
-
-        LowMC2<> mLowMC;
+        //LowMC2<> mLowMC;
         BetaCircuit mLowMCCir;
     };
 

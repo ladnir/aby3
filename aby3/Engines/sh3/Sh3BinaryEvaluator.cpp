@@ -63,13 +63,24 @@ namespace aby3
 
             for (u64 j = 0; j < inWires.size(); ++j, ++iter)
             {
-                if (shares.rows() >= inWires[j])
+                if (shares.rows() <= inWires[j])
                     throw std::runtime_error(LOCATION);
 
                 char v = vals[*iter];
                 memset(shares.data() + simdWidth * inWires[j], v, simdWidth * sizeof(i64));
             }
         }
+
+
+#ifdef BINARY_ENGINE_DEBUG
+        if (mDebug)
+        {
+            for (u64 i = 0; i < inWires.size(); ++i)
+            {
+                validateWire(inWires[i]);
+            }
+        }
+#endif
     }
 
     void Sh3BinaryEvaluator::setInput(u64 idx, const Sh3::sb64Matrix  & in)
@@ -104,8 +115,8 @@ namespace aby3
 
             MatrixView<u8> inView(
                 (u8*)(in.mShares[i].data()),
-                (u8*)(in.mShares[i].data() + in.mShares[i].size()),
-                sizeof(i64));
+                (u8*)(in.mShares[i].data() + in.mShares[i].rows()),
+                sizeof(i64) * in.mShares[i].cols());
 
             if (inWires.back() > shares.rows())
                 throw std::runtime_error(LOCATION);
@@ -114,6 +125,10 @@ namespace aby3
                 (u8*)(shares.data() + simdWidth * inWires.front()),
                 (u8*)(shares.data() + simdWidth * (inWires.back() + 1)),
                 sizeof(i64) * simdWidth);
+            //(inRows + 7) / 8);
+
+            if (memView.stride() > sizeof(i64) * simdWidth)
+                throw std::runtime_error(LOCATION);
 
             if (memView.data() + memView.size() > (u8*)(shares.data() + shares.size()))
                 throw std::runtime_error(LOCATION);
@@ -165,7 +180,11 @@ namespace aby3
                 //	<< (int)m[inWires[i]].mBits[mPartyIdx] << std::endl;
             }
         }
-
+        if (mDebugPartyIdx == 0)
+            for (u64 i = 0; i < inWires.size(); ++i)
+            {
+                validateWire(inWires[i]);
+            }
         //Matrix nn(in);
         //getOutput(inWires, nn);
 
@@ -193,17 +212,85 @@ namespace aby3
         if (in.bitCount() != mCir->mInputs[idx].mWires.size())
             throw std::runtime_error(LOCATION);
 
+        auto& inWires = mCir->mInputs[idx];
         for (u64 i = 0; i < 2; ++i)
         {
             auto& share = mMem.mShares[i];
-            auto& wires = mCir->mInputs[idx];
-
-            for (u64 j = 0; j < wires.size(); ++j)
+            for (u64 j = 0; j < inWires.size(); ++j)
             {
-                memcpy(share.data() + simdWidth * wires[j], in.mShares[i].data() + simdWidth * j, simdWidth * sizeof(i64));
+                memcpy(share.data() + simdWidth * inWires[j], in.mShares[i].data() + simdWidth * j, simdWidth * sizeof(i64));
+            }
+        }
+
+#ifdef BINARY_ENGINE_DEBUG
+        if (mDebug)
+        {
+            for (u64 i = 0; i < inWires.size(); ++i)
+            {
+                auto shareCount = mPlainWires_DEBUG.size();
+
+                auto prevIdx = (mDebugPartyIdx + 2) % 3;
+                //auto& m = mPlainWires_DEBUG[r];
+                auto bv0 = BitVector((u8*)in.mShares[0].row(i).data(), shareCount);
+                auto bv1 = BitVector((u8*)in.mShares[1].row(i).data(), shareCount);
+
+                for (u64 r = 0; r < shareCount; ++r)
+                {
+                    auto& triple = mPlainWires_DEBUG[r][inWires[i]];
+
+                    triple.mBits[mDebugPartyIdx] = bv0[r];
+                    triple.mBits[prevIdx] = bv1[r];
+                }
+
+                validateWire(inWires[i]);
+            }
+        }
+#endif
+    }
+
+#ifdef BINARY_ENGINE_DEBUG
+    void Sh3BinaryEvaluator::validateMemory()
+    {
+        for (u64 i = 0; i < mCir->mWireCount; ++i)
+        {
+            validateWire(i);
+        }
+    }
+
+
+    void Sh3BinaryEvaluator::validateWire(u64 wireIdx)
+    {
+        auto shareCount = mPlainWires_DEBUG.size();
+        auto prevIdx = (mDebugPartyIdx + 2) % 3;
+
+        for (u64 r = 0; r < shareCount; ++r)
+        {
+            auto& triple = mPlainWires_DEBUG[r][wireIdx];
+
+            auto bit0 = extractBitShare(r, wireIdx, 0);
+            auto bit1 = extractBitShare(r, wireIdx, 1);
+            if (triple.mBits[mDebugPartyIdx] != bit0)
+            {
+                std::cout << "party " << mDebugPartyIdx << " wire " << wireIdx << " row " << r << " s " << 0 << " ~~"
+                    << " exp:" << int(triple.mBits[mDebugPartyIdx])
+                    << " act:" << int(bit0) << std::endl;
+
+                throw std::runtime_error(LOCATION);
+                
+            }
+            if (triple.mBits[prevIdx] != bit1)
+            {
+
+                std::cout << "party " << mDebugPartyIdx << " wire " << wireIdx << " row " << r << " s " << 1 << " ~~"
+                    << " exp:" << int(triple.mBits[prevIdx])
+                    << " act:" << int(bit1) << std::endl;
+                throw std::runtime_error(LOCATION);
             }
         }
     }
+#endif
+
+
     Sh3Task Sh3BinaryEvaluator::asyncEvaluate(
         Sh3Task dep,
         oc::BetaCircuit * cir,
@@ -216,7 +303,7 @@ namespace aby3
             throw std::runtime_error(LOCATION);
 
         return dep.then([this, cir, inputs = std::move(inputs)](Sh3::CommPkg& comm, Sh3Task& self)
-        {        
+        {
             auto width = inputs[0]->rows();
             setCir(cir, width);
 
@@ -247,6 +334,7 @@ namespace aby3
         {
             if (mDebugPartyIdx != dependency.getRuntime().mPartyIdx)
                 throw std::runtime_error(LOCATION);
+            SHA1 sha(sizeof(block));
 
             auto prevIdx = (mDebugPartyIdx + 2) % 3;
             auto nextIdx = (mDebugPartyIdx + 1) % 3;
@@ -273,13 +361,29 @@ namespace aby3
 
                     m[i].mBits[nextIdx] = s1[i];
                 }
+
+
+                sha.Update(m.data(), m.size());
+
             }
+
+            block b;
+            sha.Final(b);
+            ostreamLock(std::cout) << "b" << mDebugPartyIdx << " " << b << std::endl;
         }
 #endif
         return dependency.then([this](Sh3::CommPkg& comm, Sh3Task& self)
         {
             roundCallback(comm, self);
         });
+    }
+
+    u8 Sh3BinaryEvaluator::extractBitShare(u64 rowIdx, u64 wireIdx, u64 shareIdx)
+    {
+        auto k = rowIdx / (sizeof(i64) * 8);
+        auto j = rowIdx % (sizeof(i64) * 8);
+
+        return (mMem.mShares[shareIdx](wireIdx, k) >> j) & 1;
     }
 
     void Sh3BinaryEvaluator::roundCallback(Sh3::CommPkg& comm, Sh3Task task)
@@ -292,7 +396,7 @@ namespace aby3
         {
             throw std::runtime_error("evaluateRound() was called but no rounds remain... " LOCATION);
         }
-        if (mCir->mLevelCounts.size() == 0 && mCir->mNonXorGateCount)
+        if (mCir->mLevelCounts.size() == 0 && mCir->mNonlinearGateCount)
             throw std::runtime_error("the level by and gate function must be called first." LOCATION);
 
         if (mLevel)
@@ -337,7 +441,6 @@ namespace aby3
                 auto in0 = gate.mInput[0] * simdWidth;
                 auto in1 = gate.mInput[1] * simdWidth;
                 auto out = gate.mOutput * simdWidth;
-
 
                 switch (gate.mType)
                 {
@@ -473,8 +576,13 @@ namespace aby3
 #ifdef BINARY_ENGINE_DEBUG
                 if (mDebug)
                 {
+                    auto gIn0 = gate.mInput[0];
+                    auto gIn1 = gate.mInput[1];
+                    auto gOut = gate.mOutput;
 
-                    out = gate.mOutput * simdWidth;
+                    in0 = gIn0 * simdWidth;
+                    in1 = gIn1 * simdWidth;
+                    out = gOut * simdWidth;
 
                     mDebugNext.asyncSendCopy(&shares[0](out), simdWidth);
                     mDebugPrev.asyncSendCopy(&shares[0](out), simdWidth);
@@ -488,14 +596,13 @@ namespace aby3
 
                     for (u64 r = 0; r < mPlainWires_DEBUG.size(); ++r)
                     {
+                        auto zeroShare = extractBitShare(r, gOut, 0);
+
                         auto k = r / (sizeof(i64) * 8);
                         auto j = r % (sizeof(i64) * 8);
                         i64 plain = (s0[k] >> j) & 1;
-                        i64 zeroShare = (shares[0](out + k) >> j) & 1;
 
-                        auto gIn0 = gate.mInput[0];
-                        auto gIn1 = gate.mInput[1];
-                        auto gOut = gate.mOutput;
+
 
                         auto& m = mPlainWires_DEBUG[r];
                         auto gIdx = mGateIter - mCir->mGates.data();

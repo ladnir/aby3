@@ -24,3 +24,9 @@ x64/*
 
 log.txt
 */log.txt
+*.txt
+*.bin
+*.json
+
+*.psess
+*.vspx

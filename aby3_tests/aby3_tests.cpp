@@ -4,7 +4,8 @@ oc::TestCollection aby3_tests([](oc::TestCollection& tc) {
     
     tc.add("BetaCircuit_int_Adder_Test        ", BetaCircuit_int_Adder_Test    );
     tc.add("BetaCircuit_int_piecewise_Test    ", BetaCircuit_int_piecewise_Test);
-                                              
+    tc.add("BetaCircuit_json_Tests            ", BetaCircuit_json_Tests);
+    tc.add("BetaCircuit_bin_Tests             ", BetaCircuit_bin_Tests);
 
     tc.add("Lynx_matrixOperations_tests       ", Lynx_matrixOperations_tests);
     tc.add("Lynx_BinaryEngine_and_test        ", Lynx_BinaryEngine_and_test);
