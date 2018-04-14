@@ -82,10 +82,10 @@ namespace osuCrypto
             //auto shareCount = tables[i]->mKeys.shareCount();
             auto shareCount = tables[i]->mKeys.rows();
 
-            if (i == 0)
-            {
-                binEvals[i].enableDebug(mIdx, mPrev, mNext);
-            }
+            //if (i == 0)
+            //{
+            //    binEvals[i].enableDebug(mIdx, mPrev, mNext);
+            //}
             binEvals[i].setCir(&mLowMCCir, shareCount);
 
             binEvals[i].setInput(0, tables[i]->mKeys);

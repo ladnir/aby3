@@ -4,6 +4,7 @@
 #include "aby3/Circuit/BetaCircuit.h"
 #include "Sh3Runtime.h"
 #include <cryptoTools/Crypto/sha1.h>
+#include "Sh3ShareGen.h"
 
 namespace aby3
 {
@@ -53,7 +54,7 @@ namespace aby3
         std::vector<i64> mRecvData;
         std::future<void> mRecvFutr;
         Sh3::sPackedBin mMem;
-
+        //std::array<std::vector<block>, 2>  mZeroShares;
         
         void setCir(oc::BetaCircuit* cir, u64 width);
 
@@ -86,6 +87,9 @@ namespace aby3
             h.Final(b);
             return b;
         }
+
+        Sh3ShareGen mShareGen;
+        //std::array<oc::PRNG, 2> mGens;
 	};
 
 }

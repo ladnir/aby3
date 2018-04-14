@@ -11,7 +11,10 @@ namespace aby3
 
     void Sh3BinaryEvaluator::setCir(BetaCircuit * cir, u64 width)
     {
-        if (cir->mLevelCounts.size() == 0) cir->levelByAndDepth();
+        
+
+        if (cir->mLevelCounts.size() == 0) 
+            cir->levelByAndDepth();
 
         //if (cir->mInputs.size() != 2) throw std::runtime_error(LOCATION);
 
@@ -450,10 +453,17 @@ namespace aby3
         }
         else {
             mGateIter = mCir->mGates.data();
+
+            auto simdBlockWidth = (mMem.shareCount() + 127) / 128;
+            auto seed0 = toBlock((task.getRuntime().mPartyIdx));
+            auto seed1 = toBlock((task.getRuntime().mPartyIdx + 2) % 3);
+            mShareGen.init(seed0, seed1, simdBlockWidth);
         }
+
         i64 ccWord;
         memset(&ccWord, 0xCC, sizeof(i64));
 
+        const bool debug = mDebug;
         auto& shares = mMem.mShares;
         //ostreamLock(std::cout) << "P" << mDebugPartyIdx << " l" << mLevel << " : " << hashState() << std::endl;
 
@@ -467,6 +477,7 @@ namespace aby3
             std::vector<i64> mSendData(andGateCount * simdWidth);
             auto sendIter = mSendData.begin();
 
+
             for (u64 j = 0; j < gateCount; ++j, ++mGateIter)
             {
                 const auto& gate = *mGateIter;
@@ -474,6 +485,20 @@ namespace aby3
                 auto in0 = gate.mInput[0] * simdWidth;
                 auto in1 = gate.mInput[1] * simdWidth;
                 auto out = gate.mOutput * simdWidth;
+
+                mShareGen.refillBuffer();
+                block* zz0 = mShareGen.mShareBuff[0].data();
+                block* zz1 = mShareGen.mShareBuff[1].data();
+                i64* z0 = (i64*)(zz0);
+                i64* z1 = (i64*)(zz1);
+
+#ifdef BINARY_ENGINE_DEBUG
+                if (debug)
+                {
+                    memset(mShareGen.mShareBuff[0].data(), 0, mShareGen.mShareBuff[0].size() * sizeof(block));
+                    memset(mShareGen.mShareBuff[1].data(), 0, mShareGen.mShareBuff[0].size() * sizeof(block));
+                }
+#endif
 
                 switch (gate.mType)
                 {
@@ -493,22 +518,28 @@ namespace aby3
                     for (u64 k = 0; k < simdWidth; ++k)
                     {
 
-                        TODO("add the randomization back");
                         *sendIter = shares[0](out)
                             = (shares[0](in0) & shares[0](in1))
                             ^ (shares[0](in0) & shares[1](in1))
                             ^ (shares[1](in0) & shares[0](in1))
-                            /*^ getBinaryShare()*/;
+                            ^ *z0
+                            ^ *z1;
 
 #ifndef NDEBUG
                         if (shares[1](in0) == ccWord || shares[1](in1) == ccWord)
                             throw std::runtime_error(LOCATION);
                         shares[1](out) = ccWord;
 #endif
+                        if (z0 >= (i64*)(mShareGen.mShareBuff[0].data() + mShareGen.mShareBuff[0].size()))
+                            throw std::runtime_error(LOCATION);
+                        if (z1 >= (i64*)(mShareGen.mShareBuff[1].data() + mShareGen.mShareBuff[1].size()))
+                            throw std::runtime_error(LOCATION);
                         ++sendIter;
                         ++in0;
                         ++in1;
                         ++out;
+                        ++z0;
+                        ++z1;
                     }
                     break;
                 case GateType::Nor:
@@ -525,17 +556,25 @@ namespace aby3
                             = (mem00 & mem01)
                             ^ (mem00 & mem11)
                             ^ (mem10 & mem01)
-                            /*^ getBinaryShare()*/;
+                            ^ *z0
+                            ^ *z1;
 
 #ifndef NDEBUG
                         if (shares[1](in0) == ccWord || shares[1](in1) == ccWord)
                             throw std::runtime_error(LOCATION);
                         shares[1](out) = ccWord;
 #endif
+                        if (z0 >= (i64*)(mShareGen.mShareBuff[0].data() + mShareGen.mShareBuff[0].size()))
+                            throw std::runtime_error(LOCATION);
+                        if (z1 >= (i64*)(mShareGen.mShareBuff[1].data() + mShareGen.mShareBuff[1].size()))
+                            throw std::runtime_error(LOCATION);
+
                         ++sendIter;
                         ++in0;
                         ++in1;
                         ++out;
+                        ++z0;
+                        ++z1;
                     }
                     break;
                 case GateType::Nxor:
@@ -575,17 +614,25 @@ namespace aby3
                             = ((~shares[0](in0)) & shares[0](in1))
                             ^ ((~shares[0](in0)) & shares[1](in1))
                             ^ ((~shares[1](in0)) & shares[0](in1))
-                            /*^ getBinaryShare()*/;
+                            ^ *z0
+                            ^ *z1;
 
 #ifndef NDEBUG
                         if (shares[1](in0) == ccWord || shares[1](in1) == ccWord)
                             throw std::runtime_error(LOCATION);
                         shares[1](out) = ccWord;
 #endif
+                        if (z0 >= (i64*)(mShareGen.mShareBuff[0].data() + mShareGen.mShareBuff[0].size()))
+                            throw std::runtime_error(LOCATION);
+                        if (z1 >= (i64*)(mShareGen.mShareBuff[1].data() + mShareGen.mShareBuff[1].size()))
+                            throw std::runtime_error(LOCATION);
+
                         ++sendIter;
                         ++in0;
                         ++in1;
                         ++out;
+                        ++z0;
+                        ++z1;
                     }
                     break;
                 case GateType::Zero:
@@ -607,7 +654,7 @@ namespace aby3
 
 
 #ifdef BINARY_ENGINE_DEBUG
-                if (mDebug)
+                if (debug)
                 {
                     auto gIn0 = gate.mInput[0];
                     auto gIn1 = gate.mInput[1];
@@ -709,6 +756,7 @@ namespace aby3
 
         out.resize(mMem.shareCount(), outWires.size());
         auto simdWidth = mMem.simdWidth();
+        auto simBlockdWidth = (mMem.simdWidth() + 1) / 2;
 
         for (u64 j = 0; j < 2; ++j)
         {

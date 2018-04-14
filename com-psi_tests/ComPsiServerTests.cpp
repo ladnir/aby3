@@ -20,8 +20,8 @@ void ComPsi_computeKeys_test()
     srvs[0].init(0, s02, s01);
     srvs[1].init(1, s10, s12);
     srvs[2].init(2, s21, s20);
-     
-    auto size = 10;
+
+    auto size = 1 << 16;
     Table a;
     a.mKeys.resize(size, srvs[0].mKeyBitCount / 64);
 
@@ -43,13 +43,17 @@ void ComPsi_computeKeys_test()
         auto r = srvs[i].computeKeys(tables, reveals);
 
 
-        for (u64 i = 0; i < size; ++i)
+        for (u64 i = 0; i < size - 1; i += 2)
         {
             for (u64 j = 0; j < a.mKeys.cols(); ++j)
             {
-                std::cout << (j? ", " : ToString(i) + " : ") << r (i, j);
+                //std::cout << (j ? ", " : ToString(i) + " : ") << r(i, j);
+                if (r(i, j) != r(i + 1, j))
+                {
+                    throw std::runtime_error(LOCATION);
+                }
             }
-            std::cout << std::endl;
+            //std::cout << std::endl;
         }
 
     });
