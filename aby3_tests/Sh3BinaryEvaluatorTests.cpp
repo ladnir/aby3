@@ -42,65 +42,65 @@ using namespace Sh3;
 //    s2.mShares[1] = s1.mShares[0];
 //}
 
-Lynx::Matrix toLynx(const Sh3::sbMatrix& A)
-{
-    Lynx::Matrix r(A.rows(), A.i64Cols());
-    r.mShares[0] = A.mShares[0];
-    r.mShares[1] = A.mShares[1];
-    return r;
-}
-
-void compare(Sh3BinaryEvaluator& a, Lynx::BinaryEngine& b)
-{
-    if (a.mMem.bitCount() != b.mMem.bitCount())
-        throw std::runtime_error(LOCATION);
-
-    if (a.mMem.shareCount() != b.mMem.shareCount())
-        throw std::runtime_error(LOCATION);
-
-
-    if (neq(a.hashState(), b.hashState()))
-        ostreamLock(std::cout)
-            << "Ha " << a.hashState() << std::endl
-            << "Hb " << b.hashState() << std::endl;
-
-    for (u64 s = 0; s < 2; ++s)
-    {
-
-        for (u64 i = 0; i < a.mMem.bitCount(); ++i)
-        {
-            for (u64 j = 0; j < a.mMem.simdWidth(); ++j)
-            {
-                if (a.mMem.mShares[s](i, j) != b.mMem.mShares[s](i, j))
-                {
-                    ostreamLock(std::cout) << " share " << s << " bit " << i << " word " << j << std::endl;
-                }
-            }
-        }
-    }
-
-    if (a.mPlainWires_DEBUG.size() != b.mPlainWires_DEBUG.size())
-        throw std::runtime_error(LOCATION);
-
-    for (u64 s = 0; s < 3; ++s)
-    {
-        for (u64 i = 0; i < a.mPlainWires_DEBUG.size(); ++i)
-        {
-
-            if (a.mPlainWires_DEBUG[i].size() != b.mPlainWires_DEBUG[i].size())
-                throw std::runtime_error(LOCATION);
-
-            for (u64 j = 0; j < a.mPlainWires_DEBUG[i].size(); ++j)
-            {
-                if (a.mPlainWires_DEBUG[i][j].mBits[s] !=
-                    b.mPlainWires_DEBUG[i][j].mBits[s])
-                {
-                    ostreamLock(std::cout) << "*share " << s << " bit " << i << " word " << j << std::endl;
-                }
-            }
-        }
-    }
-}
+//Lynx::Matrix toLynx(const Sh3::sbMatrix& A)
+//{
+//    Lynx::Matrix r(A.rows(), A.i64Cols());
+//    r.mShares[0] = A.mShares[0];
+//    r.mShares[1] = A.mShares[1];
+//    return r;
+//}
+//
+//void compare(Sh3BinaryEvaluator& a, Lynx::BinaryEngine& b)
+//{
+//    if (a.mMem.bitCount() != b.mMem.bitCount())
+//        throw std::runtime_error(LOCATION);
+//
+//    if (a.mMem.shareCount() != b.mMem.shareCount())
+//        throw std::runtime_error(LOCATION);
+//
+//
+//    if (neq(a.hashState(), b.hashState()))
+//        ostreamLock(std::cout)
+//            << "Ha " << a.hashState() << std::endl
+//            << "Hb " << b.hashState() << std::endl;
+//
+//    for (u64 s = 0; s < 2; ++s)
+//    {
+//
+//        for (u64 i = 0; i < a.mMem.bitCount(); ++i)
+//        {
+//            for (u64 j = 0; j < a.mMem.simdWidth(); ++j)
+//            {
+//                if (neq(a.mMem.mShares[s](i, j),b.mMem.mShares[s](i, j)))
+//                {
+//                    ostreamLock(std::cout) << " share " << s << " bit " << i << " word " << j << std::endl;
+//                }
+//            }
+//        }
+//    }
+//
+//    if (a.mPlainWires_DEBUG.size() != b.mPlainWires_DEBUG.size())
+//        throw std::runtime_error(LOCATION);
+//
+//    for (u64 s = 0; s < 3; ++s)
+//    {
+//        for (u64 i = 0; i < a.mPlainWires_DEBUG.size(); ++i)
+//        {
+//
+//            if (a.mPlainWires_DEBUG[i].size() != b.mPlainWires_DEBUG[i].size())
+//                throw std::runtime_error(LOCATION);
+//
+//            for (u64 j = 0; j < a.mPlainWires_DEBUG[i].size(); ++j)
+//            {
+//                if (a.mPlainWires_DEBUG[i][j].mBits[s] !=
+//                    b.mPlainWires_DEBUG[i][j].mBits[s])
+//                {
+//                    ostreamLock(std::cout) << "*share " << s << " bit " << i << " word " << j << std::endl;
+//                }
+//            }
+//        }
+//    }
+//}
 
 i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, u64 valMask = ~0ull)
 {

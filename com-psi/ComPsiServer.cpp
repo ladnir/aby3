@@ -46,7 +46,7 @@ namespace osuCrypto
         mEnc.localBinMatrix(mRt.mComm, t.mKeys, ret.mKeys);
 
         return ret;
-    } 
+    }
 
     SharedTable ComPsiServer::remoteInput(u64 partyIdx, u64 numRows)
     {
@@ -96,8 +96,11 @@ namespace osuCrypto
                 temp.resize2(shareCount, blockSize);
                 for (u64 k = 0; k < shareCount; ++k)
                 {
-                    temp.mShares[0].row(k) = oprfRoundKey.mShares[0].row(0);
-                    temp.mShares[1].row(k) = oprfRoundKey.mShares[1].row(0);
+                    for (u64 l = 0; l < temp.mShares[0].cols(); ++l)
+                    {
+                        temp.mShares[0](k, l) = oprfRoundKey.mShares[0](0, l);
+                        temp.mShares[1](k, l) = oprfRoundKey.mShares[1](0, l);
+                    }
                 }
 
                 binEvals[i].setInput(j + 1, temp);

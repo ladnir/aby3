@@ -3,7 +3,7 @@
 //#include <cryptoTools/Common/Matrix.h>
 #include <Eigen/Dense>
 #include <cryptoTools/Network/Channel.h>
-#include <cryptoTools/Common/MatrixView.h>
+#include <cryptoTools/Common/Matrix.h>
 
 namespace aby3
 {
@@ -19,33 +19,28 @@ namespace aby3
 
         namespace details
         {
+
+            bool areEqualImpl(
+                const std::array<oc::MatrixView<u8>, 2>& a,
+                const std::array<oc::MatrixView<u8>, 2>& b,
+                u64 bitCount);
+
             template<typename T>
             bool areEqual(
-                const std::array<eMatrix<T>, 2>& a,
-                const std::array<eMatrix<T>, 2>& b,
+                const std::array<oc::Matrix<T>, 2>& a,
+                const std::array<oc::Matrix<T>, 2>& b,
                 u64 bitCount)
             {
-                if (bitCount % 64)
-                {
-                    auto last = a[0].cols() - 1;
-                    auto mask = (1ull << bitCount) - 1;
-                    for (u64 i = 0; i < a[0].rows(); ++i)
-                    {
-                        for (u64 j = 0; j < last; ++j)
-                        {
-                            if (a[0](i, j) ^ b[0](i, j) |
-                                a[1](i, j) ^ b[1](i, j))
-                                return false;
-                        }
-                        if ((a[0](i, last) ^ b[0](i, last) |
-                            a[1](i, last) ^ b[1](i, last)) &
-                            mask)
-                            return false;
-                    }
-                    return true;
-                }
+                std::array<oc::MatrixView<u8>, 2> aa;
+                std::array<oc::MatrixView<u8>, 2> bb;
 
-                return a == b;
+                static_assert(std::is_pod<T>::value, "");
+                aa[0] = oc::MatrixView<u8>((u8*)a[0].data(), a[0].rows(), a[0].cols() * sizeof(T));
+                aa[1] = oc::MatrixView<u8>((u8*)a[1].data(), a[1].rows(), a[1].cols() * sizeof(T));
+                bb[0] = oc::MatrixView<u8>((u8*)b[0].data(), b[0].rows(), b[0].cols() * sizeof(T));
+                bb[1] = oc::MatrixView<u8>((u8*)b[1].data(), b[1].rows(), b[1].cols() * sizeof(T));
+
+                return areEqualImpl(aa, bb, bitCount);
             }
 
             void trimImpl(oc::MatrixView<u8> a, u64 bits);
@@ -183,7 +178,7 @@ namespace aby3
 
         struct sbMatrix
         {
-            std::array<eMatrix<i64>, 2> mShares;
+            std::array<oc::Matrix<i64>, 2> mShares;
             u64 mBitCount = 0;
             //struct ConstRow { const si64Matrix& mMtx; const u64 mIdx; };
             //struct Row { si64Matrix& mMtx; const u64 mIdx; const Row& operator=(const Row& row); const ConstRow& operator=(const ConstRow& row); };
@@ -227,8 +222,7 @@ namespace aby3
             {
                 for (auto i = 0; i < mShares.size(); ++i)
                 {
-                    oc::MatrixView<i64>s(mShares[i].data(), mShares[i].rows(), mShares[i].cols());
-                    details::trim(s, bitCount());
+                    details::trim(mShares[i], bitCount());
                 }
             }
         };
@@ -244,7 +238,7 @@ namespace aby3
             static_assert(std::is_pod<T>::value, "must be pod");
             u64 mShareCount;
 
-            std::array<eMatrix<T>, 2> mShares;
+            std::array<oc::Matrix<T>, 2> mShares;
 
             sPackedBinBase() = default;
             sPackedBinBase(u64 shareCount, u64 bitCount)

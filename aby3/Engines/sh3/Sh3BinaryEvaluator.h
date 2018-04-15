@@ -51,9 +51,9 @@ namespace aby3
         oc::BetaGate* mGateIter;
 		u64 mLevel;
 		std::vector<u32> mRecvLocs;
-        std::vector<i64> mRecvData;
+        std::vector<u8> mRecvData;
         std::future<void> mRecvFutr;
-        Sh3::sPackedBin mMem;
+        Sh3::sPackedBin128 mMem;
         //std::array<std::vector<block>, 2>  mZeroShares;
         
         void setCir(oc::BetaCircuit* cir, u64 width);
@@ -89,7 +89,7 @@ namespace aby3
         }
 
 
-        std::array<i64*, 2> getShares();
+        std::array<block*, 2> getShares();
         Sh3ShareGen mShareGen;
         //std::array<oc::PRNG, 2> mGens;
 	};
