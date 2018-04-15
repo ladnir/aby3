@@ -102,7 +102,7 @@ using namespace Sh3;
 //    }
 //}
 
-i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, u64 valMask = ~0ull)
+i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, bool debug, u64 valMask = ~0ull)
 {
 
     IOService ios;
@@ -153,7 +153,9 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
 
         Sh3Encryptor enc;
         Sh3BinaryEvaluator eval, eval2;
-        eval.enableDebug(i, debugComm[i].mPrev, debugComm[i].mNext);
+
+        if(debug)
+            eval.enableDebug(i, debugComm[i].mPrev, debugComm[i].mNext);
 
         enc.init(i, toBlock(i), toBlock(i + 1));
 
@@ -216,7 +218,9 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
         Sh3Encryptor enc;
         enc.init(i, toBlock(i), toBlock((i + 1) % 3));
         Sh3BinaryEvaluator eval, eval2;
-        eval.enableDebug(i, debugComm[i].mPrev, debugComm[i].mNext);
+
+        if(debug)
+            eval.enableDebug(i, debugComm[i].mPrev, debugComm[i].mNext);
 
         auto task = rt.noDependencies();
         // queue up the operations
@@ -279,7 +283,8 @@ void Sh3_BinaryEngine_and_test()
         auto cir = lib.int_int_bitwiseAnd(size, size, size);
         cir->levelByAndDepth();
 
-        Sh3_BinaryEngine_test(cir, [](i64 a, i64 b) {return a & b; });
+        Sh3_BinaryEngine_test(cir, [](i64 a, i64 b) {return a & b; }, true);
+        Sh3_BinaryEngine_test(cir, [](i64 a, i64 b) {return a & b; }, true);
     }
 
     // na_and
@@ -308,7 +313,7 @@ void Sh3_BinaryEngine_and_test()
 
         Sh3_BinaryEngine_test(cd, [](i64 a, i64 b) {
             return ~a & b;
-        });
+        }, false);
 
     }
 
@@ -322,7 +327,8 @@ void Sh3_BinaryEngine_add_test()
     u64 size = 64, width = 1;
     auto cir = lib.int_int_add(size, size, size, BetaLibrary::Optimized::Depth);
 
-    Sh3_BinaryEngine_test(cir, [](i64 a, i64 b) {return a + b; });
+    Sh3_BinaryEngine_test(cir, [](i64 a, i64 b) {return a + b; }, true);
+    Sh3_BinaryEngine_test(cir, [](i64 a, i64 b) {return a + b; }, false);
 
 }
 
@@ -333,5 +339,6 @@ void Sh3_BinaryEngine_add_msb_test()
     u64 size = 64, width = 1;
     auto cir = lib.int_int_add_msb(size);
 
-    Sh3_BinaryEngine_test(cir, [size](i64 a, i64 b) {return ((a + b) >> (size - 1)) & 1; });
+    Sh3_BinaryEngine_test(cir, [size](i64 a, i64 b) {return ((a + b) >> (size - 1)) & 1; }, true);
+    Sh3_BinaryEngine_test(cir, [size](i64 a, i64 b) {return ((a + b) >> (size - 1)) & 1; }, false);
 }

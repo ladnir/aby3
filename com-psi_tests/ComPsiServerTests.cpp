@@ -21,7 +21,7 @@ void ComPsi_computeKeys_test()
     srvs[1].init(1, s10, s12);
     srvs[2].init(2, s21, s20);
 
-    auto size = 1 << 16;
+    auto size = 1 << 18;
     Table a;
     a.mKeys.resize(size, srvs[0].mKeyBitCount / 64);
 

@@ -241,16 +241,17 @@ namespace aby3
             std::array<oc::Matrix<T>, 2> mShares;
 
             sPackedBinBase() = default;
-            sPackedBinBase(u64 shareCount, u64 bitCount)
+            sPackedBinBase(u64 shareCount, u64 bitCount, u64 wordMultiple = 1)
             {
-                resize(shareCount, bitCount);
+                resize(shareCount, bitCount, wordMultiple);
             }
 
-            void resize(u64 shareCount, u64 bitCount)
+            void resize(u64 shareCount, u64 bitCount, u64 wordMultiple = 1)
             {
                 mShareCount = shareCount;
                 auto bitsPerWord = 8 * sizeof(T);
                 auto wordCount = (shareCount + bitsPerWord - 1) / bitsPerWord;
+                wordCount = oc::roundUpTo(wordCount, wordMultiple);
                 mShares[0].resize(bitCount, wordCount);
                 mShares[1].resize(bitCount, wordCount);
             }
