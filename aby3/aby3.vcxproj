@@ -19,6 +19,7 @@
     <ClCompile Include="Engines\sh3\Sh3Converter.cpp" />
     <ClCompile Include="Engines\sh3\Sh3Evaluator.cpp" />
     <ClCompile Include="Engines\sh3\Sh3Runtime.cpp" />
+    <ClCompile Include="Engines\sh3\Sh3Types.cpp" />
     <ClCompile Include="OT\SharedOT.cpp" />
     <ClCompile Include="Circuit\BetaCircuit.cpp" />
     <ClCompile Include="Circuit\BetaLibrary.cpp" />
@@ -37,7 +38,7 @@
     <ClInclude Include="Engines\sh3\Sh3Converter.h" />
     <ClInclude Include="Engines\sh3\Sh3Evaluator.h" />
     <ClInclude Include="Engines\sh3\Sh3ShareGen.h" />
-    <ClInclude Include="Engines\sh3\Sh3Defines.h" />
+    <ClInclude Include="Engines\sh3\Sh3Types.h" />
     <ClInclude Include="Engines\sh3\Sh3Runtime.h" />
     <ClInclude Include="OT\SharedOT.h" />
     <ClInclude Include="Circuit\BetaCircuit.h" />

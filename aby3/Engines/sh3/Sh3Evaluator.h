@@ -1,5 +1,5 @@
 #pragma once
-#include "Sh3Defines.h"
+#include "Sh3Types.h"
 #include "Sh3ShareGen.h"
 #include "Sh3Runtime.h"
 

@@ -251,3 +251,74 @@ void Sh3_convert_b64Matrix_PackedBin_test()
 
 
 }
+
+
+void Sh3_trim_test()
+{
+
+    auto trials = 100;
+    auto mod = 256;
+
+    for (u64 t = 0; t < trials; ++t)
+    {
+        PRNG prng(ZeroBlock);
+        auto shares = prng.get<u64>() % mod + 1;
+        auto bits = prng.get<u64>() % mod + 1;
+
+        Sh3::sbMatrix mtx(shares, bits), mtxDest;
+        Sh3::sPackedBin pack(shares, bits), packDest;
+
+        memset(mtx.mShares[0].data(), ~0, mtx.mShares[0].size() * sizeof(i64));
+        memset(mtx.mShares[1].data(), ~0, mtx.mShares[1].size() * sizeof(i64));
+        memset(pack.mShares[0].data(), ~0, pack.mShares[0].size() * sizeof(i64));
+        memset(pack.mShares[1].data(), ~0, pack.mShares[1].size() * sizeof(i64));
+
+        mtx.trim();
+        pack.trim();
+
+        auto end = oc::roundUpTo(shares, 64);
+        for (u64 i = 0; i < shares; ++i)
+        {
+            BitIterator iter0((u8*)pack.mShares[0].row(i).data(), 0);
+            BitIterator iter1((u8*)pack.mShares[1].row(i).data(), 0);
+            
+            if(false)
+            {
+                std::cout << '\n';
+                auto iter = iter0;
+                for (u64 j = 0; j < end; ++j)
+                {
+                    if (j % 8 == 0)
+                        std::cout << ' ';
+                    if (j == shares)
+                        std::cout << " - ";
+                    std::cout << *iter;
+
+                    ++iter;
+                }
+            }
+
+            for (u64 j = 0; j < end; ++j)
+            {
+                auto exp = j < shares;
+                if(*iter0 != exp)
+                {
+                    std::cout <<"\n " << std::string(j, ' ') << '^' << std::endl;;
+                    pack.trim();
+                    throw std::runtime_error(LOCATION);
+                }
+                if (*iter1 != exp) 
+                {
+                    pack.trim();
+                    throw std::runtime_error(LOCATION);
+                }
+
+                ++iter0;
+                ++iter1;
+            }
+
+        }
+    }
+
+
+}

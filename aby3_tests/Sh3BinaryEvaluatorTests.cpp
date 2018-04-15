@@ -317,6 +317,7 @@ void Sh3_BinaryEngine_and_test()
 
 void Sh3_BinaryEngine_add_test()
 {
+
     BetaLibrary lib;
     u64 size = 64, width = 1;
     auto cir = lib.int_int_add(size, size, size, BetaLibrary::Optimized::Depth);

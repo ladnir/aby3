@@ -11,9 +11,9 @@ namespace aby3
 
     void Sh3BinaryEvaluator::setCir(BetaCircuit * cir, u64 width)
     {
-        
 
-        if (cir->mLevelCounts.size() == 0) 
+
+        if (cir->mLevelCounts.size() == 0)
             cir->levelByAndDepth();
 
         //if (cir->mInputs.size() != 2) throw std::runtime_error(LOCATION);
@@ -173,12 +173,33 @@ namespace aby3
             Sh3Converter convt;
             Sh3::sPackedBin pack;
             convt.toPackedBin(in, pack);
+            pack.trim();
+            mMem.trim();
             for (u64 i = 0; i < inWires.size(); ++i)
             {
-                if (pack.mShares[0].row(i) != mMem.mShares[0].row(inWires[i]))
-                    throw std::runtime_error("");
-                if (pack.mShares[1].row(i) != mMem.mShares[1].row(inWires[i]))
-                    throw std::runtime_error("");
+                for (u64 j = 0; j < 2; ++j)
+                {
+
+                    if (pack.mShares[j].row(i) != mMem.mShares[j].row(inWires[i]))
+                    {
+
+                        BitVector a((u8*)pack.mShares[j].row(i).data(), pack.shareCount());
+                        BitVector b((u8*)mMem.mShares[j].row(inWires[i]).data(), mMem.shareCount());
+
+                        auto leftover = ((pack.shareCount() + 63) / 64) * 64 - pack.shareCount();
+                        BitVector aa, bb;
+
+                        aa.append((u8*)pack.mShares[j].row(i).data(), leftover, pack.shareCount());
+                        bb.append((u8*)mMem.mShares[j].row(inWires[i]).data(), leftover, pack.shareCount());
+                        ostreamLock(std::cout)
+                            << j << std::endl << std::hex
+                            << pack.mShares[j].row(i) << std::endl
+                            << mMem.mShares[j].row(inWires[i]) << std::endl
+                            << a << " " << aa << std::endl
+                            << b << " " << bb << std::endl;
+                        throw std::runtime_error("");
+                    }
+                }
             }
 
             for (u64 r = 0; r < mPlainWires_DEBUG.size(); ++r)
@@ -485,103 +506,96 @@ namespace aby3
                 auto in0 = gate.mInput[0] * simdWidth;
                 auto in1 = gate.mInput[1] * simdWidth;
                 auto out = gate.mOutput * simdWidth;
+                auto s0_Out = &shares[0](out);
+                auto s1_Out = &shares[1](out);
+                auto s0_in0 = &shares[0](in0);
+                auto s0_in1 = &shares[0](in1);
+                auto s1_in0 = &shares[1](in0);
+                auto s1_in1 = &shares[1](in1);
 
-                mShareGen.refillBuffer();
-                block* zz0 = mShareGen.mShareBuff[0].data();
-                block* zz1 = mShareGen.mShareBuff[1].data();
-                i64* z0 = (i64*)(zz0);
-                i64* z1 = (i64*)(zz1);
+                std::array<i64*, 2> z{ nullptr, nullptr };
 
-#ifdef BINARY_ENGINE_DEBUG
-                if (debug)
-                {
-                    memset(mShareGen.mShareBuff[0].data(), 0, mShareGen.mShareBuff[0].size() * sizeof(block));
-                    memset(mShareGen.mShareBuff[1].data(), 0, mShareGen.mShareBuff[0].size() * sizeof(block));
-                }
-#endif
 
                 switch (gate.mType)
                 {
                 case GateType::Xor:
                     for (u64 k = 0; k < simdWidth; ++k)
                     {
-                        shares[0](out) = shares[0](in0) ^ shares[0](in1);
-                        shares[1](out) = shares[1](in0) ^ shares[1](in1);
-
-                        ++in0;
-                        ++in1;
-                        ++out;
+                        s0_Out[k] = s0_in0[k] ^ s0_in1[k];
+                        s1_Out[k] = s1_in0[k] ^ s1_in1[k];
                     }
                     break;
                 case GateType::And:
                     *updateIter++ = out;
+                    z = getShares();
                     for (u64 k = 0; k < simdWidth; ++k)
                     {
 
-                        *sendIter = shares[0](out)
-                            = (shares[0](in0) & shares[0](in1))
-                            ^ (shares[0](in0) & shares[1](in1))
-                            ^ (shares[1](in0) & shares[0](in1))
-                            ^ *z0
-                            ^ *z1;
+                        *sendIter = s0_Out[k]
+                            = (s0_in0[k] & s0_in1[k])
+                            ^ (s0_in0[k] & s1_in1[k])
+                            ^ (s1_in0[k] & s0_in1[k])
+                            ^ *z[0]
+                            ^ *z[1];
 
 #ifndef NDEBUG
-                        if (shares[1](in0) == ccWord || shares[1](in1) == ccWord)
+                        if (s1_in0[k] == ccWord || s1_in1[k] == ccWord)
                             throw std::runtime_error(LOCATION);
-                        shares[1](out) = ccWord;
+                        s1_Out[k] = ccWord;
 #endif
-                        if (z0 >= (i64*)(mShareGen.mShareBuff[0].data() + mShareGen.mShareBuff[0].size()))
+                        if (z[0] >= (i64*)(mShareGen.mShareBuff[0].data() + mShareGen.mShareBuff[0].size()))
                             throw std::runtime_error(LOCATION);
-                        if (z1 >= (i64*)(mShareGen.mShareBuff[1].data() + mShareGen.mShareBuff[1].size()))
+                        if (z[1] >= (i64*)(mShareGen.mShareBuff[1].data() + mShareGen.mShareBuff[1].size()))
                             throw std::runtime_error(LOCATION);
                         ++sendIter;
                         ++in0;
                         ++in1;
                         ++out;
-                        ++z0;
-                        ++z1;
+                        ++z[0];
+                        ++z[1];
                     }
                     break;
                 case GateType::Nor:
                     *updateIter++ = out;
+                    z = getShares();
                     for (u64 k = 0; k < simdWidth; ++k)
                     {
-                        auto mem00 = shares[0](in0) ^ -1;
-                        auto mem01 = shares[0](in1) ^ -1;
-                        auto mem10 = shares[1](in0) ^ -1;
-                        auto mem11 = shares[1](in1) ^ -1;
+                        auto mem00 = s0_in0[k] ^ -1;
+                        auto mem01 = s0_in1[k] ^ -1;
+                        auto mem10 = s1_in0[k] ^ -1;
+                        auto mem11 = s1_in1[k] ^ -1;
 
                         TODO("add the randomization back");
-                        *sendIter = shares[0](out)
+                        *sendIter = s0_Out[k]
                             = (mem00 & mem01)
                             ^ (mem00 & mem11)
                             ^ (mem10 & mem01)
-                            ^ *z0
-                            ^ *z1;
+                            ^ *z[0]
+                            ^ *z[1];
 
 #ifndef NDEBUG
-                        if (shares[1](in0) == ccWord || shares[1](in1) == ccWord)
+                        if (s1_in0[k] == ccWord || s1_in1[k] == ccWord)
                             throw std::runtime_error(LOCATION);
-                        shares[1](out) = ccWord;
+                        s1_Out[k] = ccWord;
 #endif
-                        if (z0 >= (i64*)(mShareGen.mShareBuff[0].data() + mShareGen.mShareBuff[0].size()))
+                        if (z[0] >= (i64*)(mShareGen.mShareBuff[0].data() + mShareGen.mShareBuff[0].size()))
                             throw std::runtime_error(LOCATION);
-                        if (z1 >= (i64*)(mShareGen.mShareBuff[1].data() + mShareGen.mShareBuff[1].size()))
+                        if (z[1] >= (i64*)(mShareGen.mShareBuff[1].data() + mShareGen.mShareBuff[1].size()))
                             throw std::runtime_error(LOCATION);
 
                         ++sendIter;
                         ++in0;
                         ++in1;
                         ++out;
-                        ++z0;
-                        ++z1;
+                        ++z[0];
+                        ++z[1];
                     }
                     break;
                 case GateType::Nxor:
                     for (u64 k = 0; k < simdWidth; ++k)
                     {
-                        shares[0](out) = ~(shares[0](in0) ^ shares[0](in1));
-                        shares[1](out) = ~(shares[1](in0) ^ shares[1](in1));
+                        s0_Out[k] = ~(s0_in0[k] ^ s0_in1[k]);
+                        s1_Out[k] = ~(s1_in0[k] ^ s1_in1[k]);
 
                         ++in0;
                         ++in1;
@@ -589,15 +603,15 @@ namespace aby3
                     }
                     break;
                 case GateType::a:
-                    //memcpy(&shares[0](out), &shares[0](in0), simdWidth * sizeof(Word));
-                    //memcpy(&shares[1](out), &shares[1](in0), simdWidth * sizeof(Word));
+                    //memcpy(&s0_Out[k], &s0_in0[k], simdWidth * sizeof(Word));
+                    //memcpy(&s1_Out[k], &s1_in0[k], simdWidth * sizeof(Word));
                     for (u64 k = 0; k < simdWidth; ++k)
                     {
-                        if (shares[1](in0) == ccWord)
+                        if (s1_in0[k] == ccWord)
                             throw std::runtime_error(LOCATION);
 
-                        shares[0](out) = shares[0](in0);
-                        shares[1](out) = shares[1](in0);
+                        s0_Out[k] = s0_in0[k];
+                        s1_Out[k] = s1_in0[k];
 
                         ++in0;
                         ++in1;
@@ -605,34 +619,36 @@ namespace aby3
                     }
                     break;
                 case GateType::na_And:
+                    z = getShares();
+
                     *updateIter++ = out;
                     for (u64 k = 0; k < simdWidth; ++k)
                     {
 
                         TODO("add the randomization back");
-                        *sendIter = shares[0](out)
-                            = ((~shares[0](in0)) & shares[0](in1))
-                            ^ ((~shares[0](in0)) & shares[1](in1))
-                            ^ ((~shares[1](in0)) & shares[0](in1))
-                            ^ *z0
-                            ^ *z1;
+                        *sendIter = s0_Out[k]
+                            = ((~s0_in0[k]) & s0_in1[k])
+                            ^ ((~s0_in0[k]) & s1_in1[k])
+                            ^ ((~s1_in0[k]) & s0_in1[k])
+                            ^ *z[0]
+                            ^ *z[1];
 
 #ifndef NDEBUG
-                        if (shares[1](in0) == ccWord || shares[1](in1) == ccWord)
+                        if (s1_in0[k] == ccWord || s1_in1[k] == ccWord)
                             throw std::runtime_error(LOCATION);
-                        shares[1](out) = ccWord;
+                        s1_Out[k] = ccWord;
 #endif
-                        if (z0 >= (i64*)(mShareGen.mShareBuff[0].data() + mShareGen.mShareBuff[0].size()))
+                        if (z[0] >= (i64*)(mShareGen.mShareBuff[0].data() + mShareGen.mShareBuff[0].size()))
                             throw std::runtime_error(LOCATION);
-                        if (z1 >= (i64*)(mShareGen.mShareBuff[1].data() + mShareGen.mShareBuff[1].size()))
+                        if (z[1] >= (i64*)(mShareGen.mShareBuff[1].data() + mShareGen.mShareBuff[1].size()))
                             throw std::runtime_error(LOCATION);
 
                         ++sendIter;
                         ++in0;
                         ++in1;
                         ++out;
-                        ++z0;
-                        ++z1;
+                        ++z[0];
+                        ++z[1];
                     }
                     break;
                 case GateType::Zero:
@@ -656,6 +672,13 @@ namespace aby3
 #ifdef BINARY_ENGINE_DEBUG
                 if (debug)
                 {
+
+                    if (z[0] && z[0] != (i64*)(mShareGen.mShareBuff[0].data() + mShareGen.mShareBuff[0].size()))
+                        throw std::runtime_error(LOCATION);
+                    if (z[1] && z[1] != (i64*)(mShareGen.mShareBuff[1].data() + mShareGen.mShareBuff[1].size()))
+                        throw std::runtime_error(LOCATION);
+
+
                     auto gIn0 = gate.mInput[0];
                     auto gIn1 = gate.mInput[1];
                     auto gOut = gate.mOutput;
@@ -664,8 +687,8 @@ namespace aby3
                     in1 = gIn1 * simdWidth;
                     out = gOut * simdWidth;
 
-                    //mDebugNext.asyncSendCopy(&shares[0](out), simdWidth);
-                    //mDebugPrev.asyncSendCopy(&shares[0](out), simdWidth);
+                    //mDebugNext.asyncSendCopy(&s0_Out[k], simdWidth);
+                    //mDebugPrev.asyncSendCopy(&s0_Out[k], simdWidth);
                     //
                     //std::vector<i64> s0(simdWidth), s1(simdWidth);
                     //mDebugPrev.recv(s0);
@@ -925,6 +948,23 @@ namespace aby3
             }
 #endif
         }
+    }
+
+    std::array<i64*, 2> Sh3BinaryEvaluator::getShares()
+    {
+
+        mShareGen.refillBuffer();
+        i64* z0 = (i64*)(mShareGen.mShareBuff[0].data());
+        i64* z1 = (i64*)(mShareGen.mShareBuff[1].data());
+
+#ifdef BINARY_ENGINE_DEBUG
+        if (mDebug)
+        {
+            memset(mShareGen.mShareBuff[0].data(), 0, mShareGen.mShareBuff[0].size() * sizeof(block));
+            memset(mShareGen.mShareBuff[1].data(), 0, mShareGen.mShareBuff[0].size() * sizeof(block));
+        }
+#endif
+        return { z0, z1 };
     }
 
 

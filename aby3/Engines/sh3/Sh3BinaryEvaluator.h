@@ -1,5 +1,5 @@
 #pragma once
-#include "Sh3Defines.h"
+#include "Sh3Types.h"
 
 #include "aby3/Circuit/BetaCircuit.h"
 #include "Sh3Runtime.h"
@@ -88,6 +88,8 @@ namespace aby3
             return b;
         }
 
+
+        std::array<i64*, 2> getShares();
         Sh3ShareGen mShareGen;
         //std::array<oc::PRNG, 2> mGens;
 	};

@@ -25,7 +25,7 @@ namespace osuCrypto
 	{
 		BetaGate() = default;
 		BetaGate(const BetaWire& in0, const BetaWire& in1, const GateType& gt, const BetaWire& out)
-			: mInput({in0, in1})
+			: mInput({{in0, in1}})
 			, mOutput(out)
 			, mType(gt)
 			, mAAlpha(gt == GateType::Nor || gt == GateType::na_And || gt == GateType::nb_Or || gt == GateType::Or)

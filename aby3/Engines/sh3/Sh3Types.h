@@ -3,12 +3,13 @@
 //#include <cryptoTools/Common/Matrix.h>
 #include <Eigen/Dense>
 #include <cryptoTools/Network/Channel.h>
+#include <cryptoTools/Common/MatrixView.h>
 
 namespace aby3
 {
     namespace Sh3
     {
-        struct CommPkg{
+        struct CommPkg {
             oc::Channel mPrev, mNext;
         };
 
@@ -18,9 +19,10 @@ namespace aby3
 
         namespace details
         {
-            inline bool areEqual(
-                const std::array<eMatrix<i64>, 2>& a,
-                const std::array<eMatrix<i64>, 2>& b,
+            template<typename T>
+            bool areEqual(
+                const std::array<eMatrix<T>, 2>& a,
+                const std::array<eMatrix<T>, 2>& b,
                 u64 bitCount)
             {
                 if (bitCount % 64)
@@ -46,19 +48,13 @@ namespace aby3
                 return a == b;
             }
 
-            inline void trim(std::array<eMatrix<i64>, 2>& a, i64 bits)
+            void trimImpl(oc::MatrixView<u8> a, u64 bits);
+            template<typename T>
+            void trim(oc::MatrixView<T> a, i64 bits)
             {
-                bits = bits % 64;
-                if (bits)
-                {
-                    auto mtxLast = a[0].cols() - 1;
-                    auto mtxMask = (1ull << bits) - 1;
-                    for (u64 i = 0; i < a[0].rows(); ++i)
-                    {
-                        a[0](i, mtxLast) &= mtxMask;
-                        a[1](i, mtxLast) &= mtxMask;
-                    }
-                }
+                static_assert(std::is_pod<T>::value, "");
+                oc::MatrixView<u8> aa((u8*)a.data(), a.rows(), a.cols() * sizeof(T));
+                trimImpl(aa, bits);
             }
         }
         struct si64;
@@ -229,7 +225,11 @@ namespace aby3
 
             void trim()
             {
-                details::trim(mShares, bitCount());
+                for (auto i = 0; i < mShares.size(); ++i)
+                {
+                    oc::MatrixView<i64>s(mShares[i].data(), mShares[i].rows(), mShares[i].cols());
+                    details::trim(s, bitCount());
+                }
             }
         };
 
@@ -238,14 +238,16 @@ namespace aby3
         // The 'ith bit of all the shares are packed together into the i'th row. This allows 
         // efficient SIMD operations. E.g. applying bit[0] = bit[1] ^ bit[2] to all the shares
         // can be performed to 64 shares using one instruction.
-        struct sPackedBin
+        template<typename T = i64>
+        struct sPackedBinBase
         {
+            static_assert(std::is_pod<T>::value, "must be pod");
             u64 mShareCount;
 
-            std::array<eMatrix<i64>, 2> mShares;
+            std::array<eMatrix<T>, 2> mShares;
 
-            sPackedBin() = default;
-            sPackedBin(u64 shareCount, u64 bitCount)
+            sPackedBinBase() = default;
+            sPackedBinBase(u64 shareCount, u64 bitCount)
             {
                 resize(shareCount, bitCount);
             }
@@ -253,7 +255,7 @@ namespace aby3
             void resize(u64 shareCount, u64 bitCount)
             {
                 mShareCount = shareCount;
-                auto bitsPerWord = 8 * sizeof(i64);
+                auto bitsPerWord = 8 * sizeof(T);
                 auto wordCount = (shareCount + bitsPerWord - 1) / bitsPerWord;
                 mShares[0].resize(bitCount, wordCount);
                 mShares[1].resize(bitCount, wordCount);
@@ -270,12 +272,12 @@ namespace aby3
             // the number of i64s in each row = divCiel(mShareCount, 8 * sizeof(i64))
             u64 simdWidth() const { return mShares[0].cols(); }
 
-            sPackedBin operator^(const sPackedBin& rhs)
+            sPackedBinBase<T> operator^(const sPackedBinBase<T>& rhs)
             {
                 if (shareCount() != rhs.shareCount() || bitCount() != rhs.bitCount())
                     throw std::runtime_error(LOCATION);
 
-                sPackedBin r(shareCount(), bitCount());
+                sPackedBinBase<T> r(shareCount(), bitCount());
                 for (u64 i = 0; i < 2; ++i)
                 {
                     for (u64 j = 0; j < mShares[0].size(); ++j)
@@ -286,12 +288,12 @@ namespace aby3
                 return r;
             }
 
-            bool operator!=(const sPackedBin& b) const
+            bool operator!=(const sPackedBinBase<T>& b) const
             {
                 return !(*this == b);
             }
 
-            bool operator==(const sPackedBin& b) const
+            bool operator==(const sPackedBinBase<T>& b) const
             {
                 return (shareCount() == b.shareCount() &&
                     bitCount() == b.bitCount() &&
@@ -300,10 +302,17 @@ namespace aby3
 
             void trim()
             {
-                details::trim(mShares, bitCount());
+                for (auto i = 0; i < mShares.size(); ++i)
+                {
+                    oc::MatrixView<T>s(mShares[i].data(), mShares[i].rows(), mShares[i].cols());
+                    details::trim(s, shareCount());
+                }
             }
 
         };
+
+        using sPackedBin = sPackedBinBase<i64>;
+        using sPackedBin128 = sPackedBinBase<block>;
 
         template<typename T>
         inline const T& Ref<T>::operator=(const T & copy)

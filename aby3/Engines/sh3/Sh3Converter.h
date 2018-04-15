@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Sh3Defines.h"
+#include "Sh3Types.h"
 
 namespace aby3
 {
