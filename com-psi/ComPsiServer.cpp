@@ -14,18 +14,31 @@ namespace osuCrypto
         mPrng.SetSeed(ZeroBlock);
         mEnc.init(idx, toBlock(idx), toBlock((idx + 1) % 3));
 
-        std::string filename = "./lowMCCircuit_b" + ToString(sizeof(LowMC2<>::block)) + "_k" + ToString(sizeof(LowMC2<>::keyblock)) + ".bin";
+        const auto blockSize = 80;
+        const auto rounds = 13;
+        const auto sboxCount = 14;
+        const auto dataComplex = 30;
+        const auto keySize = 128;
+
+        //std::string filename = "./lowMCCircuit_b" + ToString(sizeof(LowMC2<>::block)) + "_k" + ToString(sizeof(LowMC2<>::keyblock)) + ".bin";
+        std::stringstream filename;
+        filename << "./lowMCCircuit"
+            << "_b" << blockSize 
+            << "_r" << rounds 
+            << "_d" << dataComplex 
+            << "_k" << keySize 
+            << ".bin";
 
         std::ifstream in;
-        in.open(filename, std::ios::in | std::ios::binary);
+        in.open(filename.str(), std::ios::in | std::ios::binary);
 
         if (in.is_open() == false)
         {
-            LowMC2<> cipher1(1);
+            LowMC2<sboxCount, blockSize, keySize, rounds> cipher1(1);
             cipher1.to_enc_circuit(mLowMCCir);
 
             std::ofstream out;
-            out.open(filename, std::ios::trunc | std::ios::out | std::ios::binary);
+            out.open(filename.str(), std::ios::trunc | std::ios::out | std::ios::binary);
             mLowMCCir.levelByAndDepth();
 
             mLowMCCir.writeBin(out);

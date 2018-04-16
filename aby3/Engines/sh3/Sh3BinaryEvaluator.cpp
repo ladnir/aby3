@@ -4,9 +4,45 @@
 #include <libOTe/Tools/Tools.h>
 #include <cryptoTools/Crypto/sha1.h>
 #include "Sh3Converter.h"
+#include <immintrin.h>
+
+
+//std::ostream& operator<<(std::ostream& out, const __m256i& block);
+//namespace osuCrypto
+//{
+//    using ::operator<<;
+//}
+
+inline bool eq(const __m256i& lhs, const __m256i& rhs)
+{
+    __m256i zero = _mm256_xor_si256(lhs, lhs);
+    __m256i neq = _mm256_xor_si256(lhs, rhs);
+    return memcmp(&zero, &neq, 32) == 0;
+}
+
+inline bool neq(const __m256i& lhs, const __m256i& rhs)
+{
+    return !eq(lhs, rhs);
+}
+
+#ifdef _MSC_VER
+
+inline __m256i operator^(const __m256i& lhs, const __m256i& rhs)
+{
+    return _mm256_xor_si256(lhs, rhs);
+}
+inline __m256i operator&(const __m256i& lhs, const __m256i& rhs)
+{
+    return _mm256_and_si256(lhs, rhs);
+}
+
+#endif
 
 namespace aby3
 {
+
+
+
     using namespace oc;
 
     void Sh3BinaryEvaluator::setCir(BetaCircuit * cir, u64 width)
@@ -73,7 +109,7 @@ namespace aby3
                     throw std::runtime_error(LOCATION);
 
                 char v = vals[*iter];
-                memset(shares.data() + simdWidth * inWires[j], v, simdWidth * sizeof(block));
+                memset(shares.data() + simdWidth * inWires[j], v, simdWidth * sizeof(block_type));
             }
         }
 
@@ -144,7 +180,7 @@ namespace aby3
             MatrixView<u8> memView(
                 (u8*)(shares.data() + simdWidth * inWires.front()),
                 (u8*)(shares.data() + simdWidth * (inWires.back() + 1)),
-                sizeof(block) * simdWidth);
+                sizeof(block_type) * simdWidth);
 
             if (memView.data() + memView.size() > (u8*)(shares.data() + shares.size()))
                 throw std::runtime_error(LOCATION);
@@ -464,8 +500,8 @@ namespace aby3
     void Sh3BinaryEvaluator::roundCallback(Sh3::CommPkg& comm, Sh3Task task)
     {
 
-        auto shareCountDiv8 = (mMem.shareCount() + 7) / 8;
-        auto simdWidth128 = mMem.simdWidth();
+        i32 shareCountDiv8 = (mMem.shareCount() + 7) / 8;
+        i32 simdWidth128 = mMem.simdWidth();
         //auto simdWidth1024 = (simdWidth128 + 7) / 8;
 
         if (mLevel > mCir->mLevelCounts.size())
@@ -484,7 +520,7 @@ namespace aby3
 
                 auto iter = mRecvData.begin();
 
-                for (u64 j = 0; j < mRecvLocs.size(); ++j)
+                for (i32 j = 0; j < mRecvLocs.size(); ++j)
                 {
                     auto out = mRecvLocs[j];
                     memcpy(&mMem.mShares[1](out), &*iter, shareCountDiv8);
@@ -512,17 +548,17 @@ namespace aby3
             mGateIter = mCir->mGates.data();
             auto seed0 = toBlock((task.getRuntime().mPartyIdx));
             auto seed1 = toBlock((task.getRuntime().mPartyIdx + 2) % 3);
-            mShareGen.init(seed0, seed1, simdWidth128);
+            mShareGen.init(seed0, seed1, simdWidth128 * sizeof(block_type) / sizeof(block));
         }
 
-        i64 ccWord;
-        memset(&ccWord, 0xCC, sizeof(i64));
+        block_type AllOneBlock;
+        memset(&AllOneBlock, 0xFF, sizeof(block_type));
 
         const bool debug = mDebug;
         auto& shares = mMem.mShares;
         //ostreamLock(std::cout) << "P" << mDebugPartyIdx << " l" << mLevel << " : " << hashState() << std::endl;
 
-        std::array<block, 8> t0, t1, t2;// , t3;
+        std::array<block_type, 8> t0, t1, t2;// , t3;
 
         if (mLevel < mCir->mLevelCounts.size())
         {
@@ -537,7 +573,7 @@ namespace aby3
             auto sendIter = sendBuff.begin();
 
 
-            for (u64 j = 0; j < gateCount; ++j, ++mGateIter)
+            for (i32 j = 0; j < gateCount; ++j, ++mGateIter)
             {
                 const auto& gate = *mGateIter;
                 const auto& type = gate.mType;
@@ -551,13 +587,13 @@ namespace aby3
                 auto s1_in0 = &shares[1](in0);
                 auto s1_in1 = &shares[1](in1);
 
-                std::array<block*, 2> z{ nullptr, nullptr };
+                std::array<block_type*, 2> z{ nullptr, nullptr };
 
 
                 switch (gate.mType)
                 {
                 case GateType::Xor:
-                    for (u64 k = 0; k < simdWidth128; k += 8)
+                    for (i32 k = 0; k < simdWidth128; k += 8)
                     {
                         s0_Out[k + 0] = s0_in0[k + 0] ^ s0_in1[k + 0];
                         s0_Out[k + 1] = s0_in0[k + 1] ^ s0_in1[k + 1];
@@ -581,7 +617,7 @@ namespace aby3
                 case GateType::And:
                     *updateIter++ = out;
                     z = getShares();
-                    for (u64 k = 0; k < simdWidth128; k += 8)
+                    for (i32 k = 0; k < simdWidth128; k += 8)
                     {
                         t0[0] = s0_in0[k + 0] & s0_in1[k + 0];
                         t0[1] = s0_in0[k + 1] & s0_in1[k + 1];
@@ -668,7 +704,7 @@ namespace aby3
                 case GateType::Nor:
                     *updateIter++ = out;
                     z = getShares();
-                    for (u64 k = 0; k < simdWidth128; k += 8)
+                    for (i32 k = 0; k < simdWidth128; k += 8)
                     {
                         // t0 = mem00
                         t0[0] = s0_in0[k + 0] ^ AllOneBlock;
@@ -803,7 +839,7 @@ namespace aby3
                     sendIter += shareCountDiv8;
                     break;
                 case GateType::Nxor:
-                    for (u64 k = 0; k < simdWidth128; ++k)
+                    for (i32 k = 0; k < simdWidth128; ++k)
                     {
                         s0_Out[k + 0] = s0_in0[k + 0] ^ s0_in1[k + 0];
                         s0_Out[k + 1] = s0_in0[k + 1] ^ s0_in1[k + 1];
@@ -844,7 +880,7 @@ namespace aby3
                     }
                     break;
                 case GateType::a:
-                    for (u64 k = 0; k < simdWidth128; ++k)
+                    for (i32 k = 0; k < simdWidth128; ++k)
                     {
 #ifndef NDEBUG
                         if (eq(s1_in0[k], CCBlock))
@@ -860,7 +896,7 @@ namespace aby3
                     z = getShares();
 
                     *updateIter++ = out;
-                    for (u64 k = 0; k < simdWidth128; ++k)
+                    for (i32 k = 0; k < simdWidth128; ++k)
                     {
                         TODO("vectorize");
                         s0_Out[k]
@@ -1045,10 +1081,12 @@ namespace aby3
         using Word = i64;
         if (outWires.size() != out.bitCount()) throw std::runtime_error(LOCATION);
         //auto outCols = roundUpTo(outWires.size(), 8);
-
+        
+        block_type AllOneBlock;
+        memset(&AllOneBlock, 0xFF, sizeof(block_type));
         auto simdWidth128 = mMem.simdWidth();
         //auto simdWidth64 = (mMem.shareCount() + 63) / 64;
-        Eigen::Matrix<block, Eigen::Dynamic, Eigen::Dynamic> temp;
+        Eigen::Matrix<block_type, Eigen::Dynamic, Eigen::Dynamic> temp;
         temp.resize(outWires.size(), simdWidth128);
 
         for (u64 j = 0; j < 2; ++j)
@@ -1063,7 +1101,7 @@ namespace aby3
                 auto md = mMem.mShares[j].data();
                 auto ms = mMem.mShares[j].size();
                 auto src = md + outWires[i] * simdWidth128;
-                auto size = simdWidth128 * sizeof(block);
+                auto size = simdWidth128 * sizeof(block_type);
 
                 if (src + simdWidth128 > md + ms)
                     throw std::runtime_error(LOCATION);
@@ -1115,7 +1153,7 @@ namespace aby3
                 }
 #endif
             }
-            MatrixView<u8> in((u8*)temp.data(), (u8*)(temp.data() + temp.size()), simdWidth128 * sizeof(block));
+            MatrixView<u8> in((u8*)temp.data(), (u8*)(temp.data() + temp.size()), simdWidth128 * sizeof(block_type));
             MatrixView<u8> oout((u8*)out.mShares[j].data(), (u8*)(out.mShares[j].data() + out.mShares[j].size()), sizeof(Word) * out.mShares[j].cols());
             //memset(oout.data(), 0, oout.size());
             //out.mShares[j].setZero();
@@ -1158,12 +1196,12 @@ namespace aby3
         }
     }
 
-    std::array<block*, 2> Sh3BinaryEvaluator::getShares()
+    std::array<Sh3BinaryEvaluator::block_type*, 2> Sh3BinaryEvaluator::getShares()
     {
 
         mShareGen.refillBuffer();
-        auto* z0 = mShareGen.mShareBuff[0].data();
-        auto* z1 = mShareGen.mShareBuff[1].data();
+        auto* z0 = (block_type*)mShareGen.mShareBuff[0].data();
+        auto* z1 = (block_type*)mShareGen.mShareBuff[1].data();
 
 #ifdef BINARY_ENGINE_DEBUG
         if (mDebug)

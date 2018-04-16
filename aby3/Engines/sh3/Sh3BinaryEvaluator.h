@@ -12,7 +12,7 @@ namespace aby3
 	class Sh3BinaryEvaluator
 	{
 	public:
-
+        using block_type = __m256i;
 #define BINARY_ENGINE_DEBUG
 #ifdef BINARY_ENGINE_DEBUG
     private:
@@ -55,7 +55,7 @@ namespace aby3
         std::array<std::vector<u8>, 2> mSendBuffs;
 
         std::future<void> mRecvFutr;
-        Sh3::sPackedBin128 mMem;
+        Sh3::sPackedBinBase<block_type> mMem;
         //std::array<std::vector<block>, 2>  mZeroShares;
         
         void setCir(oc::BetaCircuit* cir, u64 width);
@@ -91,7 +91,7 @@ namespace aby3
         }
 
 
-        std::array<block*, 2> getShares();
+        std::array<block_type*, 2> getShares();
         Sh3ShareGen mShareGen;
         //std::array<oc::PRNG, 2> mGens;
 	};

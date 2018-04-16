@@ -196,8 +196,8 @@ namespace aby3
             {
                 mBitCount = bitCount;
                 auto ySize = (bitCount + 63) / 64;
-                mShares[0].resize(xSize, ySize);
-                mShares[1].resize(xSize, ySize);
+                mShares[0].resize(xSize, ySize, oc::AllocType::Uninitialized);
+                mShares[1].resize(xSize, ySize, oc::AllocType::Uninitialized);
             }
 
 
@@ -252,8 +252,8 @@ namespace aby3
                 auto bitsPerWord = 8 * sizeof(T);
                 auto wordCount = (shareCount + bitsPerWord - 1) / bitsPerWord;
                 wordCount = oc::roundUpTo(wordCount, wordMultiple);
-                mShares[0].resize(bitCount, wordCount);
-                mShares[1].resize(bitCount, wordCount);
+                mShares[0].resize(bitCount, wordCount, oc::AllocType::Uninitialized);
+                mShares[1].resize(bitCount, wordCount, oc::AllocType::Uninitialized);
             }
 
             u64 size() const { return mShares[0].size(); }

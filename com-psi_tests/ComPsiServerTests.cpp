@@ -23,7 +23,7 @@ void ComPsi_computeKeys_test()
 
     auto size = 1 << 18;
     Table a;
-    a.mKeys.resize(size, srvs[0].mKeyBitCount / 64);
+    a.mKeys.resize(size, (srvs[0].mKeyBitCount+63) / 64);
 
     for (u64 i = 0; i < size; ++i)
     {

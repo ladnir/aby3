@@ -39,7 +39,7 @@ namespace osuCrypto
     class ComPsiServer
     {
     public:
-        u64 mIdx, mKeyBitCount = 256;
+        u64 mIdx, mKeyBitCount = 80;
         Channel mNext, mPrev;
         PRNG mPrng;
 

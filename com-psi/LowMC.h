@@ -430,9 +430,9 @@ namespace osuCrypto
                             // Repeat if matrix is not invertible
                         } while (rank_of_Matrix(mat) != blocksize);
 
-                        std::ofstream out;
-                        out.open(fileName, std::ios::out | std::ios::binary | std::ios::trunc);
-                        writeMatrix(out, mat);
+                        //std::ofstream out;
+                        //out.open(fileName, std::ios::out | std::ios::binary | std::ios::trunc);
+                        //writeMatrix(out, mat);
                     }
                     else
                     {
@@ -477,9 +477,9 @@ namespace osuCrypto
                             // Repeat if matrix is not of maximal rank
                         } while (rank_of_Matrix(mat) < std::min(blocksize, keysize));
 
-                        std::ofstream out;
-                        out.open(fileName, std::ios::out | std::ios::binary | std::ios::trunc);
-                        writeMatrix(out, mat);
+                        //std::ofstream out;
+                        //out.open(fileName, std::ios::out | std::ios::binary | std::ios::trunc);
+                        //writeMatrix(out, mat);
                     }
                     else
                     {
