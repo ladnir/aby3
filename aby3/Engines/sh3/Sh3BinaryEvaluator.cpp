@@ -65,7 +65,7 @@ namespace aby3
         for (u64 i = 0; i < 2; ++i)
         {
             auto& shares = mMem.mShares[i];
-            BitIterator iter((u8*)in.mShares[0].data(), 0);
+            BitIterator iter((u8*)in.mShares[i].data(), 0);
 
             for (u64 j = 0; j < inWires.size(); ++j, ++iter)
             {
@@ -79,11 +79,26 @@ namespace aby3
 
 
 #ifdef BINARY_ENGINE_DEBUG
-        throw std::runtime_error("");
+        //throw std::runtime_error("");
         if (mDebug)
         {
+            auto prevIdx = (mDebugPartyIdx + 2) % 3;
+            auto bv0 = BitVector((u8*)in.mShares[0][0].data(), inWires.size());
+            auto bv1 = BitVector((u8*)in.mShares[1][0].data(), inWires.size());
+
             for (u64 i = 0; i < inWires.size(); ++i)
             {
+                for (u64 r = 0; r < mPlainWires_DEBUG.size(); ++r)
+                {
+                    auto& m = mPlainWires_DEBUG[r];
+                    m[inWires[i]].mBits[mDebugPartyIdx] = bv0[i];
+                    m[inWires[i]].mBits[prevIdx] = bv1[i];
+                    m[inWires[i]].mIsSet = true;
+                    //if (inWires[i] < 10)
+                    //	ostreamLock(std::cout) << mPartyIdx << " w[" << inWires[i] << "] = "
+                    //	<< (int)m[inWires[i]].mBits[mPartyIdx] << std::endl;
+                }
+
                 validateWire(inWires[i]);
             }
         }
@@ -165,38 +180,38 @@ namespace aby3
 
         if (mDebug)
         {
-            Sh3Converter convt;
-            Sh3::sPackedBin pack;
-            convt.toPackedBin(in, pack);
-            pack.trim();
-            mMem.trim();
-            for (u64 i = 0; i < inWires.size(); ++i)
-            {
-                for (u64 j = 0; j < 2; ++j)
-                {
-                    auto pPtr = pack.mShares[j][i].data();
-                    auto mPtr = mMem.mShares[j][inWires[i]].data();
-                    if (memcmp(pPtr, mPtr, pack.mShares[j].cols() * sizeof(i64)))
-                    {
+            //Sh3Converter convt;
+            //Sh3::sPackedBin pack;
+            //convt.toPackedBin(in, pack);
+            //pack.trim();
+            //mMem.trim();
+            //for (u64 i = 0; i < inWires.size(); ++i)
+            //{
+            //    for (u64 j = 0; j < 2; ++j)
+            //    {
+            //        auto pPtr = pack.mShares[j][i].data();
+            //        auto mPtr = mMem.mShares[j][inWires[i]].data();
+            //        if (memcmp(pPtr, mPtr, pack.mShares[j].cols() * sizeof(i64)))
+            //        {
 
-                        BitVector a((u8*)pPtr, pack.shareCount());
-                        BitVector b((u8*)mPtr, mMem.shareCount());
+            //            BitVector a((u8*)pPtr, pack.shareCount());
+            //            BitVector b((u8*)mPtr, mMem.shareCount());
 
-                        auto leftover = ((pack.shareCount() + 63) / 64) * 64 - pack.shareCount();
-                        BitVector aa, bb;
+            //            auto leftover = ((pack.shareCount() + 63) / 64) * 64 - pack.shareCount();
+            //            BitVector aa, bb;
 
-                        aa.append((u8*)pPtr, leftover, pack.shareCount());
-                        bb.append((u8*)mPtr, leftover, pack.shareCount());
-                        ostreamLock(std::cout)
-                            << j << std::endl << std::hex
-                            //<< pack.mShares[j].row(i) << std::endl
-                            //<< mMem.mShares[j].row(inWires[i]) << std::endl
-                            << a << " " << aa << std::endl
-                            << b << " " << bb << std::endl;
-                        throw std::runtime_error("");
-                    }
-                }
-            }
+            //            aa.append((u8*)pPtr, leftover, pack.shareCount());
+            //            bb.append((u8*)mPtr, leftover, pack.shareCount());
+            //            ostreamLock(std::cout)
+            //                << j << std::endl << std::hex
+            //                //<< pack.mShares[j].row(i) << std::endl
+            //                //<< mMem.mShares[j].row(inWires[i]) << std::endl
+            //                << a << " " << aa << std::endl
+            //                << b << " " << bb << std::endl;
+            //            throw std::runtime_error("");
+            //        }
+            //    }
+            //}
 
             for (u64 r = 0; r < mPlainWires_DEBUG.size(); ++r)
             {
@@ -516,8 +531,10 @@ namespace aby3
 
             mRecvLocs.resize(andGateCount);
             auto updateIter = mRecvLocs.data();
-            std::vector<u8> mSendData(andGateCount * shareCountDiv8);
-            auto sendIter = mSendData.begin();
+            //std::vector<u8> mSendData(andGateCount * shareCountDiv8);
+            auto& sendBuff = mSendBuffs[mLevel & 1];
+            sendBuff.resize(andGateCount * shareCountDiv8);
+            auto sendIter = sendBuff.begin();
 
 
             for (u64 j = 0; j < gateCount; ++j, ++mGateIter)
@@ -911,7 +928,7 @@ namespace aby3
 
                         m[gOut].assign(m[gIn0], m[gIn1], gate.mType);
 
-                        if (bit0 != m[gOut].mBits[mDebugPartyIdx]) 
+                        if (bit0 != m[gOut].mBits[mDebugPartyIdx])
                         {
                             ostreamLock(std::cout)
                                 << "\n g" << gIdx << " act: _  exp: " << (int)m[gate.mOutput].val() << std::endl
@@ -926,13 +943,13 @@ namespace aby3
 #endif
             }
 
-            if (sendIter != mSendData.end()) throw std::runtime_error(LOCATION);
+            if (sendIter != sendBuff.end()) throw std::runtime_error(LOCATION);
 
-            mRecvData.resize(roundUpTo(mSendData.size(), 2));
+            mRecvData.resize(sendBuff.size());
 
-            if (mSendData.size())
+            if (sendBuff.size())
             {
-                comm.mNext.asyncSend(std::move(mSendData));
+                comm.mNext.asyncSend(sendBuff.data(), sendBuff.size());
 
                 mRecvFutr = comm.mPrev.asyncRecv(mRecvData);
             }

@@ -76,7 +76,7 @@ namespace osuCrypto
         auto blockSize = mLowMCCir.mInputs[0].size();
         auto rounds = mLowMCCir.mInputs.size() - 1;
 
-        aby3::Sh3::sbMatrix oprfRoundKey(1, blockSize), temp;
+        aby3::Sh3::sbMatrix oprfRoundKey(1, blockSize);// , temp;
         for (u64 i = 0; i < tables.size(); ++i)
         {
             //auto shareCount = tables[i]->mKeys.shareCount();
@@ -93,17 +93,17 @@ namespace osuCrypto
             for (u64 j = 0; j < rounds; ++j)
             {
                 mEnc.rand(oprfRoundKey);
-                temp.resize2(shareCount, blockSize);
-                for (u64 k = 0; k < shareCount; ++k)
-                {
-                    for (u64 l = 0; l < temp.mShares[0].cols(); ++l)
-                    {
-                        temp.mShares[0](k, l) = oprfRoundKey.mShares[0](0, l);
-                        temp.mShares[1](k, l) = oprfRoundKey.mShares[1](0, l);
-                    }
-                }
-
-                binEvals[i].setInput(j + 1, temp);
+                //temp.resize2(shareCount, blockSize);
+                //for (u64 k = 0; k < shareCount; ++k)
+                //{
+                //    for (u64 l = 0; l < temp.mShares[0].cols(); ++l)
+                //    {
+                //        temp.mShares[0](k, l) = oprfRoundKey.mShares[0](0, l);
+                //        temp.mShares[1](k, l) = oprfRoundKey.mShares[1](0, l);
+                //    }
+                //}
+                //binEvals[i].setInput(j + 1, temp);
+                binEvals[i].setReplicatedInput(j + 1, oprfRoundKey);
             }
 
 

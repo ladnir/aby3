@@ -52,6 +52,8 @@ namespace aby3
 		u64 mLevel;
 		std::vector<u32> mRecvLocs;
         std::vector<u8> mRecvData;
+        std::array<std::vector<u8>, 2> mSendBuffs;
+
         std::future<void> mRecvFutr;
         Sh3::sPackedBin128 mMem;
         //std::array<std::vector<block>, 2>  mZeroShares;
