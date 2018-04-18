@@ -131,80 +131,87 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
     debugComm[2] = { comms[2].mPrev.getSession().addChannel(), comms[2].mNext.getSession().addChannel() };
 
     cir->levelByAndDepth();
-    u64 width = 100;
+    u64 width = 261;
     bool failed = false;
-    bool manual = false;
+    //bool manual = false;
+
+    enum Mode { Manual, Auto, Replicated };
 
     auto t0 = std::thread([&]() {
         auto i = 0;
-        Sh3::i64Matrix a(width, 1), b(width, 1), c(width, 1);
+        Sh3::i64Matrix a(width, 1), b(width, 1), c(width, 1), ar(1, 1);
         Sh3::i64Matrix aa(width, 1), bb(width, 1);
-        
+
         PRNG prng(ZeroBlock);
         for (u64 i = 0; i < a.size(); ++i)
         {
             a(i) = prng.get<i64>() & valMask;
             b(i) = prng.get<i64>() & valMask;
         }
+        ar(0) = prng.get<i64 >();
 
         Sh3Runtime rt(i, comms[i]);
 
         Sh3::sbMatrix A(width, 64), B(width, 64), C(width, 64);
+        Sh3::sbMatrix Ar(1, 64);
 
         Sh3Encryptor enc;
-        Sh3BinaryEvaluator eval, eval2;
-
-        if(debug)
-            eval.enableDebug(i, debugComm[i].mPrev, debugComm[i].mNext);
-
         enc.init(i, toBlock(i), toBlock(i + 1));
 
         auto task = rt.noDependencies();
 
         enc.localBinMatrix(rt.noDependencies(), a, A).get();
+        enc.localBinMatrix(rt.noDependencies(), ar, Ar).get();
         task = enc.localBinMatrix(rt.noDependencies(), b, B);
 
-        if (manual)
+        Sh3BinaryEvaluator eval;
+        if (debug)
+            eval.enableDebug(i, debugComm[i].mPrev, debugComm[i].mNext);
+
+        for (auto mode : { Manual, Auto, Replicated })
         {
-            task.get();
-            eval.setCir(cir, width);
-            eval.setInput(0, A);
-            eval.setInput(1, B);
-            eval.asyncEvaluate(rt.noDependencies()).get();
-            eval.getOutput(0, C);
-        }
-        else
-        {
-            //task.get();
-
-            //eval2.setCir(cir, width);
-            //eval2.setInput(0, A);
-            //eval2.setInput(1, B);
-            //eval2.asyncEvaluate(rt.noDependencies()).get();
-            //eval2.getOutput(0, C);
-            //eval.asyncEvaluate(rt.noDependencies(), cir, { &A, &B }, { &C }).get();
-
-            //if (eval.mMem != eval2.mMem)
-            //{
-            //    throw std::runtime_error("");
-            //}
-
-            task = eval.asyncEvaluate(task, cir, { &A, &B }, { &C });
-        }
-
-        task = enc.reveal(task, C, c);
-
-
-        task.get();
-
-        for (u64 j = 0; j < width; ++j)
-        {
-            if (c(j) != binOp(a(j), b(j)))
+            switch (mode)
             {
-                std::cout << " failed at " << j << " " << c(j) << " != " << binOp(a(j), b(j)) << std::endl;
-                failed = true;
+            case Manual: 
+                task.get();
+                eval.setCir(cir, width);
+                eval.setInput(0, A);
+                eval.setInput(1, B);
+                eval.asyncEvaluate(rt.noDependencies()).get();
+                eval.getOutput(0, C);
+                break;
+            case Auto:
+                task = eval.asyncEvaluate(task, cir, { &A, &B }, { &C });
+                break;
+            case Replicated:
+                for (u64 i = 0; i < width; ++i)
+                    a(i) = ar(0);
+
+                task.get();
+                eval.setCir(cir, width);
+                eval.setReplicatedInput(0, Ar);
+                eval.setInput(1, B);
+                eval.asyncEvaluate(rt.noDependencies()).get();
+                eval.getOutput(0, C);
+                break;
+
+            }
+
+            task = enc.reveal(task, C, c);
+            task.get();
+
+            for (u64 j = 0; j < width; ++j)
+            {
+                if (c(j) != binOp(a(j), b(j)))
+                {
+                    std::cout << "mode: " << (int)mode << " failed at " << j << " " << c(j) << " != " << binOp(a(j), b(j)) << std::endl;
+                    failed = true;
+                }
             }
         }
+
+
+
     });
 
     auto routine = [&](int i)
@@ -213,52 +220,54 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
 
         Sh3Runtime rt(i, comms[i]);
 
-        Sh3::sbMatrix A(width, 64), B(width, 64), C(width, 64);
+        Sh3::sbMatrix A(width, 64), B(width, 64), C(width, 64), Ar(1, 64);
 
         Sh3Encryptor enc;
         enc.init(i, toBlock(i), toBlock((i + 1) % 3));
-        Sh3BinaryEvaluator eval, eval2;
 
-        if(debug)
-            eval.enableDebug(i, debugComm[i].mPrev, debugComm[i].mNext);
 
         auto task = rt.noDependencies();
         // queue up the operations
         enc.remoteBinMatrix(rt.noDependencies(), A).get();
+        enc.remoteBinMatrix(rt.noDependencies(), Ar).get();
         task = enc.remoteBinMatrix(rt.noDependencies(), B);
 
-        if (manual)
+        Sh3BinaryEvaluator eval;
+        if (debug)
+            eval.enableDebug(i, debugComm[i].mPrev, debugComm[i].mNext);
+
+        for (auto mode : { Manual, Auto, Replicated })
         {
+            switch (mode)
+            {
+            case Manual:
+                task.get();
+                eval.setCir(cir, width);
+                eval.setInput(0, A);
+                eval.setInput(1, B);
+                eval.asyncEvaluate(rt.noDependencies()).get();
+                eval.getOutput(0, C);
+                break;
+            case Auto:
+                task = eval.asyncEvaluate(task, cir, { &A, &B }, { &C });
+                break;
+            case Replicated:
+                task.get();
+                eval.setCir(cir, width);
+                eval.setReplicatedInput(0, Ar);
+                eval.setInput(1, B);
+                eval.asyncEvaluate(rt.noDependencies()).get();
+                eval.getOutput(0, C);
+                break;
+
+            }
+
+            task = enc.reveal(task, 0, C);
+
+            // actually execute the computation
             task.get();
-            eval.setCir(cir, width);
-            eval.setInput(0, A);
-            eval.setInput(1, B);
-            eval.asyncEvaluate(task).get();
-            eval.getOutput(0, C);
-        }
-        else
-        {
-            //task.get();
-
-            //eval2.setCir(cir, width);
-            //eval2.setInput(0, A);
-            //eval2.setInput(1, B);
-            //eval2.asyncEvaluate(rt.noDependencies()).get();
-            //eval2.getOutput(0, C);
-            //eval.asyncEvaluate(rt.noDependencies(), cir, { &A, &B }, { &C }).get();
-
-            //if (eval.mMem != eval2.mMem)
-            //{
-            //    throw std::runtime_error("");
-            //}
-
-            task = eval.asyncEvaluate(task, cir, { &A, &B }, { &C });
         }
 
-        task = enc.reveal(task, 0, C);
-
-        // actually execute the computation
-        task.get();
     };
 
     auto t1 = std::thread(routine, 1);

@@ -45,6 +45,8 @@ namespace aby3
         void validateMemory();
         void validateWire(u64 wireIdx);
         void distributeInputs();
+
+        oc::block hashDebugState();
 #endif
 
         oc::BetaCircuit* mCir;
@@ -54,7 +56,7 @@ namespace aby3
         std::vector<u8> mRecvData;
         std::array<std::vector<u8>, 2> mSendBuffs;
 
-        std::future<void> mRecvFutr;
+        std::vector<std::future<void>> mRecvFutr;
         Sh3::sPackedBinBase<block_type> mMem;
         //std::array<std::vector<block>, 2>  mZeroShares;
         

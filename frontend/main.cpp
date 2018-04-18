@@ -4,8 +4,11 @@
 #include "aby3_tests/aby3_tests.h"
 #include "com-psi_tests/UnitTests.h"
 #include <tests_cryptoTools/UnitTests.h>
-
+#include "cryptoTools/Common/BitIterator.h"
+#include "cryptoTools/Crypto/PRNG.h"
+using namespace oc;
 std::vector<std::string> unitTestTag{"u", "unitTest"};
+
 
 
 using u64 = oc::u64;

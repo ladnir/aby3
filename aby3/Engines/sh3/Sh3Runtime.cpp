@@ -75,6 +75,9 @@ namespace aby3
 
     void Sh3Runtime::runUntilTaskCompletes(i64 taskIdx)
     {
+        if (taskIdx < mTasks.mPopIdx)
+            return;
+
         auto taskBase = mTasks.get(taskIdx);
         if (taskBase == nullptr)
             throw std::runtime_error(LOCATION);

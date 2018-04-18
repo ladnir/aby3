@@ -391,7 +391,6 @@ namespace aby3
 
         if (mDebug)
         {
-            SHA1 sha(sizeof(block));
 
             auto prevIdx = (mDebugPartyIdx + 2) % 3;
             auto nextIdx = (mDebugPartyIdx + 1) % 3;
@@ -418,16 +417,27 @@ namespace aby3
 
                     m[i].mBits[nextIdx] = s1[i];
                 }
-
-
-                sha.Update(m.data(), m.size());
-
             }
 
-            block b;
-            sha.Final(b);
+            //block b = hashDebugState();
             //ostreamLock(std::cout) << "b" << mDebugPartyIdx << " " << b << std::endl;
         }
+    }
+    oc::block Sh3BinaryEvaluator::hashDebugState()
+    {
+        if (mDebug == false)
+            return ZeroBlock;
+
+        SHA1 sha(sizeof(block));
+        for (u64 r = 0; r < mPlainWires_DEBUG.size(); ++r)
+        {
+            auto& m = mPlainWires_DEBUG[r];
+            sha.Update(m.data(), m.size());
+        }
+
+        block b;
+        sha.Final(b);
+        return b;
     }
 #endif
 
@@ -485,6 +495,14 @@ namespace aby3
         });
     }
 
+    u8 extractBit(i64* data, u64 rowIdx)
+    {
+        auto k = rowIdx / (sizeof(i64) * 8);
+        auto j = rowIdx % (sizeof(i64) * 8);
+
+        return (data[k] >> j) & 1;
+    }
+
     u8 Sh3BinaryEvaluator::extractBitShare(u64 rowIdx, u64 wireIdx, u64 shareIdx)
     {
         if (rowIdx >= mMem.shareCount())
@@ -495,6 +513,33 @@ namespace aby3
         auto j = rowIdx % (sizeof(i64) * 8);
 
         return (row[k] >> j) & 1;
+    }
+
+
+    std::ostream& operator<<(std::ostream& out, Sh3BinaryEvaluator::DEBUG_Triple& triple)
+    {
+        out << "(" << (int) triple.mBits[0] << " " << (int)triple.mBits[1] << " " << (int)triple.mBits[2] << ") = " << triple.val();
+
+        return out;
+    }
+
+    std::string prettyShare(int partyIdx, int share0, int share1 = -1)
+    {
+        std::array<int, 3> shares;
+        shares[partyIdx] = share0;
+        shares[(partyIdx + 2) % 3] = share1;
+        shares[(partyIdx + 1) % 3] = -1;
+
+        std::stringstream ss;
+        ss << "(";
+        if (shares[0] == -1) ss << "_ ";
+        else ss << shares[0] << " ";
+        if (shares[1] == -1) ss << "_ ";
+        else ss << shares[1] << " ";
+        if (shares[2] == -1) ss << "_)";
+        else ss << shares[2] << ")";
+
+        return ss.str();
     }
 
     void Sh3BinaryEvaluator::roundCallback(Sh3::CommPkg& comm, Sh3Task task)
@@ -515,8 +560,9 @@ namespace aby3
         {
             if (mRecvLocs.size())
             {
-                mRecvFutr.get();
-
+                for(auto& fu : mRecvFutr)
+                    fu.get();
+                mRecvFutr.clear();
 
                 auto iter = mRecvData.begin();
 
@@ -538,7 +584,7 @@ namespace aby3
                     //    o << std::dec << std::endl;
                     //}
 
-                    //validateWire(out);
+                    //validateWire(out / simdWidth128);
                 }
 
             }
@@ -556,9 +602,12 @@ namespace aby3
 
         const bool debug = mDebug;
         auto& shares = mMem.mShares;
-        //ostreamLock(std::cout) << "P" << mDebugPartyIdx << " l" << mLevel << " : " << hashState() << std::endl;
+
+
+        const auto bufferSize = std::max<i32>(1 << 16, shareCountDiv8);
 
         std::array<block_type, 8> t0, t1, t2;// , t3;
+
 
         if (mLevel < mCir->mLevelCounts.size())
         {
@@ -570,8 +619,13 @@ namespace aby3
             //std::vector<u8> mSendData(andGateCount * shareCountDiv8);
             auto& sendBuff = mSendBuffs[mLevel & 1];
             sendBuff.resize(andGateCount * shareCountDiv8);
-            auto sendIter = sendBuff.begin();
+            mRecvData.resize(andGateCount * shareCountDiv8);
+            auto writeIter = sendBuff.begin();
+            auto prevSendIdx = 0;
+            auto nextSendIdx = std::min<i32>(bufferSize, sendBuff.size());
 
+            //std::vector<block_type> s0_in0_data(simdWidth128), s0_in1_data(simdWidth128);
+            //std::vector<block_type> s1_in0_data(simdWidth128), s1_in1_data(simdWidth128);
 
             for (i32 j = 0; j < gateCount; ++j, ++mGateIter)
             {
@@ -589,6 +643,10 @@ namespace aby3
 
                 std::array<block_type*, 2> z{ nullptr, nullptr };
 
+                //memcpy(s0_in0_data.data(), s0_in0, simdWidth128 * sizeof(block_type));
+                //memcpy(s0_in1_data.data(), s0_in1, simdWidth128 * sizeof(block_type));
+                //memcpy(s1_in0_data.data(), s1_in0, simdWidth128 * sizeof(block_type));
+                //memcpy(s1_in1_data.data(), s1_in1, simdWidth128 * sizeof(block_type));
 
                 switch (gate.mType)
                 {
@@ -697,8 +755,8 @@ namespace aby3
 #endif
 
                     }
-                    memcpy(&*sendIter, s0_Out, shareCountDiv8);
-                    sendIter += shareCountDiv8;
+                    memcpy(&*writeIter, s0_Out, shareCountDiv8);
+                    writeIter += shareCountDiv8;
 
                     break;
                 case GateType::Nor:
@@ -835,11 +893,11 @@ namespace aby3
 #endif
                     }
 
-                    memcpy(&*sendIter, s0_Out, shareCountDiv8);
-                    sendIter += shareCountDiv8;
+                    memcpy(&*writeIter, s0_Out, shareCountDiv8);
+                    writeIter += shareCountDiv8;
                     break;
                 case GateType::Nxor:
-                    for (i32 k = 0; k < simdWidth128; ++k)
+                    for (i32 k = 0; k < simdWidth128; k += 8)
                     {
                         s0_Out[k + 0] = s0_in0[k + 0] ^ s0_in1[k + 0];
                         s0_Out[k + 1] = s0_in0[k + 1] ^ s0_in1[k + 1];
@@ -913,8 +971,8 @@ namespace aby3
 #endif
                     }
 
-                    memcpy(&*sendIter, s0_Out, shareCountDiv8);
-                    sendIter += shareCountDiv8;
+                    memcpy(&*writeIter, s0_Out, shareCountDiv8);
+                    writeIter += shareCountDiv8;
                     break;
                 case GateType::Zero:
                 case GateType::nb_And:
@@ -932,6 +990,18 @@ namespace aby3
                     break;
                 }
 
+                if (false)
+                {
+                    auto size = nextSendIdx - prevSendIdx;
+                    if (size && writeIter - sendBuff.begin() >= nextSendIdx)
+                    {
+                        comm.mNext.asyncSend(&*sendBuff.begin() + prevSendIdx, size);
+                        mRecvFutr.emplace_back(comm.mPrev.asyncRecv(&*mRecvData.begin() + prevSendIdx, size));
+
+                        prevSendIdx = nextSendIdx;
+                        nextSendIdx = std::min<i32>(nextSendIdx + bufferSize, sendBuff.size());
+                    }
+                }
 
 
 #ifdef BINARY_ENGINE_DEBUG
@@ -942,13 +1012,18 @@ namespace aby3
                     auto gIn1 = gate.mInput[1];
                     auto gOut = gate.mOutput;
 
+                    //if (gIdx % 1000 == 0)
+                    //{
+                    //    block b = hashDebugState();
+                    //    ostreamLock(std::cout) << "b" << mDebugPartyIdx << " g" << gIdx << " " << b << std::endl;
+                    //}
                     //if (gate.mType == GateType::And)
                     //{
-                    //    auto iter = sendIter - shareCountDiv8;
+                    //    auto iter = writeIter - shareCountDiv8;
                     //    //for(u64 i = 0; i < )
                     //    ostreamLock o(std::cout);
                     //    o << mDebugPartyIdx<< " " << gOut << " - ";
-                    //    while (iter != sendIter)
+                    //    while (iter != writeIter)
                     //    {
                     //        o << std::hex << int(*iter++) << " ";
                     //    }
@@ -958,20 +1033,61 @@ namespace aby3
                     auto prevIdx = (mDebugPartyIdx + 2) % 3;
                     for (u64 r = 0; r < mPlainWires_DEBUG.size(); ++r)
                     {
-                        auto bit0 = extractBitShare(r, gOut, 0);
+                        auto s0_out = extractBitShare(r, gOut, 0);
+                        auto s0_in0_val = extractBit((i64*)s0_in0, r);
+                        auto s1_in0_val = extractBit((i64*)s1_in0, r);
+                        auto s0_in1_val = extractBit((i64*)s0_in1, r);
+                        auto s1_in1_val = extractBit((i64*)s1_in1, r);
 
                         auto& m = mPlainWires_DEBUG[r];
+                        auto inTriple0 = m[gIn0];
+                        auto inTriple1 = m[gIn1];
 
-                        m[gOut].assign(m[gIn0], m[gIn1], gate.mType);
+                        m[gOut].assign(inTriple0, inTriple1, gate.mType);
 
-                        if (bit0 != m[gOut].mBits[mDebugPartyIdx])
+                        auto badOutput = s0_out != m[gOut].mBits[mDebugPartyIdx];
+                        auto badInput0 = 
+                            s0_in0_val != inTriple0.mBits[mDebugPartyIdx] ||
+                            s1_in0_val != inTriple0.mBits[prevIdx];
+                        auto badInput1 = 
+                            s0_in1_val != inTriple1.mBits[mDebugPartyIdx] ||
+                            s1_in1_val != inTriple1.mBits[prevIdx];
+
+                        if (gIn0 == gOut){
+                            badInput0 = false;
+                            s0_in0_val = -1;
+                            s1_in0_val = -1;
+                        }
+
+                        if (gIn1 == gOut) {
+                            badInput1 = false;
+                            s0_in1_val = -1;
+                            s1_in1_val = -1;
+                        }
+
+                        auto bad = badOutput || badInput0 || badInput1;
+
+                        if (bad)
                         {
+
+
                             ostreamLock(std::cout)
-                                << "\n g" << gIdx << " act: _  exp: " << (int)m[gate.mOutput].val() << std::endl
-                                << m[gIn0].val() << " " << gateToString(type) << " " << m[gIn1].val() << " -> " << m[gOut].val() << std::endl
-                                << gIn0 << " " << gateToString(type) << " " << gIn1 << " -> " << int(gOut) << std::endl;
-                            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                            throw std::runtime_error(LOCATION);
+                                << "\np "<< mDebugPartyIdx << " gate[" << gIdx << "] r" << r <<": "
+                                << gIn0 << " " << gateToString(type) << " " << gIn1 << " -> " << int(gOut)
+                                << " exp: " << m[gOut] << "\n"
+                                << " act: " << prettyShare(mDebugPartyIdx, s0_out) << "\n"
+                                << " in0: " << inTriple0 << "\n"
+                                << "*in0: " << prettyShare(mDebugPartyIdx, s0_in0_val, s1_in0_val) << "\n"
+                                << " in1: " << inTriple1 << "\n"
+                                << "*in1: " << prettyShare(mDebugPartyIdx, s0_in1_val, s1_in1_val) << "\n"
+                                << std::endl;
+
+                            if (bad)
+                            {
+
+                                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+                                throw std::runtime_error(LOCATION);
+                            }
                         }
                     }
 
@@ -979,16 +1095,33 @@ namespace aby3
 #endif
             }
 
-            if (sendIter != sendBuff.end()) throw std::runtime_error(LOCATION);
+            if (writeIter != sendBuff.end())
+                throw std::runtime_error(LOCATION);
 
-            mRecvData.resize(sendBuff.size());
-
-            if (sendBuff.size())
+            if (false)
             {
-                comm.mNext.asyncSend(sendBuff.data(), sendBuff.size());
-
-                mRecvFutr = comm.mPrev.asyncRecv(mRecvData);
+                if (prevSendIdx != sendBuff.size())
+                    throw std::runtime_error(LOCATION);
             }
+            else
+            {
+                if (sendBuff.size())
+                {
+                    comm.mNext.asyncSend(sendBuff.data(), sendBuff.size());
+                    mRecvData.resize(sendBuff.size());
+                    mRecvFutr.emplace_back(comm.mPrev.asyncRecv(mRecvData));
+                }
+            }
+
+            //SHA1 sha(sizeof(block));
+            //sha.Update(sendBuff.data(), sendBuff.size());
+            //block b;
+            //sha.Final(b);
+            //ostreamLock(std::cout) << b << std::endl;
+
+            //
+
+
         }
 
         mLevel++;
@@ -1081,7 +1214,7 @@ namespace aby3
         using Word = i64;
         if (outWires.size() != out.bitCount()) throw std::runtime_error(LOCATION);
         //auto outCols = roundUpTo(outWires.size(), 8);
-        
+
         block_type AllOneBlock;
         memset(&AllOneBlock, 0xFF, sizeof(block_type));
         auto simdWidth128 = mMem.simdWidth();
@@ -1344,250 +1477,3 @@ namespace aby3
     }
 #endif
 }
-//
-//auto simdWidth = mMem.simdWidth();
-//
-//if (mLevel > mCir->mLevelCounts.size())
-//throw std::runtime_error("evaluateRound() was called but no rounds remain... " LOCATION);
-//
-//if (mCir->mLevelCounts.size() == 0 && mCir->mNonXorGateCount)
-//throw std::runtime_error("the level by and gate function must be called first." LOCATION);
-//
-//if (mLevel == 0) {
-//    mGateIter = mCir->mGates.data();
-//    mRecvData.resize(0);
-//}
-//
-//if (mRecvData.size())
-//{
-//    mRecvFutr.get();
-//    auto iter = mRecvData.begin();
-//    for (u64 j = 0; j < mRecvLocs.size(); ++j)
-//    {
-//        auto out = mRecvLocs[j];
-//        memcpy(&mMem.mShares[1](out), &*iter, simdWidth * sizeof(i64));
-//        iter += simdWidth;
-//    }
-//}
-//
-//if (mLevel < mCir->mLevelCounts.size())
-//{
-//    i64 ccWord;
-//    memset(&ccWord, 0xCC, sizeof(i64));
-//
-//    auto& shares = mMem.mShares;
-//    auto andGateCount = mCir->mLevelAndCounts[mLevel];
-//    auto gateCount = mCir->mLevelCounts[mLevel];
-//    mRecvLocs.resize(andGateCount);
-//    std::vector<i64> sendData(andGateCount * simdWidth);
-//
-//    auto recvLocIter = mRecvLocs.data();
-//    auto sendIter = sendData.begin();
-//
-//
-//    for (u64 j = 0; j < gateCount; ++j, ++mGateIter)
-//    {
-//        const auto& gate = *mGateIter;
-//        const auto& type = gate.mType;
-//        auto in0 = gate.mInput[0] * simdWidth;
-//        auto in1 = gate.mInput[1] * simdWidth;
-//        auto out = gate.mOutput * simdWidth;
-//
-//
-//        switch (gate.mType)
-//        {
-//        case GateType::Xor:
-//            for (u64 k = 0; k < simdWidth; ++k)
-//            {
-//                shares[0](out) = shares[0](in0) ^ shares[0](in1);
-//                shares[1](out) = shares[1](in0) ^ shares[1](in1);
-//
-//                ++in0;
-//                ++in1;
-//                ++out;
-//            }
-//            break;
-//        case GateType::And:
-//            *recvLocIter++ = out;
-//            for (u64 k = 0; k < simdWidth; ++k)
-//            {
-//
-//                TODO("add the randomization back");
-//                *sendIter = shares[0](out)
-//                    = (shares[0](in0) & shares[0](in1))
-//                    ^ (shares[0](in0) & shares[1](in1))
-//                    ^ (shares[1](in0) & shares[0](in1))
-//                    /*^ getBinaryShare()*/;
-//
-//#ifndef NDEBUG
-//                if (shares[1](in0) == ccWord || shares[1](in1) == ccWord)
-//                    throw std::runtime_error(LOCATION);
-//                shares[1](out) = ccWord;
-//#endif
-//                ++sendIter;
-//                ++in0;
-//                ++in1;
-//                ++out;
-//            }
-//            break;
-//        case GateType::Nor:
-//            *recvLocIter++ = out;
-//            for (u64 k = 0; k < simdWidth; ++k)
-//            {
-//                auto mem00 = shares[0](in0) ^ -1;
-//                auto mem01 = shares[0](in1) ^ -1;
-//                auto mem10 = shares[1](in0) ^ -1;
-//                auto mem11 = shares[1](in1) ^ -1;
-//
-//                TODO("add the randomization back");
-//                *sendIter = shares[0](out)
-//                    = (mem00 & mem01)
-//                    ^ (mem00 & mem11)
-//                    ^ (mem10 & mem01)
-//                    /*^ getBinaryShare()*/;
-//
-//#ifndef NDEBUG
-//                if (shares[1](in0) == ccWord || shares[1](in1) == ccWord)
-//                    throw std::runtime_error(LOCATION);
-//                shares[1](out) = ccWord;
-//#endif
-//                ++sendIter;
-//                ++in0;
-//                ++in1;
-//                ++out;
-//            }
-//            break;
-//        case GateType::Nxor:
-//            for (u64 k = 0; k < simdWidth; ++k)
-//            {
-//                shares[0](out) = ~(shares[0](in0) ^ shares[0](in1));
-//                shares[1](out) = ~(shares[1](in0) ^ shares[1](in1));
-//
-//                ++in0;
-//                ++in1;
-//                ++out;
-//            }
-//            break;
-//        case GateType::a:
-//            //memcpy(&shares[0](out), &shares[0](in0), simdWidth * sizeof(Word));
-//            //memcpy(&shares[1](out), &shares[1](in0), simdWidth * sizeof(Word));
-//            for (u64 k = 0; k < simdWidth; ++k)
-//            {
-//                if (shares[1](in0) == ccWord)
-//                    throw std::runtime_error(LOCATION);
-//
-//                shares[0](out) = shares[0](in0);
-//                shares[1](out) = shares[1](in0);
-//
-//                ++in0;
-//                ++in1;
-//                ++out;
-//            }
-//            break;
-//        case GateType::na_And:
-//            *recvLocIter++ = out;
-//            for (u64 k = 0; k < simdWidth; ++k)
-//            {
-//
-//                TODO("add the randomization back");
-//                *sendIter = shares[0](out)
-//                    = ((~shares[0](in0)) & shares[0](in1))
-//                    ^ ((~shares[0](in0)) & shares[1](in1))
-//                    ^ ((~shares[1](in0)) & shares[0](in1))
-//                    /*^ getBinaryShare()*/;
-//
-//#ifndef NDEBUG
-//                if (shares[1](in0) == ccWord || shares[1](in1) == ccWord)
-//                    throw std::runtime_error(LOCATION);
-//                shares[1](out) = ccWord;
-//#endif
-//                ++sendIter;
-//                ++in0;
-//                ++in1;
-//                ++out;
-//            }
-//            break;
-//        case GateType::Zero:
-//        case GateType::nb_And:
-//        case GateType::nb:
-//        case GateType::na:
-//        case GateType::Nand:
-//        case GateType::nb_Or:
-//        case GateType::b:
-//        case GateType::na_Or:
-//        case GateType::Or:
-//        case GateType::One:
-//        default:
-//
-//            throw std::runtime_error("Sh3BinaryEvaluator unsupported GateType " LOCATION);
-//            break;
-//        }
-//
-//
-//
-//#ifdef BINARY_ENGINE_DEBUG
-//        if (mDebug)
-//        {
-//
-//            out = gate.mOutput * simdWidth;
-//
-//            mDebugNext.asyncSendCopy(&shares[0](out), simdWidth);
-//            mDebugPrev.asyncSendCopy(&shares[0](out), simdWidth);
-//
-//            std::vector<i64> s0(simdWidth), s1(simdWidth);
-//            mDebugPrev.recv(s0);
-//            mDebugNext.recv(s1);
-//
-//            for (u64 k = 0; k < simdWidth; ++k)
-//                s0[k] ^= s1[k] ^ shares[0](out + k);
-//
-//            for (u64 r = 0; r < mPlainWires_DEBUG.size(); ++r)
-//            {
-//                auto k = r / (sizeof(i64) * 8);
-//                auto j = r % (sizeof(i64) * 8);
-//                i64 plain = (s0[k] >> j) & 1;
-//                i64 zeroShare = (shares[0](out + k) >> j) & 1;
-//
-//                auto gIn0 = gate.mInput[0];
-//                auto gIn1 = gate.mInput[1];
-//                auto gOut = gate.mOutput;
-//
-//                auto& m = mPlainWires_DEBUG[r];
-//                auto gIdx = mGateIter - mCir->mGates.data();
-//
-//                m[gOut].assign(m[gIn0], m[gIn1], gate.mType);
-//
-//                if (zeroShare != m[gOut].mBits[mDebugPartyIdx])
-//                    throw std::runtime_error(LOCATION);
-//
-//
-//                if (plain != m[gOut].val())
-//                {
-//                    ostreamLock(std::cout)
-//                        << "\n g" << gIdx << " act: " << plain << "   exp: " << (int)m[gate.mOutput].val() << std::endl
-//                        << m[gIn0].val() << " " << gateToString(type) << " " << m[gIn1].val() << " -> " << m[gOut].val() << std::endl
-//                        << gIn0 << " " << gateToString(type) << " " << gIn1 << " -> " << int(gOut) << std::endl;
-//                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-//                    throw std::runtime_error(LOCATION);
-//                }
-//
-//            }
-//        }
-//#endif
-//    }
-//
-//    if (sendIter != sendData.end()) throw std::runtime_error(LOCATION);
-//
-//    if (sendData.size())
-//    {
-//        comm.mNext.asyncSend(std::move(sendData));
-//
-//        mRecvData.resize(mRecvLocs.size() * simdWidth);
-//        mRecvFutr = comm.mPrev.asyncRecv(mRecvData.data(), mRecvData.size());
-//
-//    }
-//}
-//
-//mLevel++;
-//if (mGateIter > mCir->mGates.data() + mCir->mGates.size())
-//throw std::runtime_error(LOCATION);
