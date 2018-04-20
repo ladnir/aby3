@@ -56,7 +56,9 @@ namespace osuCrypto
         SharedTable intersect(SharedTable& A, SharedTable& B);
 
 
-
+        Matrix<u8> cuckooHashRecv(SharedTable & A);
+        void cuckooHashSend(SharedTable & A);
+        Matrix<u8> cuckooHash(SharedTable & A, aby3::Sh3::i64Matrix& keys);
 
         aby3::Sh3::i64Matrix computeKeys(span<SharedTable*> tables, span<u64> reveals);
 

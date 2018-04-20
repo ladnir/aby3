@@ -48,6 +48,9 @@
     <ClInclude Include="Engines\PlainEngine.h" />
     <ClInclude Include="Engines\sh3\Sh3Encryptor.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\..\libOTe\cryptoTools\cryptoTools\gsl\GSL.natvis" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{FD60CAE8-ABAB-433C-BC50-D867DE0234B2}</ProjectGuid>

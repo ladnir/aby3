@@ -189,10 +189,10 @@ namespace aby3
             sbMatrix() = default;
             sbMatrix(u64 xSize, u64 ySize)
             {
-                resize2(xSize, ySize);
+                resize(xSize, ySize);
             }
 
-            void resize2(u64 xSize, u64 bitCount)
+            void resize(u64 xSize, u64 bitCount)
             {
                 mBitCount = bitCount;
                 auto ySize = (bitCount + 63) / 64;

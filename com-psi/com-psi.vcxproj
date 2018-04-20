@@ -127,9 +127,14 @@
   <ItemGroup>
     <ClInclude Include="ComPsiServer.h" />
     <ClInclude Include="LowMC.h" />
+    <ClInclude Include="OblvPermutation.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ComPsiServer.cpp" />
+    <ClCompile Include="OblvPermutation.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\..\libOTe\cryptoTools\cryptoTools\gsl\GSL.natvis" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -33,7 +33,7 @@ namespace aby3
     void Sh3Converter::toBinaryMatrix(const Sh3::sPackedBin & in, Sh3::sbMatrix & dest)
     {
         auto bits = sizeof(u64) * 8;
-        dest.resize2(in.shareCount(), in.bitCount());
+        dest.resize(in.shareCount(), in.bitCount());
 
         for (u64 i = 0; i < 2; ++i)
         {
