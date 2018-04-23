@@ -24,12 +24,18 @@
     <ClInclude Include="OblvPermutation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="OblvSwitchNet.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ComPsiServer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="OblvPermutation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OblvSwitchNet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

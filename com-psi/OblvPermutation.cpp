@@ -1,7 +1,7 @@
 #include "OblvPermutation.h"
 #include <cryptoTools/Crypto/PRNG.h>
 #include <cryptoTools/Common/Matrix.h>
-
+#include <unordered_set>
 namespace osuCrypto
 {
 
@@ -42,7 +42,13 @@ namespace osuCrypto
                     ////std::cout << std::endl;
                     //for (u32 k = 0; k < src.cols(); ++k)
                     //{
-                    src(i, k) ^= prng.get<u8>();
+                    auto c = prng.get<u8>();
+                    src(i, k) ^= c;
+
+                    //if (k == 0)
+                    //{
+                    //    std::cout << "src[" << i << "] = " << int(c) << "\t" << int(src(i,k)) << std::endl;
+                    //}
                     //    std::cout << " " << std::hex << int(src(i, k));
                 }
                 //std::cout << std::endl << std::dec;
@@ -57,6 +63,8 @@ namespace osuCrypto
             else
                 recvrChl.asyncSend(data, size);
         }
+
+        //std::cout << "p0" << prng.get<int>() << std::endl;
     }
 
     void OblvPermutation::recv(
@@ -93,24 +101,35 @@ namespace osuCrypto
             {
                 for (u32 j = 0; j < perm.size(); ++j)
                 {
-                    u8* destPtr = &*(dest.begin() + perm[j] * dest.stride());
+                    if (perm[j] != -1)
+                    {
 
-                    //std::cout << "____ -> " << j << " -> " << perm[j] << std::endl;
+                        u8* destPtr = &*(dest.begin() + perm[j] * dest.stride());
 
-                    memcpy(destPtr, iter, dest.stride());
-                    iter += dest.stride();
+                        //std::cout << "____ -> " << j << " -> " << perm[j] << std::endl;
+
+                        memcpy(destPtr, iter, dest.stride());
+                    }
+                        iter += dest.stride();
                 }
             }
             else
             {
                 for (u32 j = 0; j < perm.size(); ++j)
                 {
-                    u8* destPtr = &*(dest.begin() + perm[j] * dest.stride());
-
-                    for (u32 k = 0; k < dest.stride(); ++k)
+                    if (perm[j] != -1)
                     {
-                        destPtr[k] ^= *iter;
-                        ++iter;
+                        u8* destPtr = &*(dest.begin() + perm[j] * dest.stride());
+
+                        for (u32 k = 0; k < dest.stride(); ++k)
+                        {
+                            destPtr[k] ^= *iter;
+                            ++iter;
+                        }
+                    }
+                    else
+                    {
+                        iter += dest.stride();
                     }
                 }
             }
@@ -120,7 +139,23 @@ namespace osuCrypto
 
     void OblvPermutation::program(Channel & recvrChl, Channel & sendrChl, std::vector<u32> perm, PRNG& p, MatrixView<u8> dest, OutputType type)
     {
-        auto rows = dest.rows();
+        auto rows = perm.size();
+
+        if (true)
+        {
+            std::unordered_set<u32> set;
+            set.reserve(dest.size());
+            for (auto p : perm)
+            {
+                if (p != -1)
+                {
+                    auto r = set.emplace(p);
+                    if (r.second == false)
+                        throw std::runtime_error("");
+                }
+            }
+
+        }
         //std::vector<u32> pi1(rows);
         //for (u32 i = 0; i <rows; ++i)
         //{
@@ -132,7 +167,7 @@ namespace osuCrypto
         //sendrChl.asyncSend(seed);
         PRNG prng(seed, 256);
 
-
+        std::vector<u8> temp(dest.stride());
         for (u32 i = 0, j = rows; i < rows;)
         {
             auto min = std::min<u32>(rows - i, step);
@@ -147,18 +182,27 @@ namespace osuCrypto
 
 
                 //std::cout << "perm'[" << i << "] = " << perm[i] << std::endl;
-                auto destPtr = &dest(perm[i], 0);
-
-                if (type == Overwrite)
+                if (perm[i] != -1)
                 {
-                    prng.get(destPtr, dest.stride());
+                    auto destPtr = &dest(perm[i], 0);
+
+                    if (type == Overwrite)
+                    {
+                        prng.get(destPtr, dest.stride());
+                        //std::cout << "dest[" << perm[i]<<", "<<i << "] = " << int(destPtr[0]) << std::endl;
+                    }
+                    else
+                    {
+                        for (u32 k = 0; k < dest.stride(); ++k)
+                        {
+                            destPtr[k] ^= prng.get<u8>();
+                        }
+                    }
                 }
                 else
                 {
-                    for (u32 k = 0; k < dest.stride(); ++k)
-                    {
-                        destPtr[k] ^= prng.get<u8>();
-                    }
+                    prng.get(temp.data(), temp.size());
+                    //std::cout << "dest[" << perm[i] << ", " << i << "] = " << int(temp[0]) << std::endl;
                 }
                 ++i, --j;
             }
@@ -169,6 +213,8 @@ namespace osuCrypto
             else
                 recvrChl.asyncSend(data, size);
         }
+
+        ///std::cout << "p0" << prng.get<int>() << std::endl;
 
     }
 }
