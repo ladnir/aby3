@@ -12,5 +12,6 @@ oc::TestCollection ComPsi_tests([](oc::TestCollection& tc) {
     tc.add("Perm3p_subset_Test           ", Perm3p_subset_Test);
     tc.add("switch_select_test           ", switch_select_test);
     tc.add("switch_duplicate_test        ", switch_duplicate_test);
+    tc.add("switch_full_test             ", switch_full_test);
     tc.add("ComPsi_cuckooHash_test       ", ComPsi_cuckooHash_test);
 });

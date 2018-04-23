@@ -6,6 +6,44 @@
 
 namespace osuCrypto
 {
+    void OblvSwitchNet::sendRecv(Channel & programChl, Channel & revcrChl, Matrix<u8> src, MatrixView<u8> dest)
+    {
+        sendSelect(programChl, revcrChl, std::move(src));
+        helpDuplicate(programChl, dest.rows(), dest.cols());
+
+        OblvPermutation oblvPerm;
+        oblvPerm.recv(programChl, revcrChl, dest);
+    }
+
+    void OblvSwitchNet::program(Channel & revcrChl, Channel & sendrChl, Program & prog, PRNG & prng, MatrixView<u8> dest)
+    {
+        Matrix<u8> temp(dest.rows(), dest.cols());
+
+        programSelect(revcrChl, sendrChl, prog, prng, temp);
+        programDuplicate(revcrChl, sendrChl, prog, prng, temp);
+
+        std::vector<u32> perm(prog.mSrcDests.size());
+        for (auto i = 0; i < perm.size(); ++i)
+        {
+            perm[i] = prog.mSrcDests[i].mDest;
+            memcpy(&dest(perm[i], 0), &temp(i, 0), dest.cols());
+        }
+
+        OblvPermutation oblvPerm;
+        oblvPerm.program(sendrChl, revcrChl, std::move(perm), prng, dest, OblvPermutation::Additive);
+    }
+
+    void OblvSwitchNet::help(Channel& programChl, Channel& sendrChl, PRNG& prng, u32 destRows, u32 bytes)
+    {
+        Matrix<u8> temp(destRows, bytes);
+        recvSelect(programChl, sendrChl, temp);
+        sendDuplicate(programChl, prng, temp);
+
+        OblvPermutation oblvPerm;
+        oblvPerm.send(programChl, sendrChl, std::move(temp));
+    }
+
+
     void OblvSwitchNet::sendSelect(Channel & programChl, Channel & revcrChl, Matrix<u8> src)
     {
         OblvPermutation oblvPerm;

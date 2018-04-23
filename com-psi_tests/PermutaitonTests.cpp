@@ -557,3 +557,125 @@ void switch_duplicate_test()
 
     }
 }
+
+
+
+void switch_full_test()
+{
+    IOService ios;
+    Session s01(ios, "127.0.0.1", SessionMode::Server, "01");
+    Session s10(ios, "127.0.0.1", SessionMode::Client, "01");
+    Session s02(ios, "127.0.0.1", SessionMode::Server, "02");
+    Session s20(ios, "127.0.0.1", SessionMode::Client, "02");
+    Session s12(ios, "127.0.0.1", SessionMode::Server, "12");
+    Session s21(ios, "127.0.0.1", SessionMode::Client, "12");
+
+    Channel chl01 = s01.addChannel();
+    Channel chl10 = s10.addChannel();
+    Channel chl02 = s02.addChannel();
+    Channel chl20 = s20.addChannel();
+    Channel chl12 = s12.addChannel();
+    Channel chl21 = s21.addChannel();
+
+
+    int trials = 100;
+    int srcSize = 50;
+    int destSize = srcSize / 2;
+    int bytes = 1;
+
+    Matrix<u8> src(srcSize, bytes);
+    Matrix<u8> dest0(destSize, bytes), dest1(destSize, bytes);
+
+
+    for (auto t = 0; t < trials; ++t)
+    {
+        PRNG prng(toBlock(t));
+
+        prng.get(src.data(), src.size());
+
+        //for (auto i = 0; i < src.rows(); ++i)
+        //{
+        //    std::cout << "s[" << i << "] = ";
+        //    for (auto j = 0; j < src.cols(); ++j)
+        //    {
+        //        std::cout << " " << std::setw(2) << std::hex << int(src(i, j));
+        //    }
+        //    std::cout << std::endl << std::dec;
+        //}
+
+        OblvSwitchNet::Program prog;
+        prog.init(srcSize, destSize);
+
+        for (u64 i = 0; i < destSize; ++i)
+        {
+            prog.addSwitch(prng.get<u32>() % srcSize, i);
+            //prog.addSwitch(0, i);
+            //std::cout << "switch[" << i << "] = " << prog.mSrcDests[i][0] << " -> " << prog.mSrcDests[i][1] << std::endl;
+        }
+
+
+        auto t0 = std::thread([&]() {
+            setThreadName("t0");
+            OblvSwitchNet snet;
+            snet.program(chl02, chl01, prog, prng, dest0);
+        });
+
+        auto t1 = std::thread([&]() {
+            setThreadName("t1");
+            OblvSwitchNet snet;
+            snet.sendRecv(chl10, chl12, src, dest1);
+        });
+
+        auto t2 = std::thread([&]() {
+            setThreadName("t2");
+            OblvSwitchNet snet;
+            PRNG prng2(toBlock(44444));
+            snet.help(chl20, chl21, prng2, destSize, bytes);
+        });
+
+        t0.join();
+        t1.join();
+        t2.join();
+
+
+        bool print = false;
+        if (print)
+            std::cout << std::endl;
+        bool failed = false;
+        for (u64 i = 0; i < prog.mSrcDests.size(); ++i)
+        {
+            auto s = prog.mSrcDests[i].mSrc;
+            auto d = prog.mSrcDests[i].mDest;
+
+            for (auto j = 0; j < bytes; ++j)
+            {
+                if ((dest0(d, j) ^ dest1(d, j)) != src(s, j))
+                {
+                    failed = true;
+                }
+            }
+
+            if (print)
+            {
+                std::cout << "d[" << d << "] = ";
+                for (auto j = 0; j < bytes; ++j)
+                {
+                    if ((dest0(d, j) ^ dest1(d, j)) != src(s, j))
+                        std::cout << Color::Red;
+                    std::cout << ' ' << std::setw(2) << std::hex << int(dest0(i, j) ^ dest1(i, j)) << ColorDefault;
+                }
+                std::cout << "\ns[" << s << "] = ";
+                for (auto j = 0; j < bytes; ++j)
+                    std::cout << ' ' << std::setw(2) << std::hex << int(src(s, j));
+
+                std::cout << std::endl << std::dec;
+            }
+
+
+        }
+
+        if (failed)
+            throw std::runtime_error("");
+
+    }
+}

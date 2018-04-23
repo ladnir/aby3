@@ -51,10 +51,10 @@ namespace osuCrypto
 
 
 
-        void send(Channel& programChl, Channel& revcrChl, Matrix<u8> src);
-        void recv(Channel& programChl, Channel& sendrChl, MatrixView<u8> dest);
+        void sendRecv(Channel& programChl, Channel& helpChl, Matrix<u8> src, MatrixView<u8> dest);
+        void help(Channel& programChl, Channel& sendrChl, PRNG& prng, u32 destRows, u32 bytes);
         void program(
-            Channel& revcrChl, 
+            Channel& helpChl, 
             Channel& sendrChl,
             Program& prog, 
             PRNG& prng, 
@@ -62,10 +62,10 @@ namespace osuCrypto
 
 
 
-        void sendSelect(Channel& programChl, Channel& revcrChl, Matrix<u8> src);
+        void sendSelect(Channel& programChl, Channel& helpChl, Matrix<u8> src);
         void recvSelect(Channel& programChl, Channel& sendrChl, MatrixView<u8> dest);
         void programSelect(
-            Channel& revcrChl,
+            Channel& helpChl,
             Channel& sendrChl,
             Program& prog,
             PRNG& prng,
