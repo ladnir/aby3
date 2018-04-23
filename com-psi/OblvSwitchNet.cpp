@@ -1,6 +1,8 @@
 #include "OblvSwitchNet.h"
 #include "OblvPermutation.h"
-
+#include <cryptoTools/Common/BitIterator.h>
+#include <cryptoTools/Crypto/PRNG.h>
+#include <iomanip>
 
 namespace osuCrypto
 {
@@ -9,7 +11,7 @@ namespace osuCrypto
         OblvPermutation oblvPerm;
         oblvPerm.send(programChl, revcrChl, std::move(src));
     }
-    
+
     void OblvSwitchNet::recvSelect(Channel & programChl, Channel & sendrChl, MatrixView<u8> dest)
     {
         OblvPermutation oblvPerm;
@@ -30,8 +32,8 @@ namespace osuCrypto
         prog.reset();
 
 
-        
-        
+
+
         std::vector<u32> perm1(prog.mSrcSize, -1);
         auto switchIdx = 0;
         auto permIdx = 0;
@@ -40,19 +42,19 @@ namespace osuCrypto
 
         while (switchIdx < prog.mSrcDests.size())
         {
-            auto src = prog.mSrcDests[switchIdx][0];
+            auto src = prog.mSrcDests[switchIdx].mSrc;
 
             perm1[src] = switchIdx++;
 
             while (switchIdx < prog.mSrcDests.size() &&
-                prog.mSrcDests[switchIdx - 1][0] == prog.mSrcDests[switchIdx][0])
+                prog.mSrcDests[switchIdx - 1].mSrc == prog.mSrcDests[switchIdx].mSrc)
             {
                 auto src = prog.nextFree();
                 perm1[src] = switchIdx++;
             }
         }
 
-        
+
         //for (auto i = 0; i < perm1.size(); ++i)
         //{
         //    //if (perm1[i] == -1)
@@ -66,7 +68,7 @@ namespace osuCrypto
 
 
     }
-    
+
     void OblvSwitchNet::Program::finalize()
     {
         auto counts = std::move(mCounts);
@@ -83,16 +85,16 @@ namespace osuCrypto
         // Move elements.
         for (int i = n - 1; i >= 0; --i) {
             auto& val = mSrcDests[i];
-            int j = counts[val[0]];
+            int j = counts[val.mSrc];
 
             if (j < i) {
                 do {
-                    ++counts[val[0]];
+                    ++counts[val.mSrc];
 
                     // Swap val and a[j].
                     std::swap(val, mSrcDests[j]);
 
-                    j = counts[val[0]];
+                    j = counts[val.mSrc];
                 } while (j < i);
             }
         }
@@ -115,9 +117,13 @@ namespace osuCrypto
 
     u32 OblvSwitchNet::Program::nextFree()
     {
-        while (mNextFreeIdx == mSrcDests[mNextFreeNodeIdx][0])
+        while (
+            mNextFreeNodeIdx < mSrcDests.size() &&
+            mNextFreeIdx == mSrcDests[mNextFreeNodeIdx].mSrc)
         {
-            while (mNextFreeIdx == mSrcDests[mNextFreeNodeIdx][0])
+            while (
+                mNextFreeNodeIdx < mSrcDests.size() &&
+                mNextFreeIdx == mSrcDests[mNextFreeNodeIdx].mSrc)
                 ++mNextFreeNodeIdx;
 
             ++mNextFreeIdx;
@@ -131,8 +137,185 @@ namespace osuCrypto
     {
         for (auto i = 1; i < mSrcDests.size(); ++i)
         {
-            if (mSrcDests[i][0] < mSrcDests[i - 1][0])
+            if (mSrcDests[i].mSrc < mSrcDests[i - 1].mSrc)
                 throw std::runtime_error("");
         }
+    }
+
+
+    void OblvSwitchNet::sendDuplicate(Channel & programChl, PRNG& prng, MatrixView<u8> src)
+    {
+        auto rows = src.rows();
+        PRNG otPrng2(toBlock(645687456));
+        std::vector<u8> sendData((rows - 1) * src.stride() * 2);
+        otPrng2.get(sendData.data(), sendData.size());
+
+        std::vector<u8> bits((rows + 6) / 8);
+        BitIterator iter(bits.data(), 0);
+
+        programChl.recv(bits.data(), bits.size());
+
+        std::array<u8*, 2> m{ sendData.data() , sendData.data() + src.stride() };
+
+        for (u64 i = 1; i < rows; ++i)
+        {
+            bool p = *iter;
+            ++iter;
+
+            auto i0 = i - p;
+            auto i1 = i - !p;
+
+            u32 m0 = m[0][0];
+            u32 m1 = m[1][0];
+            u32 s0 = src(i0, 0);
+            u32 s1 = src(i1, 0);
+
+            for (u32 j = 0; j < src.stride(); ++j)
+            {
+                m[0][j] ^= src(i0, j);
+                m[1][j] ^= src(i1, j);
+            }
+
+            prng.get(&src(i, 0), src.stride());
+
+            u32 ss0 = src(i, 0);
+
+            for (u32 j = 0; j < src.stride(); ++j)
+            {
+                m[0][j] ^= src(i, j);
+                m[1][j] ^= src(i, j);
+            }
+
+            //ostreamLock (std::cout)            
+            //    << "s[" << i << ", 0] = src[" << i0 << "] ^ w[" << i << ", 0] ^ s'[" << i << "]\n"
+            //    << "s[" << i << ", 0] = " <<std::setw(6) << s0 << " ^ " <<std::setw(7)<< m0 << " ^ " << std::setw(7) << ss0 << " = " << int(m[0][1])
+            //    << "\n"
+            //    << "s[" << i << ", 1] = src[" << i1 << "] ^ w[" << i << ", 1] ^ s'[" << i << "]\n"
+            //    << "s[" << i << ", 1] = " << std::setw(6) << s1 << " ^ " << std::setw(7) << m1 << " ^ " << std::setw(7) << ss0 <<" = " <<int(m[1][1]) <<"\n"<< std::endl;
+
+
+            m[0] += 2 * src.stride();
+            m[1] += 2 * src.stride();
+        }
+
+        if (m[0] != sendData.data() + sendData.size())
+            throw std::runtime_error("");
+
+        programChl.asyncSend(std::move(sendData));
+    }
+
+    void OblvSwitchNet::helpDuplicate(Channel & programChl, u64 rows, u32 bytes)
+    {
+        PRNG otPrng2(toBlock(645687456));
+        PRNG otPrng1(toBlock(345345));
+        std::vector<u8> bits((rows + 6) / 8);
+        otPrng1.get(bits.data(), bits.size());
+        BitIterator iter(bits.data(), 0);
+
+        std::vector<u8> share0((rows - 1) * bytes), temp(bytes);
+        std::array<u8*, 2> ptrs{ share0.data(), temp.data() };
+
+
+        //ostreamLock o(std::cout);
+        for (u32 i = 1; i < rows; ++i)
+        {
+            auto p = *iter;
+            auto m0 = ptrs[p];
+            auto m1 = ptrs[!p];
+
+            otPrng2.get(m0, bytes);
+            otPrng2.get(m1, bytes);
+
+            //o << "w[" << i  << ", " << *iter << "] = " << int(ptrs[0][0]) << std::endl;
+
+            ptrs[0] += bytes;
+            ++iter;
+        }
+
+
+        if (ptrs[0] != share0.data() + share0.size())
+            throw std::runtime_error("");
+        programChl.asyncSend(std::move(share0));
+    }
+
+    void OblvSwitchNet::programDuplicate(
+        Channel & sendrChl,
+        Channel & helperChl,
+        Program& prog,
+        PRNG& prng,
+        MatrixView<u8> dest)
+    {
+
+        PRNG otPrng(toBlock(345345));
+
+        auto rows = dest.rows();
+        std::vector<u8> bits((rows + 6) / 8);
+        otPrng.get(bits.data(), bits.size());
+
+        BitIterator iter(bits.data(), 0);
+
+        {
+            //ostreamLock o(std::cout);
+            for (u32 i = 1; i < rows; ++i)
+            {
+                bool dup = (prog.mSrcDests[i - 1].mSrc == prog.mSrcDests[i].mSrc);
+
+                //o << "r[" << i << "] = " << *iter << "\n";
+                //o << "p[" << i << "] = " << int(dup) << "\n";
+
+                *iter ^= dup;
+                ++iter;
+            }
+        }
+
+        sendrChl.asyncSend(bits);
+        iter = BitIterator(bits.data(), 0);
+
+
+
+
+        std::vector<u8> share0, share1;
+        auto fu0 = helperChl.asyncRecv(share0);
+        auto fu1 = sendrChl.asyncRecv(share1);
+
+        fu0.get();
+        fu1.get();
+        if (share0.size() != dest.size() - dest.stride())
+            throw std::runtime_error("");
+        if (share1.size() != 2 * (dest.size() - dest.stride()))
+            throw std::runtime_error("");
+
+        //auto destPtr = dest.data() + dest.stride();
+        auto s0Ptr = share0.data();
+        auto s1Ptr = share1.data();
+
+        for (u32 i = 1; i < rows; ++i)
+        {
+            bool dup = (prog.mSrcDests[i - 1].mSrc == prog.mSrcDests[i].mSrc);
+            bool p = *iter ^ dup;
+            ++iter;
+
+            auto destPtr = &dest(i, 0);
+            auto srcPtr = &dest(i - 1, 0);
+
+            memcpy(destPtr, srcPtr, dest.stride() * dup);
+
+
+            s1Ptr += p * dest.stride();
+
+            //ostreamLock o(std::cout);
+
+            //o   << "dest[" << i << "] = dest[" << i << "] ^ w[" << i << ", " << int(p) << "] ^ s[" << i << ", " << p << "]\n"
+            //    << "dest[" << i << "] = " << std::setw(7) << int(destPtr[0]) << " ^ " << std::setw(7) << int(s0Ptr[0]) << " ^ " << std::setw(7) << int(s1Ptr[0]) << " = ";
+
+            for (u32 j = 0; j < dest.stride(); ++j)
+                destPtr[j] ^= s0Ptr[j] ^ s1Ptr[j];
+
+            //o << int(destPtr[0]) << std::endl;
+
+            s0Ptr += dest.stride();
+            s1Ptr += dest.stride() + (!p) * dest.stride();
+        }
+
     }
 }

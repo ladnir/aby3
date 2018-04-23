@@ -33,4 +33,3 @@ public:
 		const oc::BitVector& choices,
 		oc::span<oc::i64> recvMsgs);
 };
-

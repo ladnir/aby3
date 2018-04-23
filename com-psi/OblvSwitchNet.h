@@ -19,8 +19,13 @@ namespace osuCrypto
 
         struct Program
         {
+            struct SrcDest
+            {
+                u32 mSrc,
+                    mDest;
+            };
             std::vector<u32> mCounts;
-            std::vector<std::array<u32,2>> mSrcDests;
+            std::vector<SrcDest> mSrcDests;
             //std::vector<Node> mNodes;
 
             void reset()
@@ -65,6 +70,16 @@ namespace osuCrypto
             Program& prog,
             PRNG& prng,
             MatrixView<u8> dest);
+
+
+        void sendDuplicate(Channel& programChl, PRNG& prng, MatrixView<u8> srcDest);
+        void helpDuplicate(Channel& programChl, u64 rows, u32 bytes);
+        void programDuplicate(
+            Channel& sendrChl,
+            Channel& helperChl,
+            Program& prog,
+            PRNG& prng,
+            MatrixView<u8> srcDest);
 
     };
 

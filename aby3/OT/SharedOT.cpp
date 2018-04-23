@@ -100,3 +100,4 @@ std::future<void> SharedOT::asyncRecv(oc::Channel & sender, oc::Channel & helper
 
 	return ret;
 }
+
