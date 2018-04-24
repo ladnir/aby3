@@ -2,14 +2,16 @@
 #include <cryptoTools/Common/CuckooIndex.h>
 #include "OblvPermutation.h"
 #include <iomanip>
+#include "OblvSwitchNet.h"
 
 namespace osuCrypto
 {
+    int ssp = 10;
     void ComPsiServer::init(u64 idx, Session & prev, Session & next)
     {
         mIdx = idx;
-        mNext = next.addChannel();
-        mPrev = prev.addChannel();
+
+        mComm = { prev.addChannel(), next.addChannel() };
 
         aby3::Sh3::CommPkg comm{ prev.addChannel(), next.addChannel() };
         mRt.init(idx, comm);
@@ -79,18 +81,99 @@ namespace osuCrypto
         std::array<SharedTable*, 2> AB{ &A,&B };
         std::array<u64, 2> reveals{ 0,1 };
         aby3::Sh3::i64Matrix keys = computeKeys(AB, reveals);
+        auto bytes = (A.mKeys.bitCount() + 7) / 8;
 
-        //cuckooHash(A);
+        switch (mIdx)
+        {
+        case 0:
+        {
+            auto cuckooTable = cuckooHash(A, keys);
+            if (bytes != cuckooTable.cols())
+                throw std::runtime_error("");
+
+            Matrix<u8> a2(B.rows() * 3, cuckooTable.cols());
+            selectCuckooPos(cuckooTable, a2);
+
+            mComm.mNext.send(cuckooTable.data(), cuckooTable.size());
+            mComm.mNext.send(a2.data(), a2.size());
 
 
-        throw std::runtime_error(LOCATION);
+            break;
+        }
+        case 1:
+        {
+            auto cuckooTable = cuckooHashRecv(A);
+            Matrix<u8> a2(B.rows() * 3, cuckooTable.cols());
+            selectCuckooPos(cuckooTable, a2, keys);
+
+
+            Matrix<u8> c2(cuckooTable.rows(), cuckooTable.cols());
+            Matrix<u8> a3(B.rows() * 3, cuckooTable.cols());
+            mComm.mPrev.recv(c2.data(), c2.size());
+            mComm.mPrev.recv(a3.data(), a3.size());
+
+
+            for (u64 i = 0; i < cuckooTable.size(); ++i)
+                cuckooTable(i) = cuckooTable(i) ^ c2(i);
+
+
+            for (u64 i = 0; i < a2.size(); ++i)
+                a2(i) = a2(i) ^ a3(i);
+
+
+            span<block> view((block*)keys.data(), keys.rows());
+
+            auto cuckooParams = CuckooIndex<>::selectParams(keys.rows(), ssp, 0, 3);
+            auto numBins = cuckooParams.numBins();
+
+            for (u64 h = 0; h < 3; ++h)
+            {
+                auto start = a2.data() + a2.cols() * keys.rows() * (h + 0);
+                auto end = a2.data() + a2.cols() * keys.rows()* (h + 1);
+
+                MatrixView<u8> sub(start, end, a2.cols());
+
+                for (u64 i = 0; i < view.size(); ++i)
+                {
+                    auto hx = CuckooIndex<>::getHash(view[i], h, numBins);
+
+                    auto destPtr = &sub(i, 0);
+                    auto srcPtr = &cuckooTable(hx, 0);
+
+                    for (u64 j = 0; j < a2.cols(); ++j)
+                    {
+                        if (srcPtr[j] != destPtr[j])
+                        {
+                            throw std::runtime_error("");
+                        }
+                    }
+                }
+
+            }
+
+            break;
+        }
+        case 2:
+        {
+            cuckooHashSend(A);
+            selectCuckooPos(B.rows(), bytes);
+
+            break;
+        }
+        default:
+            throw std::runtime_error("");
+        }
+
+        return {};
+
+        //throw std::runtime_error(LOCATION);
     }
     Matrix<u8> ComPsiServer::cuckooHash(SharedTable & A, aby3::Sh3::i64Matrix& keys)
     {
         if (mIdx != 0)
             throw std::runtime_error(LOCATION);
         CuckooIndex<CuckooTypes::NotThreadSafe> cuckoo;
-        cuckoo.init(A.mKeys.rows(), 5, 0, 3);
+        cuckoo.init(A.mKeys.rows(), ssp, 0, 3);
 
         if (keys.cols() != 2)
             throw std::runtime_error(LOCATION);
@@ -131,7 +214,7 @@ namespace osuCrypto
         //    std::cout << i << " -> " << perm[i] << std::endl;
         //}
 
-        oblvPerm.program(mNext, mPrev, std::move(perm), mPrng, share2, OblvPermutation::Overwrite);
+        oblvPerm.program(mComm.mNext, mComm.mPrev, std::move(perm), mPrng, share2, OutputType::Overwrite);
 
 
         //aby3::Sh3::i64Matrix a(A.mKeys.rows(), 2);
@@ -183,11 +266,12 @@ namespace osuCrypto
         return std::move(share0);
     }
 
+
     void ComPsiServer::cuckooHashSend(SharedTable & A)
     {
         if (mIdx != 2)
             throw std::runtime_error(LOCATION);
-        auto cuckooParams = CuckooIndex<>::selectParams(A.mKeys.rows(), 5, 0, 3);
+        auto cuckooParams = CuckooIndex<>::selectParams(A.mKeys.rows(), ssp, 0, 3);
         Matrix<u8> share1(cuckooParams.numBins(), (A.mKeys.bitCount() + 7) / 8);
 
         //auto dest = share1.data();
@@ -207,9 +291,9 @@ namespace osuCrypto
         }
 
         OblvPermutation oblvPerm;
-        oblvPerm.send(mNext, mPrev, std::move(share1));
+        oblvPerm.send(mComm.mNext, mComm.mPrev, std::move(share1));
 
-        mEnc.reveal(mRt.mComm, 0, A.mKeys);
+        //mEnc.reveal(mRt.mComm, 0, A.mKeys);
     }
 
     Matrix<u8> ComPsiServer::cuckooHashRecv(SharedTable & A)
@@ -218,12 +302,12 @@ namespace osuCrypto
         if (mIdx != 1)
             throw std::runtime_error(LOCATION);
 
-        auto cuckooParams = CuckooIndex<>::selectParams(A.mKeys.rows(), 5, 0, 3);
+        auto cuckooParams = CuckooIndex<>::selectParams(A.mKeys.rows(), ssp, 0, 3);
         Matrix<u8> share1(cuckooParams.numBins(), (A.mKeys.bitCount() + 7) / 8);
         share1.setZero();
 
         OblvPermutation oblvPerm;
-        oblvPerm.recv(mPrev, mNext, share1);
+        oblvPerm.recv(mComm.mPrev, mComm.mNext, share1);
         
 
         //auto dest = share1.data();
@@ -240,12 +324,94 @@ namespace osuCrypto
 
         
 
-        mEnc.reveal(mRt.mComm, 0, A.mKeys);
-        mPrev.asyncSendCopy(share1.data(), share1.size());
+        //mEnc.reveal(mRt.mComm, 0, A.mKeys);
+        //mComm.mPrev.asyncSendCopy(share1.data(), share1.size());
 
 
 
         return std::move(share1);
+    }
+
+    void ComPsiServer::selectCuckooPos(MatrixView<u8> cuckooHashTable, MatrixView<u8> dest)
+    {
+        if (mIdx != 0)
+            throw std::runtime_error("");
+
+        if (dest.cols() != cuckooHashTable.cols())
+            throw std::runtime_error("");
+
+        if (dest.rows() % 3)
+            throw std::runtime_error("");
+
+        auto size = dest.rows() / 3;
+
+        OblvSwitchNet snet;
+        for (u64 h = 0; h < 3; ++h)
+        {
+
+
+            auto start = dest.data() + dest.cols() * size * (h + 0);
+            auto end = dest.data() + dest.cols() * size * (h + 1);
+
+            MatrixView<u8> sub(start, end, dest.cols());
+            snet.sendRecv(mComm.mNext, mComm.mPrev, cuckooHashTable, sub);
+        }
+    }
+
+    void ComPsiServer::selectCuckooPos(u32 destRows, u32 bytes)
+    {
+        OblvSwitchNet snet;
+        for (u64 h = 0; h < 3; ++h)
+        {
+            snet.help(mComm.mPrev, mComm.mNext, mPrng, destRows, bytes);
+        }
+    }
+
+    void ComPsiServer::selectCuckooPos(MatrixView<u8> cuckooHashTable, MatrixView<u8> dest, aby3::Sh3::i64Matrix & keys)
+    {
+        if (mIdx != 1)
+            throw std::runtime_error("");
+
+        auto cuckooParams = CuckooIndex<>::selectParams(keys.rows(), ssp, 0, 3);
+        auto numBins = cuckooParams.numBins();
+
+        span<block> view((block*)keys.data(), keys.rows());
+
+        if (dest.cols() != cuckooHashTable.cols())
+            throw std::runtime_error("");
+
+        if (dest.rows() != keys.rows() * 3)
+            throw std::runtime_error("");
+
+        OblvSwitchNet snet;
+        OblvSwitchNet::Program prog;
+        for (u64 h = 0; h < 3; ++h)
+        {
+            auto start = dest.data() + dest.cols() * keys.rows() * (h + 0);
+            auto end = dest.data() + dest.cols() * keys.rows()* (h + 1);
+
+            MatrixView<u8> sub(start, end, dest.cols());
+
+            prog.init(cuckooHashTable.rows(), keys.rows());
+        
+            for (u64 i = 0; i < view.size(); ++i)
+            {
+                TODO("handle case of colliding hashes for a single value");
+
+                auto hx = CuckooIndex<>::getHash(view[i], h, numBins);
+                prog.addSwitch(hx, i);
+
+                auto destPtr = &sub(i, 0);
+                auto srcPtr = &cuckooHashTable(hx, 0);
+
+                memcpy(destPtr, srcPtr, dest.cols());
+            }
+
+
+
+            snet.program(mComm.mNext, mComm.mPrev, prog, mPrng, sub, OutputType::Additive);
+        }
+
     }
 
     aby3::Sh3::i64Matrix ComPsiServer::computeKeys(span<SharedTable*> tables, span<u64> reveals)
@@ -323,5 +489,9 @@ namespace osuCrypto
         mRt.runAll();
 
         return ret;
+    }
+    u64 SharedTable::rows()
+    {
+        return mKeys.rows();
     }
 }

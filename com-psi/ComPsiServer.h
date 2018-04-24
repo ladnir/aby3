@@ -10,7 +10,7 @@
 
 namespace osuCrypto
 {
-
+    using CommPkg = aby3::Sh3::CommPkg;
     class Table
     {
     public:
@@ -40,7 +40,7 @@ namespace osuCrypto
     {
     public:
         u64 mIdx, mKeyBitCount = 80;
-        Channel mNext, mPrev;
+        CommPkg mComm;
         PRNG mPrng;
 
         aby3::Sh3Runtime mRt;
@@ -59,6 +59,11 @@ namespace osuCrypto
         Matrix<u8> cuckooHashRecv(SharedTable & A);
         void cuckooHashSend(SharedTable & A);
         Matrix<u8> cuckooHash(SharedTable & A, aby3::Sh3::i64Matrix& keys);
+
+
+        void selectCuckooPos(MatrixView<u8> cuckooHashTable, MatrixView<u8> dest);
+        void selectCuckooPos(u32 destRows, u32 bytes);
+        void selectCuckooPos(MatrixView<u8> cuckooHashTable, MatrixView<u8> dest, aby3::Sh3::i64Matrix& keys);
 
         aby3::Sh3::i64Matrix computeKeys(span<SharedTable*> tables, span<u64> reveals);
 

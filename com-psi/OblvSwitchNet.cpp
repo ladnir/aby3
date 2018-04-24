@@ -1,40 +1,33 @@
 #include "OblvSwitchNet.h"
-#include "OblvPermutation.h"
 #include <cryptoTools/Common/BitIterator.h>
 #include <cryptoTools/Crypto/PRNG.h>
 #include <iomanip>
 
 namespace osuCrypto
 {
-    void OblvSwitchNet::sendRecv(Channel & programChl, Channel & revcrChl, Matrix<u8> src, MatrixView<u8> dest)
+    void OblvSwitchNet::sendRecv(Channel & programChl, Channel & helpChl, Matrix<u8> src, MatrixView<u8> dest)
     {
-        sendSelect(programChl, revcrChl, std::move(src));
+        std::stringstream ss;
+        ss << "send_" << src.rows() <<"_"<< dest.rows() << "_" << src.cols();
+
+        auto s = ss.str();
+        programChl.asyncSend(std::move(s));
+
+        sendSelect(programChl, helpChl, std::move(src));
         helpDuplicate(programChl, dest.rows(), dest.cols());
 
         OblvPermutation oblvPerm;
-        oblvPerm.recv(programChl, revcrChl, dest);
-    }
-
-    void OblvSwitchNet::program(Channel & revcrChl, Channel & sendrChl, Program & prog, PRNG & prng, MatrixView<u8> dest)
-    {
-        Matrix<u8> temp(dest.rows(), dest.cols());
-
-        programSelect(revcrChl, sendrChl, prog, prng, temp);
-        programDuplicate(revcrChl, sendrChl, prog, prng, temp);
-
-        std::vector<u32> perm(prog.mSrcDests.size());
-        for (auto i = 0; i < perm.size(); ++i)
-        {
-            perm[i] = prog.mSrcDests[i].mDest;
-            memcpy(&dest(perm[i], 0), &temp(i, 0), dest.cols());
-        }
-
-        OblvPermutation oblvPerm;
-        oblvPerm.program(sendrChl, revcrChl, std::move(perm), prng, dest, OblvPermutation::Additive);
+        oblvPerm.recv(programChl, helpChl, dest);
     }
 
     void OblvSwitchNet::help(Channel& programChl, Channel& sendrChl, PRNG& prng, u32 destRows, u32 bytes)
     {
+        std::stringstream ss;
+        ss << "help_" << destRows << "_" << bytes;
+
+        auto s = ss.str();
+        programChl.asyncSend(std::move(s));
+
         Matrix<u8> temp(destRows, bytes);
         recvSelect(programChl, sendrChl, temp);
         sendDuplicate(programChl, prng, temp);
@@ -43,11 +36,84 @@ namespace osuCrypto
         oblvPerm.send(programChl, sendrChl, std::move(temp));
     }
 
+    void OblvSwitchNet::program(
+        Channel & helpChl, 
+        Channel & sendrChl, 
+        Program & prog, 
+        PRNG & prng, 
+        MatrixView<u8> dest,
+        OutputType type)
+    {
+        {
+            std::string str;
+            sendrChl.recv(str);
+            std::stringstream ss;
+            ss << "send_" << prog.mSrcSize << "_" << dest.rows() << "_" << dest.cols();
 
-    void OblvSwitchNet::sendSelect(Channel & programChl, Channel & revcrChl, Matrix<u8> src)
+            if (str != ss.str())
+            {
+                std::cout << "exp: " << ss.str() << std::endl;
+                std::cout << "act: " << str << std::endl;
+
+                throw std::runtime_error("");
+            }
+        }
+
+        {
+            std::string str;
+            helpChl.recv(str);
+            std::stringstream ss;
+            ss << "help_" << dest.rows() << "_" << dest.cols();
+
+            if (str != ss.str())
+            {
+                std::cout << "exp: " << ss.str() << std::endl;
+                std::cout << "act: " << str << std::endl;
+
+                throw std::runtime_error("");
+            }
+        }
+
+
+        Matrix<u8> temp(dest.rows(), dest.cols());
+
+        programSelect(helpChl, sendrChl, prog, prng, temp);
+        programDuplicate(helpChl, sendrChl, prog, prng, temp);
+
+        std::vector<u32> perm(prog.mSrcDests.size());
+
+        if (type == OutputType::Overwrite)
+        {
+            for (auto i = 0; i < perm.size(); ++i)
+            {
+                perm[i] = prog.mSrcDests[i].mDest;
+                memcpy(&dest(perm[i], 0), &temp(i, 0), dest.cols());
+            }
+        }
+        else
+        {
+            for (auto i = 0; i < perm.size(); ++i)
+            {
+                perm[i] = prog.mSrcDests[i].mDest;
+                auto srcPtr = &temp(i, 0);
+                auto destPtr = &dest(perm[i], 0);
+                for (u64 j = 0; j < dest.cols(); ++j)
+                {
+                    destPtr[j] ^= srcPtr[j];
+                }
+            }
+        }
+
+        OblvPermutation oblvPerm;
+        oblvPerm.program(sendrChl, helpChl, std::move(perm), prng, dest, OutputType::Additive);
+    }
+
+
+
+    void OblvSwitchNet::sendSelect(Channel & programChl, Channel & helpChl, Matrix<u8> src)
     {
         OblvPermutation oblvPerm;
-        oblvPerm.send(programChl, revcrChl, std::move(src));
+        oblvPerm.send(programChl, helpChl, std::move(src));
     }
 
     void OblvSwitchNet::recvSelect(Channel & programChl, Channel & sendrChl, MatrixView<u8> dest)

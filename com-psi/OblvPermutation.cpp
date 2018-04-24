@@ -97,7 +97,7 @@ namespace osuCrypto
                 throw std::runtime_error(LOCATION);
 
             auto iter = data.data();
-            if (type == Overwrite)
+            if (type == OutputType::Overwrite)
             {
                 for (u32 j = 0; j < perm.size(); ++j)
                 {
@@ -186,7 +186,7 @@ namespace osuCrypto
                 {
                     auto destPtr = &dest(perm[i], 0);
 
-                    if (type == Overwrite)
+                    if (type == OutputType::Overwrite)
                     {
                         prng.get(destPtr, dest.stride());
                         //std::cout << "dest[" << perm[i]<<", "<<i << "] = " << int(destPtr[0]) << std::endl;

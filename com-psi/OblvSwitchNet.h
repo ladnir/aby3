@@ -2,6 +2,7 @@
 #include <cryptoTools/Common/Defines.h>
 #include <cryptoTools/Common/Matrix.h>
 #include <cryptoTools/Network/Channel.h>
+#include "OblvPermutation.h"
 
 namespace osuCrypto
 {
@@ -58,7 +59,8 @@ namespace osuCrypto
             Channel& sendrChl,
             Program& prog, 
             PRNG& prng, 
-            MatrixView<u8> dest);
+            MatrixView<u8> dest,
+            OutputType type = OutputType::Overwrite);
 
 
 

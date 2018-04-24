@@ -162,7 +162,7 @@ void Perm3p_additive_Test()
     {
         OblvPermutation p;
         auto perm2 = perm;
-        p.program(chl02, chl01, perm2, prng, s1, OblvPermutation::Additive);
+        p.program(chl02, chl01, perm2, prng, s1, OutputType::Additive);
     }//);
      //std::cout << std::endl;
 
@@ -174,7 +174,7 @@ void Perm3p_additive_Test()
      //std::cout << std::endl;
 
     OblvPermutation p;
-    p.recv(chl20, chl21, s2, OblvPermutation::Additive);
+    p.recv(chl20, chl21, s2, OutputType::Additive);
 
     //t0.join();
     //t1.join();

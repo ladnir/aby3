@@ -24,7 +24,7 @@ void ComPsi_computeKeys_test()
 
     auto size = 1 << 10;
     Table a;
-    a.mKeys.resize(size, (srvs[0].mKeyBitCount+63) / 64);
+    a.mKeys.resize(size, (srvs[0].mKeyBitCount + 63) / 64);
 
     for (u64 i = 0; i < size; ++i)
     {
@@ -98,11 +98,11 @@ void ComPsi_cuckooHash_test()
 
     // 80 bits;
     u32 hashSize = 80;
-    u32 rows = 3;
+    u32 rows = 100;
     u32 bytes = 8;
 
     PRNG prng(OneBlock);
-    aby3::Sh3::i64Matrix hashs(rows, (hashSize + 63)/ 64);
+    aby3::Sh3::i64Matrix hashs(rows, (hashSize + 63) / 64);
     hashs.setZero();
 
     Table a;
@@ -118,7 +118,7 @@ void ComPsi_cuckooHash_test()
         prng.get((u8*)hashs.row(i).data(), hashSize / 8);
     }
 
-    
+
 
     auto t0 = std::thread([&]() {
         auto i = 0;
@@ -150,5 +150,78 @@ void ComPsi_cuckooHash_test()
     t2.join();
 
 
+}
+
+void ComPsi_Intersect_test()
+{
+
+    IOService ios;
+    Session s01(ios, "127.0.0.1", SessionMode::Server, "01");
+    Session s10(ios, "127.0.0.1", SessionMode::Client, "01");
+    Session s02(ios, "127.0.0.1", SessionMode::Server, "02");
+    Session s20(ios, "127.0.0.1", SessionMode::Client, "02");
+    Session s12(ios, "127.0.0.1", SessionMode::Server, "12");
+    Session s21(ios, "127.0.0.1", SessionMode::Client, "12");
+
+
+    ComPsiServer srvs[3];
+    srvs[0].init(0, s02, s01);
+    srvs[1].init(1, s10, s12);
+    srvs[2].init(2, s21, s20);
+
+
+    // 80 bits;
+    u32 hashSize = 80;
+    u32 rows = 3;
+
+    PRNG prng(ZeroBlock);
+    Table a, b;
+    a.mKeys.resize(rows, (srvs[0].mKeyBitCount + 63) / 64);
+    b.mKeys.resize(rows, (srvs[0].mKeyBitCount + 63) / 64);
+
+    for (u64 i = 0; i < rows; ++i)
+    {
+        for (u64 j = 0; j < a.mKeys.cols(); ++j)
+        {
+            a.mKeys(i, j) = i;
+            b.mKeys(i, j) = i;
+        }
+    }
+
+
+
+    auto t0 = std::thread([&]() {
+        setThreadName("t0");
+        auto i = 0;
+        auto A = srvs[i].localInput(a);
+        auto B = srvs[i].localInput(b);
+
+        srvs[i].intersect(A, B);
+
+    });
+    auto t1 = std::thread([&]() {
+        setThreadName("t1");
+        auto i = 1;
+        auto A = srvs[i].remoteInput(0, rows);
+        auto B = srvs[i].remoteInput(0, rows);
+
+        srvs[i].intersect(A, B);
+    });
+    auto t2 = std::thread([&]() {
+        setThreadName("t2");
+        auto i = 2;
+        auto A = srvs[i].remoteInput(0, rows);
+        auto B = srvs[i].remoteInput(0, rows);
+
+        srvs[i].intersect(A, B);
+    });
+
+
+
+    t0.join();
+    t1.join();
+    t2.join();
+
+    //srvs[0].intersect(A, B);
 }
 

@@ -5,21 +5,21 @@
 namespace osuCrypto
 {
     class PRNG;
+    enum class OutputType
+    {
+        Overwrite,
+        Additive
+    };
 
     class OblvPermutation
     {
     public:
 
-        enum OutputType
-        {
-            Overwrite,
-            Additive
-        };
 
 
         void send(Channel& programChl, Channel& revcrChl, Matrix<u8> src);
-        void recv(Channel& programChl, Channel& sendrChl, MatrixView<u8> dest, OutputType type = Overwrite);
-        void program(Channel& revcrChl, Channel& sendrChl, std::vector<u32> perm, PRNG& prng, MatrixView<u8> dest, OutputType type = Overwrite);
+        void recv(Channel& programChl, Channel& sendrChl, MatrixView<u8> dest, OutputType type = OutputType::Overwrite);
+        void program(Channel& revcrChl, Channel& sendrChl, std::vector<u32> perm, PRNG& prng, MatrixView<u8> dest, OutputType type = OutputType::Overwrite);
 
     };
 
