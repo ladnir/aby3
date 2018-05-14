@@ -292,7 +292,7 @@ namespace aby3
             {
                 return (shareCount() == b.shareCount() &&
                     bitCount() == b.bitCount() &&
-                    details::areEqual(mShares, b.mShares, bitCount()));
+                    details::areEqual(mShares, b.mShares, shareCount()));
             }
 
             void trim()
@@ -308,6 +308,63 @@ namespace aby3
 
         using sPackedBin = sPackedBinBase<i64>;
         using sPackedBin128 = sPackedBinBase<block>;
+
+        template<typename T = i64>
+        struct PackedBinBase
+        {
+            static_assert(std::is_pod<T>::value, "must be pod");
+            u64 mShareCount;
+
+            oc::Matrix<T> mData;
+
+            PackedBinBase() = default;
+            PackedBinBase(u64 shareCount, u64 bitCount, u64 wordMultiple = 1)
+            {
+                resize(shareCount, bitCount, wordMultiple);
+            }
+
+            void resize(u64 shareCount, u64 bitCount, u64 wordMultiple = 1)
+            {
+                mShareCount = shareCount;
+                auto bitsPerWord = 8 * sizeof(T);
+                auto wordCount = (shareCount + bitsPerWord - 1) / bitsPerWord;
+                wordCount = oc::roundUpTo(wordCount, wordMultiple);
+                mData.resize(bitCount, wordCount, oc::AllocType::Uninitialized);
+            }
+
+            u64 size() const { return mData.size(); }
+
+            // the number of shares that are stored in this packed (shared) binary matrix.
+            u64 shareCount() const { return mShareCount; }
+
+            // the number of bits that each share has.
+            u64 bitCount() const { return mData.rows(); }
+
+            // the number of i64s in each row = divCiel(mShareCount, 8 * sizeof(i64))
+            u64 simdWidth() const { return mData.cols(); }
+
+            PackedBinBase<T> operator^(const PackedBinBase<T>& rhs)
+            {
+                if (shareCount() != rhs.shareCount() || bitCount() != rhs.bitCount())
+                    throw std::runtime_error(LOCATION);
+
+                PackedBinBase<T> r(shareCount(), bitCount());
+                    for (u64 j = 0; j < mData.size(); ++j)
+                    {
+                        r.mData(j) = mData(j) ^ rhs.mData(j);
+                }
+                return r;
+            }
+
+            void trim()
+            {
+                details::trim(mData, shareCount());
+            }
+        };
+
+        using PackedBin = PackedBinBase<i64>;
+        using PackedBin128 = PackedBinBase<block>;
+
 
         template<typename T>
         inline const T& Ref<T>::operator=(const T & copy)

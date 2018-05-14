@@ -152,7 +152,7 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
 
         Sh3Runtime rt(i, comms[i]);
 
-        Sh3::sbMatrix A(width, 64), B(width, 64), C(width, 64);
+        Sh3::sbMatrix A(width, 64), B(width, 64), C(width, 1);
         Sh3::sbMatrix Ar(1, 64);
 
         Sh3Encryptor enc;
@@ -220,7 +220,7 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
 
         Sh3Runtime rt(i, comms[i]);
 
-        Sh3::sbMatrix A(width, 64), B(width, 64), C(width, 64), Ar(1, 64);
+        Sh3::sbMatrix A(width, 64), B(width, 64), C(width, 1), Ar(1, 64);
 
         Sh3Encryptor enc;
         enc.init(i, toBlock(i), toBlock((i + 1) % 3));

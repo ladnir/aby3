@@ -82,11 +82,11 @@ void printBits(Sh3::eMatrix<i64>& a, u64 bits)
 {
     std::string b(bits, '0');
     //b.back() = '\n';
-    auto total = a.cols() * 64 ;
+    auto total = a.cols() * 64;
     std::string c(total - bits, '0');
     std::cout << "    ";
     for (u64 j = 0; j < bits; ++j)
-        std::cout << (j%10);
+        std::cout << (j % 10);
     std::cout << '\n';
 
     for (u64 i = 0; i < a.rows(); ++i)
@@ -110,7 +110,7 @@ void printBits(Sh3::eMatrix<i64>& a, u64 bits)
         //for (u64 j = 0; j < a.cols(); ++j)
         //    std::cout << std::hex << a(i, j) << ' ';
 
-        std::cout <<'\n';
+        std::cout << '\n';
     }
 
     std::cout << std::flush;
@@ -122,7 +122,7 @@ void pattern(oc::Matrix<i64>& a)
     for (u64 i = 0; i < a.rows(); ++i)
     {
         u64 k = i;
-        BitIterator iter((u8*)&a(i,0), 0);
+        BitIterator iter((u8*)&a(i, 0), 0);
 
         for (u64 j = 0; j < bits; ++j, ++k)
         {
@@ -144,7 +144,7 @@ void corner(oc::Matrix<i64>& a, u64 bits)
     //printBits(a, bits);
     for (u64 i = bits / 2; i < a.rows(); ++i)
     {
-        BitIterator iter((u8*)&a(i,0), 0);
+        BitIterator iter((u8*)&a(i, 0), 0);
         //a(i, 0) = -1;
 
 
@@ -169,7 +169,7 @@ void Sh3_convert_b64Matrix_PackedBin_test()
     for (u64 t = 0; t < trials; ++t)
     {
         PRNG prng(ZeroBlock);
-        auto shares =  prng.get<u64>() % mod + 1;
+        auto shares = prng.get<u64>() % mod + 1;
         auto bits = prng.get<u64>() % mod + 1;
         Sh3Encryptor enc;
 
@@ -242,8 +242,34 @@ void Sh3_convert_b64Matrix_PackedBin_test()
 
         if (pack != packDest)
         {
-            //std::cout << pack.mShares[0] << std::endl << std::endl;
-            //std::cout << packDest.mShares[0] << std::endl;
+
+            for (u64 i = 0; i < pack.mShares[0].rows(); ++i)
+            {
+                for (auto s : { 0,1 })
+                {
+                    for (u64 j = 0; j < pack.mShares[0].cols(); ++j)
+                    {
+                        std::cout << pack.mShares[s](i, j) << " ";
+                    }
+                    std::cout << "   |   ";
+
+                }
+
+                std::cout << "   #   ";
+                for (auto s : { 0,1 })
+                {
+
+                    for (u64 j = 0; j < pack.mShares[0].cols(); ++j)
+                    {
+                        if (pack.mShares[s](i, j) != pack.mShares[s](i, j)) std::cout << Color::Red;
+                        std::cout << pack.mShares[s](i, j) << " " << ColorDefault;
+
+                    }
+                    std::cout << "   |   ";
+                }
+
+                std::cout << std::endl;
+            }
 
             throw std::runtime_error(LOCATION);
         }
@@ -281,8 +307,8 @@ void Sh3_trim_test()
         {
             BitIterator iter0((u8*)pack.mShares[0][(i)].data(), 0);
             BitIterator iter1((u8*)pack.mShares[1][(i)].data(), 0);
-            
-            if(false)
+
+            if (false)
             {
                 std::cout << '\n';
                 auto iter = iter0;
@@ -301,13 +327,13 @@ void Sh3_trim_test()
             for (u64 j = 0; j < end; ++j)
             {
                 auto exp = j < shares;
-                if(*iter0 != exp)
+                if (*iter0 != exp)
                 {
-                    std::cout <<"\n " << std::string(j, ' ') << '^' << std::endl;;
+                    std::cout << "\n " << std::string(j, ' ') << '^' << std::endl;;
                     pack.trim();
                     throw std::runtime_error(LOCATION);
                 }
-                if (*iter1 != exp) 
+                if (*iter1 != exp)
                 {
                     pack.trim();
                     throw std::runtime_error(LOCATION);

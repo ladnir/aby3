@@ -2,6 +2,7 @@
 #include "Sh3Types.h"
 #include "Sh3ShareGen.h"
 #include "Sh3Runtime.h"
+#include <cryptoTools/Common/MatrixView.h>
 
 namespace aby3
 {
@@ -45,6 +46,9 @@ namespace aby3
         // generates a sPackedBin from the given matrix.
         void localPackedBinary(Sh3::CommPkg& comm, const Sh3::i64Matrix& m, Sh3::sPackedBin& dest);
         Sh3Task localPackedBinary(Sh3Task dep, const Sh3::i64Matrix& m, Sh3::sPackedBin& dest);
+
+        Sh3Task localPackedBinary(Sh3Task dep, oc::MatrixView<u8> m, Sh3::sPackedBin& dest, bool transpose);
+
 
         // generates a sPackedBin from the given matrix.
         void remotePackedBinary(Sh3::CommPkg& comm, Sh3::sPackedBin& dest);
@@ -90,6 +94,9 @@ namespace aby3
         Sh3Task reveal(Sh3Task dep, const Sh3::sPackedBin& x, Sh3::i64Matrix& dest);
         Sh3Task revealAll(Sh3Task dep, const Sh3::sPackedBin& x, Sh3::i64Matrix& dest);
         Sh3Task reveal(Sh3Task dep, u64 partyIdx, const Sh3::sPackedBin& x);
+
+        Sh3Task reveal(Sh3Task dep, const Sh3::sPackedBin& x, Sh3::PackedBin& dest);
+        Sh3Task revealAll(Sh3Task dep, const Sh3::sPackedBin& x, Sh3::PackedBin& dest);
 
         void rand(Sh3::si64Matrix& dest);
         void rand(Sh3::sbMatrix& dest);

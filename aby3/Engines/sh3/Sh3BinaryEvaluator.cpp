@@ -1150,6 +1150,11 @@ namespace aby3
     void Sh3BinaryEvaluator::getOutput(u64 idx, Sh3::sPackedBin & out)
     {
         const auto& outWires = mCir->mOutputs[idx].mWires;
+        getOutput(outWires, out);
+    }
+
+    void Sh3BinaryEvaluator::getOutput(const std::vector<oc::BetaWire>& outWires, Sh3::sPackedBin & out)
+    {
 
         out.resize(mMem.shareCount(), outWires.size());
 

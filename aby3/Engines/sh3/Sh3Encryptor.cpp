@@ -236,9 +236,15 @@ namespace aby3
     Sh3Task Sh3Encryptor::localPackedBinary(Sh3Task dep, const Sh3::i64Matrix & m, Sh3::sPackedBin & dest)
     {
 
-        return dep.then([this, &m, &dest](Sh3::CommPkg& comm, Sh3Task& self) {
+        oc::MatrixView<u8> mm((u8*)m.data(), m.rows(), m.cols() * sizeof(i64));
+        return localPackedBinary(dep, mm, dest, true);
+    }
 
-            if (dest.bitCount() != m.cols() * sizeof(i64) * 8)
+    Sh3Task Sh3Encryptor::localPackedBinary(Sh3Task dep, oc::MatrixView<u8> m, Sh3::sPackedBin & dest, bool transpose)
+    {
+        return dep.then([this, m, &dest, transpose](Sh3::CommPkg& comm, Sh3Task& self) {
+
+            if (dest.bitCount() != m.cols() * 8)
                 throw std::runtime_error(LOCATION);
             if (dest.shareCount() != m.rows())
                 throw std::runtime_error(LOCATION);
@@ -246,9 +252,12 @@ namespace aby3
             auto bits = sizeof(i64) * 8;
             auto outRows = dest.bitCount();
             auto outCols = (dest.shareCount() + bits - 1) / bits;
-            oc::MatrixView<u8> in((u8*)m.data(), m.rows(), m.cols() * sizeof(i64));
             oc::MatrixView<u8> out((u8*)dest.mShares[0].data(), outRows, outCols * sizeof(i64));
-            oc::sse_transpose(in, out);
+
+            if (transpose)
+                oc::sse_transpose(m, out);
+            else
+                memcpy(out.data(), m.data(), m.size());
 
             for (u64 i = 0; i < dest.mShares[0].size(); ++i)
                 dest.mShares[0](i) = dest.mShares[0](i) ^ mShareGen.getBinaryShare();
@@ -366,7 +375,7 @@ namespace aby3
         });
     }
 
-    Sh3Task Sh3Encryptor::revealAll(Sh3Task dep, const Sh3::si64Matrix& x, Sh3::i64Matrix& dest) 
+    Sh3Task Sh3Encryptor::revealAll(Sh3Task dep, const Sh3::si64Matrix& x, Sh3::i64Matrix& dest)
     {
         reveal(dep, (mPartyIdx + 2) % 3, x);
         return reveal(dep, x, dest);
@@ -542,6 +551,30 @@ namespace aby3
         oc::MatrixView<u8> bb((u8*)buff.data(), A.bitCount(), A.simdWidth() * sizeof(i64));
         oc::MatrixView<u8> rr((u8*)r.data(), r.rows(), r.cols() * sizeof(i64));
         sse_transpose(bb, rr);
+    }
+
+    Sh3Task Sh3Encryptor::revealAll(Sh3Task dep, const Sh3::sPackedBin& A, Sh3::PackedBin& r)
+    {
+
+        reveal(dep, (mPartyIdx + 2) % 3, A);
+        return reveal(dep, A, r);
+    }
+
+
+    Sh3Task Sh3Encryptor::reveal(Sh3Task dep, const Sh3::sPackedBin & A, Sh3::PackedBin & r)
+    {
+        return dep.then([&A, &r](Sh3::CommPkg& comm, Sh3Task&  self)
+        {
+            r.resize(A.mShareCount, A.bitCount());
+
+            comm.mNext.recv(r.mData.data(), r.mData.size());
+
+
+            for (u64 i = 0; i < r.size(); ++i)
+            {
+                r.mData(i) = r.mData(i) ^ A.mShares[0](i) ^ A.mShares[1](i);
+            }
+        });
     }
 
     void Sh3Encryptor::revealAll(Sh3::CommPkg & comm, const Sh3::sPackedBin & A, Sh3::i64Matrix & r)

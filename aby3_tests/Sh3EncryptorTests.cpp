@@ -119,7 +119,7 @@ void Sh3_Encryptor_IO_test()
             failed = true;
         }
 
-        Sh3::sbMatrix bShr(trials, trials);
+        Sh3::sbMatrix bShr(trials, trials * 64);
         e.localBinMatrix(c, m, bShr);
         e.reveal(c, bShr, mm);
 

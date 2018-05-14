@@ -376,7 +376,7 @@ namespace Lynx
 
         Matrix output(arithmetic.rows(), arithmetic.cols());
         eng.getOutput(0, output);
-        ostreamLock(std::cout) << mPartyIdx << " : " << std::hex << output.mShares[0](0) << " " << std::hex <<output.mShares[1](0) << std::endl;
+        //ostreamLock(std::cout) << mPartyIdx << " : " << std::hex << output.mShares[0](0) << " " << std::hex <<output.mShares[1](0) << std::endl;
 
         return {};
     }

@@ -17,14 +17,21 @@ bool aby3::Sh3::details::areEqualImpl(
     auto div8 = bitCount >> 3;
     u8 mask = mod8 ? ((1 << mod8) - 1) : ~0;
 
+    auto stride = (bitCount + 7) / 8;
+    if (stride > a[0].stride())
+        throw RTE_LOC;
+
     for (u64 i = 0; i < a[0].rows(); ++i)
     {
 
-        if (div8 && (
-                memcmp(a[0][i].data(), b[0][i].data(), div8 -1) ||
-                memcmp(a[1][i].data(), b[1][i].data(), div8-1)
-            ))
-            return false;
+        if (div8)
+        {
+            auto c1 = memcmp(a[0][i].data(), b[0][i].data(), div8);
+            auto c2 = memcmp(a[1][i].data(), b[1][i].data(), div8);
+
+            if(c1 || c2)
+                return false;
+        }
 
         if (mask & (
                 a[0](i, div8) ^ b[0](i, div8) |

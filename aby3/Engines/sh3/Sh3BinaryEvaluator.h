@@ -72,8 +72,10 @@ namespace aby3
         
         void roundCallback(Sh3::CommPkg& comms, Sh3Task task);
 
-        void getOutput(u64 i, Sh3::sbMatrix& out);
         void getOutput(u64 i, Sh3::sPackedBin& out);
+        void getOutput(const std::vector<oc::BetaWire>& wires, Sh3::sPackedBin& out);
+
+        void getOutput(u64 i, Sh3::sbMatrix& out);
 		void getOutput(const std::vector<oc::BetaWire>& wires, Sh3::sbMatrix& out);
 
 		bool hasMoreRounds() const {
