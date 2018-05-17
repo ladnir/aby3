@@ -318,27 +318,47 @@ namespace aby3
 #ifdef BINARY_ENGINE_DEBUG
         if (mDebug)
         {
-            throw std::runtime_error("");
-            for (u64 i = 0; i < inWires.size(); ++i)
+
+            for (u64 r = 0; r < inWires.size(); ++r)
             {
-                auto shareCount = mPlainWires_DEBUG.size();
+                auto w = inWires[r];
 
                 auto prevIdx = (mDebugPartyIdx + 2) % 3;
-                //auto& m = mPlainWires_DEBUG[r];
-                auto bv0 = BitVector((u8*)in.mShares[0][i].data(), shareCount);
-                auto bv1 = BitVector((u8*)in.mShares[1][i].data(), shareCount);
+                auto bv0 = BitVector((u8*)in.mShares[0][r].data(), mPlainWires_DEBUG.size());
+                auto bv1 = BitVector((u8*)in.mShares[1][r].data(), mPlainWires_DEBUG.size());
 
-                for (u64 r = 0; r < shareCount; ++r)
+                for (u64 i = 0; i < mPlainWires_DEBUG.size(); ++i)
                 {
-                    auto& triple = mPlainWires_DEBUG[r][inWires[i]];
-
-                    triple.mBits[mDebugPartyIdx] = bv0[r];
-                    triple.mBits[prevIdx] = bv1[r];
-                    triple.mIsSet = true;
+                    auto& m = mPlainWires_DEBUG[i];
+                    m[w].mBits[mDebugPartyIdx] = bv0[i];
+                    m[w].mBits[prevIdx] = bv1[i];
+                    m[w].mIsSet = true;
+                    //if (inWires[i] < 10)
+                    //	ostreamLock(std::cout) << mPartyIdx << " w[" << inWires[i] << "] = "
+                    //	<< (int)m[inWires[i]].mBits[mPartyIdx] << std::endl;
                 }
-
-                validateWire(inWires[i]);
             }
+            //throw std::runtime_error("");
+            //for (u64 i = 0; i < inWires.size(); ++i)
+            //{
+            //    auto shareCount = mPlainWires_DEBUG.size();
+
+            //    auto prevIdx = (mDebugPartyIdx + 2) % 3;
+            //    //auto& m = mPlainWires_DEBUG[r];
+            //    auto bv0 = BitVector((u8*)in.mShares[0][i].data(), shareCount);
+            //    auto bv1 = BitVector((u8*)in.mShares[1][i].data(), shareCount);
+
+            //    for (u64 r = 0; r < shareCount; ++r)
+            //    {
+            //        auto& triple = mPlainWires_DEBUG[r][inWires[i]];
+
+            //        triple.mBits[mDebugPartyIdx] = bv0[r];
+            //        triple.mBits[prevIdx] = bv1[r];
+            //        triple.mIsSet = true;
+            //    }
+
+            //    validateWire(inWires[i]);
+            //}
         }
 #endif
     }

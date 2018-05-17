@@ -191,7 +191,7 @@ void ComPsi_Intersect_test()
 
     // 80 bits;
     u32 hashSize = 80;
-    u32 rows = 10;
+    u32 rows = 20;
 
     PRNG prng(ZeroBlock);
     Table a, b;
