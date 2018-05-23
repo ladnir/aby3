@@ -91,7 +91,7 @@ void ComPsi_computeKeys_test()
 
     if (r0 != r1)
     {
-        std::cout << std::endl;
+        std::cout<< std::hex << std::endl;
         std::cout << r0 << std::endl << std::endl;
         std::cout << r1 << std::endl;
 

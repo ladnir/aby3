@@ -511,6 +511,7 @@ namespace aby3
 
             oc::MatrixView<u8> bb((u8*)buff.data(), A.bitCount(), A.simdWidth() * sizeof(i64));
             oc::MatrixView<u8> rr((u8*)r.data(), r.rows(), r.cols() * sizeof(i64));
+            memset(r.data(), 0, r.size() * sizeof(i64));
             sse_transpose(bb, rr);
         });
     }
@@ -550,6 +551,7 @@ namespace aby3
 
         oc::MatrixView<u8> bb((u8*)buff.data(), A.bitCount(), A.simdWidth() * sizeof(i64));
         oc::MatrixView<u8> rr((u8*)r.data(), r.rows(), r.cols() * sizeof(i64));
+        memset(r.data(), 0, r.size() * sizeof(i64));
         sse_transpose(bb, rr);
     }
 
