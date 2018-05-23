@@ -13,7 +13,7 @@
 
 
 #include <aby3/Circuit/BetaCircuit.h>
-
+#include <cryptoTools/Crypto/PRNG.h>
 
 namespace osuCrypto
 {
@@ -40,10 +40,12 @@ namespace osuCrypto
 
             // Size of the identity part in the Sbox layer
             const unsigned identitysize = blocksize - 3 * numofboxes;
+            bool mInvertable;
 
-            LowMC2(keyblock k = 0) {
+            LowMC2(bool invertable, keyblock k = 0) {
+                mInvertable = invertable;
                 key = k;
-                instantiate_LowMC();
+                instantiate_LowMC(invertable);
                 keyschedule();
             };
 
@@ -78,6 +80,9 @@ namespace osuCrypto
 
             block decrypt(const block message)
             {
+                if (mInvertable == false)
+                    throw RTE_LOC;
+
                 block c = message;
                 for (unsigned r = rounds; r > 0; --r) {
                     c ^= roundkeys[r];
@@ -303,6 +308,7 @@ namespace osuCrypto
             // Stores the round keys
             std::vector<block> roundkeys;
 
+            std::bitset<80> state;
             // LowMC2 private functions //
 
             // The substitution layer
@@ -403,8 +409,9 @@ namespace osuCrypto
 
 
             //Fills the matrices and roundconstants with pseudorandom bits 
-            void instantiate_LowMC()
+            void instantiate_LowMC(bool invertable)
             {
+                oc::PRNG prng(oc::ZeroBlock);
 
                 // Create LinMatrices and invLinMatrices
                 LinMatrices.clear();
@@ -413,37 +420,46 @@ namespace osuCrypto
 
                     std::vector<block> mat;
 
-                    std::string fileName("./linMtx_" + ToString(r) + ".txt");
-                    std::ifstream in;
-                    in.open(fileName, std::ios::in);
-
-                    if (in.is_open() == false)
+                    if (invertable == false)
                     {
-
-                        // Create matrix
-                        // Fill matrix with random bits
-                        do {
-                            mat.clear();
-                            for (unsigned i = 0; i < blocksize; ++i) {
-                                mat.push_back(getrandblock());
-                            }
-                            // Repeat if matrix is not invertible
-                        } while (rank_of_Matrix(mat) != blocksize);
-
-                        //std::ofstream out;
-                        //out.open(fileName, std::ios::out | std::ios::binary | std::ios::trunc);
-                        //writeMatrix(out, mat);
+                        for (unsigned i = 0; i < blocksize; ++i) {
+                            mat.push_back(getrandblock(prng));
+                        }
+                        LinMatrices.push_back(mat);
                     }
                     else
                     {
-                        mat = loadMatrix<block>(in);
+                        std::string fileName("./linMtx_" + ToString(r) + ".txt");
+                        std::ifstream in;
+                        in.open(fileName, std::ios::in);
 
-                        if (rank_of_Matrix(mat) != blocksize)
-                            throw std::runtime_error(LOCATION);
+                        if (in.is_open() == false)
+                        {
+
+                            // Create matrix
+                            // Fill matrix with random bits
+                            do {
+                                mat.clear();
+                                for (unsigned i = 0; i < blocksize; ++i) {
+                                    mat.push_back(getrandblock(prng));
+                                }
+                                // Repeat if matrix is not invertible
+                            } while (rank_of_Matrix(mat) != blocksize);
+
+                            //std::ofstream out;
+                            //out.open(fileName, std::ios::out | std::ios::binary | std::ios::trunc);
+                            //writeMatrix(out, mat);
+                        }
+                        else
+                        {
+                            mat = loadMatrix<block>(in);
+
+                            if (rank_of_Matrix(mat) != blocksize)
+                                throw std::runtime_error(LOCATION);
+                        }
+                        LinMatrices.push_back(mat);
+                        invLinMatrices.push_back(invert_Matrix(LinMatrices.back()));
                     }
-
-                    LinMatrices.push_back(mat);
-                    invLinMatrices.push_back(invert_Matrix(LinMatrices.back()));
                 }
 
 
@@ -451,7 +467,7 @@ namespace osuCrypto
                 // Create roundconstants
                 roundconstants.clear();
                 for (unsigned r = 0; r < rounds; ++r) {
-                    roundconstants.push_back(getrandblock());
+                    roundconstants.push_back(getrandblock(prng));
                 }
 
                 // Create KeyMatrices
@@ -460,35 +476,42 @@ namespace osuCrypto
                     // Create matrix
                     std::vector<keyblock> mat;
 
-
-                    std::string fileName("./keyMtx_" + ToString(r) + ".txt");
-                    std::ifstream in;
-                    in.open(fileName, std::ios::in);
-
-                    if (in.is_open() == false)
+                    if (invertable == false)
                     {
-
-                        // Fill matrix with random bits
-                        do {
-                            mat.clear();
-                            for (unsigned i = 0; i < blocksize; ++i) {
-                                mat.push_back(getrandkeyblock());
-                            }
-                            // Repeat if matrix is not of maximal rank
-                        } while (rank_of_Matrix(mat) < std::min(blocksize, keysize));
-
-                        //std::ofstream out;
-                        //out.open(fileName, std::ios::out | std::ios::binary | std::ios::trunc);
-                        //writeMatrix(out, mat);
+                        for (unsigned i = 0; i < blocksize; ++i) {
+                            mat.push_back(getrandkeyblock(prng));
+                        }
                     }
                     else
                     {
-                        mat = loadMatrix<keyblock>(in);
+                        std::string fileName("./keyMtx_" + ToString(r) + ".txt");
+                        std::ifstream in;
+                        in.open(fileName, std::ios::in);
 
-                        if (rank_of_Matrix(mat) < std::min(blocksize, keysize))
-                            throw std::runtime_error(LOCATION);
+                        if (in.is_open() == false)
+                        {
+
+                            // Fill matrix with random bits
+                            do {
+                                mat.clear();
+                                for (unsigned i = 0; i < blocksize; ++i) {
+                                    mat.push_back(getrandkeyblock(prng));
+                                }
+                                // Repeat if matrix is not of maximal rank
+                            } while (rank_of_Matrix(mat) < std::min(blocksize, keysize));
+
+                            //std::ofstream out;
+                            //out.open(fileName, std::ios::out | std::ios::binary | std::ios::trunc);
+                            //writeMatrix(out, mat);
+                        }
+                        else
+                        {
+                            mat = loadMatrix<keyblock>(in);
+
+                            if (rank_of_Matrix(mat) < std::min(blocksize, keysize))
+                                throw std::runtime_error(LOCATION);
+                        }
                     }
-
                     KeyMatrices.push_back(mat);
                 }
 
@@ -497,58 +520,58 @@ namespace osuCrypto
 
 
             // Random bits functions //
-            block getrandblock()
+            block getrandblock(PRNG& prng)
             {
                 block tmp = 0;
-                for (unsigned i = 0; i < blocksize; ++i) tmp[i] = getrandbit();
+                for (unsigned i = 0; i < blocksize; ++i) tmp[i] = prng.get<bool>();
                 return tmp;
             }
 
 
-            keyblock getrandkeyblock()
+            keyblock getrandkeyblock(PRNG& prng)
             {
                 keyblock tmp = 0;
-                for (unsigned i = 0; i < keysize; ++i) tmp[i] = getrandbit();
+                for (unsigned i = 0; i < keysize; ++i) tmp[i] = prng.get<bool>();
                 return tmp;
             }
 
-            bool  getrandbit()
-            {
-                //static std::mt19937 gen(0); //Standard mersenne_twister_engine seeded with zero
-                //std::uniform_int_distribution<> dis(0, 1);
-                //return dis(gen);
+            //bool  getrandbit()
+            //{
+            //    //static std::mt19937 gen(0); //Standard mersenne_twister_engine seeded with zero
+            //    //std::uniform_int_distribution<> dis(0, 1);
+            //    //return dis(gen);
 
-                static std::bitset<80> state; //Keeps the 80 bit LSFR state
-                bool tmp = 0;
-                //If state has not been initialized yet
-                if (state.none()) {
-                    state.set(); //Initialize with all bits set
-                                 //Throw the first 160 bits away
-                    for (unsigned i = 0; i < 160; ++i) {
-                        //Update the state
-                        tmp = state[0] ^ state[13] ^ state[23]
-                            ^ state[38] ^ state[51] ^ state[62];
-                        state >>= 1;
-                        state[79] = tmp;
-                    }
-                }
-                //choice records whether the first bit is 1 or 0.
-                //The second bit is produced if the first bit is 1.
-                bool choice = false;
-                do {
-                    //Update the state
-                    tmp = state[0] ^ state[13] ^ state[23]
-                        ^ state[38] ^ state[51] ^ state[62];
-                    state >>= 1;
-                    state[79] = tmp;
-                    choice = tmp;
-                    tmp = state[0] ^ state[13] ^ state[23]
-                        ^ state[38] ^ state[51] ^ state[62];
-                    state >>= 1;
-                    state[79] = tmp;
-                } while (!choice);
-                return tmp;
-            }
+            //     //Keeps the 80 bit LSFR state
+            //    bool tmp = 0;
+            //    //If state has not been initialized yet
+            //    if (state.none()) {
+            //        state.set(); //Initialize with all bits set
+            //                     //Throw the first 160 bits away
+            //        for (unsigned i = 0; i < 160; ++i) {
+            //            //Update the state
+            //            tmp = state[0] ^ state[13] ^ state[23]
+            //                ^ state[38] ^ state[51] ^ state[62];
+            //            state >>= 1;
+            //            state[79] = tmp;
+            //        }
+            //    }
+            //    //choice records whether the first bit is 1 or 0.
+            //    //The second bit is produced if the first bit is 1.
+            //    bool choice = false;
+            //    do {
+            //        //Update the state
+            //        tmp = state[0] ^ state[13] ^ state[23]
+            //            ^ state[38] ^ state[51] ^ state[62];
+            //        state >>= 1;
+            //        state[79] = tmp;
+            //        choice = tmp;
+            //        tmp = state[0] ^ state[13] ^ state[23]
+            //            ^ state[38] ^ state[51] ^ state[62];
+            //        state >>= 1;
+            //        state[79] = tmp;
+            //    } while (!choice);
+            //    return tmp;
+            //}
 
     };
 

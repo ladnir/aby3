@@ -35,6 +35,7 @@ void ComPsi_computeKeys_test()
             b.mKeys(i, j) = a.mKeys(i, j);
         }
     }
+    bool failed = false;
 
     aby3::Sh3::i64Matrix r0, r1;
     auto t0 = std::thread([&]() {
@@ -55,7 +56,8 @@ void ComPsi_computeKeys_test()
                 //std::cout << (j ? ", " : ToString(i) + " : ") << r(i, j);
                 if (r0(i, j) != r0(i + 1, j))
                 {
-                    throw std::runtime_error(LOCATION);
+                    //throw std::runtime_error(LOCATION);
+                    failed = true;
                 }
             }
             //std::cout << std::endl;
@@ -89,12 +91,18 @@ void ComPsi_computeKeys_test()
 
     if (r0 != r1)
     {
+        std::cout << std::endl;
         std::cout << r0 << std::endl << std::endl;
         std::cout << r1 << std::endl;
 
         throw std::runtime_error("");
     }
 
+    if (failed)
+    {
+        std::cout << "failed " << std::endl;
+        throw RTE_LOC;
+    }
 }
 
 void ComPsi_cuckooHash_test()

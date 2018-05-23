@@ -7,11 +7,37 @@
 //////////////////
 using namespace oc;
 
+template<typename T>
+struct vectorPrint
+{
+    const std::vector<T>& vec;
+
+};
+template<typename T>
+std::ostream& operator<<(std::ostream& out, const vectorPrint<T>& v)
+{
+    out << "{";
+    auto& vec = v.vec;
+
+    if (vec.size())
+    {
+        out << vec[0];
+    }
+
+    for (u64 i = 1; i < vec.size(); ++i)
+    {
+        out << ", " << vec[i];
+    }
+
+    out << "}";
+    return out;
+}
+
 void lowMC_Circuit_test() {
     // Example usage of the LowMC class
     // Instantiate a LowMC cipher instance called cipher using the key '1'.
     //LowMC cipher(1);
-    LowMC2<> cipher2(1);
+    LowMC2<> cipher2(false, 1);
     LowMC2<>::block m = 0xFFD5;
 
     //std::cout << "Plaintext:" << std::endl;
@@ -88,7 +114,7 @@ void lowMC_FileCircuit_test() {
 
     LowMC2<>::block m = 0xFFD5;
     LowMC2<>::block m2("0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001111111111010101", m.size(), '0', '1');
-    LowMC2<>::block c2("0101110110000000101011001100110001000111001000100011001000011101001111010001101001001111000110100101001001111100110001101000011010001101011111000000100110110000101111100010001011111010000000110101010011011111001011000010100110001000100111011111001010000011", m.size(), '0', '1');
+    LowMC2<>::block c2("0000101000111011000011010101010100001010100101001001100100110011110000001011110101100111000001011010110101110001100110000101110111100110100101110110101101100001011000101101001001101011011111010011001111010110011101010001000100001100101001100011111100011110", m.size(), '0', '1');
 
 
     if (m2 != m)
@@ -104,14 +130,21 @@ void lowMC_FileCircuit_test() {
 
     if (in.is_open() == false)
     {
-        LowMC2<> cipher1(1);
-        LowMC2<> cipher2(1);
+        LowMC2<> cipher1(false, 1);
+        LowMC2<> cipher2(false, 1);
 
 
         for (u64 i = 0; i < cipher1.LinMatrices.size(); ++i)
         {
             if (cipher1.LinMatrices[i] != cipher2.LinMatrices[i])
+            {
+                std::cout << i << " \n" 
+                    << vectorPrint<LowMC2<>::block>{ cipher1.LinMatrices[i] } 
+                    << "\n != \n" 
+                        << cipher2.LinMatrices[i][0] << std::endl;
+
                 throw std::runtime_error(LOCATION);
+            }
         }
         t.setTimePoint("lowMC done");
 
@@ -221,7 +254,7 @@ void lowMC_BinFileCircuit_test() {
 
     LowMC2<>::block m = 0xFFD5;
     LowMC2<>::block m2("0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001111111111010101", m.size(), '0', '1');
-    LowMC2<>::block c2("0101110110000000101011001100110001000111001000100011001000011101001111010001101001001111000110100101001001111100110001101000011010001101011111000000100110110000101111100010001011111010000000110101010011011111001011000010100110001000100111011111001010000011", m.size(), '0', '1');
+    LowMC2<>::block c2("0000101000111011000011010101010100001010100101001001100100110011110000001011110101100111000001011010110101110001100110000101110111100110100101110110101101100001011000101101001001101011011111010011001111010110011101010001000100001100101001100011111100011110", m.size(), '0', '1');
 
 
     if (m2 != m)
@@ -237,8 +270,8 @@ void lowMC_BinFileCircuit_test() {
 
     if (in.is_open() == false)
     {
-        LowMC2<> cipher1(1);
-        LowMC2<> cipher2(1);
+        LowMC2<> cipher1(false, 1);
+        LowMC2<> cipher2(false, 1);
 
 
         for (u64 i = 0; i < cipher1.LinMatrices.size(); ++i)

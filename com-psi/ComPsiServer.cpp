@@ -41,7 +41,7 @@ namespace osuCrypto
 
         if (in.is_open() == false)
         {
-            LowMC2<sboxCount, blockSize, keySize, rounds> cipher1(1);
+            LowMC2<sboxCount, blockSize, keySize, rounds> cipher1(false, 1);
             cipher1.to_enc_circuit(mLowMCCir);
 
             std::ofstream out;
