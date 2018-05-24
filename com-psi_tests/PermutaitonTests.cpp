@@ -61,19 +61,19 @@ void Perm3p_overwrite_Test()
     {
         OblvPermutation p;
         auto perm2 = perm;
-        p.program(chl02, chl01, perm2, prng, s1);
+        p.program(chl02, chl01, perm2, prng, s1, "test");
     }//);
     //std::cout << std::endl;
 
     //auto t1 = std::thread([&]() 
     {
         OblvPermutation p;
-        p.send(chl10, chl12, mtx);
+        p.send(chl10, chl12, mtx, "test");
     }//);
     //std::cout << std::endl;
 
     OblvPermutation p;
-    p.recv(chl20, chl21, s2);
+    p.recv(chl20, chl21, s2, rows, "test");
 
     //t0.join();
     //t1.join();
@@ -162,19 +162,19 @@ void Perm3p_additive_Test()
     {
         OblvPermutation p;
         auto perm2 = perm;
-        p.program(chl02, chl01, perm2, prng, s1, OutputType::Additive);
+        p.program(chl02, chl01, perm2, prng, s1, "test", OutputType::Additive);
     }//);
      //std::cout << std::endl;
 
      //auto t1 = std::thread([&]() 
     {
         OblvPermutation p;
-        p.send(chl10, chl12, mtx);
+        p.send(chl10, chl12, mtx, "test");
     }//);
      //std::cout << std::endl;
 
     OblvPermutation p;
-    p.recv(chl20, chl21, s2, OutputType::Additive);
+    p.recv(chl20, chl21, s2, rows, "test", OutputType::Additive);
 
     //t0.join();
     //t1.join();
@@ -260,19 +260,19 @@ void Perm3p_subset_Test()
     {
         OblvPermutation p;
         auto perm2 = perm;
-        p.program(chl02, chl01, perm2, prng, s1);
+        p.program(chl02, chl01, perm2, prng, s1, "test");
     }//);
      //std::cout << std::endl;
 
      //auto t1 = std::thread([&]() 
     {
         OblvPermutation p;
-        p.send(chl10, chl12, mtx);
+        p.send(chl10, chl12, mtx, "test");
     }//);
      //std::cout << std::endl;
 
     OblvPermutation p;
-    p.recv(chl20, chl21, s2);
+    p.recv(chl20, chl21, s2, rows, "test");
 
     //t0.join();
     //t1.join();
@@ -369,18 +369,18 @@ void switch_select_test()
 
 
         auto t0 = std::thread([&]() {
-            OblvSwitchNet snet;
+            OblvSwitchNet snet("test");
             snet.programSelect(chl02, chl01, prog, prng, dest0);
         });
 
         auto t1 = std::thread([&]() {
-            OblvSwitchNet snet;
+            OblvSwitchNet snet("test");
             snet.sendSelect(chl10, chl12, src);
         });
 
         auto t2 = std::thread([&]() {
-            OblvSwitchNet snet;
-            snet.recvSelect(chl20, chl21, dest1);
+            OblvSwitchNet snet("test");
+            snet.recvSelect(chl20, chl21, dest1, srcSize);
         });
 
         t0.join();
@@ -492,22 +492,22 @@ void switch_duplicate_test()
 
         auto t0 = std::thread([&]() {
             setThreadName("t0");
-            OblvSwitchNet snet;
+            OblvSwitchNet snet("test");
             snet.programSelect(chl02, chl01, prog, prng, dest0);
             snet.programDuplicate(chl02, chl01, prog, prng, dest0);
         });
 
         auto t1 = std::thread([&]() {
             setThreadName("t1");
-            OblvSwitchNet snet;
+            OblvSwitchNet snet("test");
             snet.sendSelect(chl10, chl12, src);
             snet.helpDuplicate(chl10, destSize, bytes);
         });
 
         auto t2 = std::thread([&]() {
             setThreadName("t2");
-            OblvSwitchNet snet;
-            snet.recvSelect(chl20, chl21, dest1);
+            OblvSwitchNet snet("test");
+            snet.recvSelect(chl20, chl21, dest1, srcSize);
             PRNG prng2(toBlock(585643));
             snet.sendDuplicate(chl20, prng2, dest1);
         });
@@ -616,21 +616,21 @@ void switch_full_test()
 
         auto t0 = std::thread([&]() {
             setThreadName("t0");
-            OblvSwitchNet snet;
+            OblvSwitchNet snet("test");
             snet.program(chl02, chl01, prog, prng, dest0);
         });
 
         auto t1 = std::thread([&]() {
             setThreadName("t1");
-            OblvSwitchNet snet;
+            OblvSwitchNet snet("test");
             snet.sendRecv(chl10, chl12, src, dest1);
         });
 
         auto t2 = std::thread([&]() {
             setThreadName("t2");
-            OblvSwitchNet snet;
+            OblvSwitchNet snet("test");
             PRNG prng2(toBlock(44444));
-            snet.help(chl20, chl21, prng2, destSize, bytes);
+            snet.help(chl20, chl21, prng2, destSize, srcSize, bytes);
         });
 
         t0.join();

@@ -2,7 +2,7 @@ $RemoteUserName='rindalp'
 $RemoteHostName='eve.eecs.oregonstate.edu'
 $PrivateKey='C:/keys/key.ppk'
 $SolutionDir=$PWD
-$RemoteWorkingDir='/scratch/repo/secureML'
+$RemoteWorkingDir='/scratch/repo/com-psi'
 
 # only files with these extensions will be copied
 $FileMasks='**.cpp;**.c;**.h;*.bin,*.S,*.sh,*CMake*;*/Tools/*.txt;*/gsl/*;**.mak;thirdparty/linux/**.get;*/libOTe_Tests/testData/*.txt'

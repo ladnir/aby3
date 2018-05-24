@@ -11,29 +11,43 @@ namespace osuCrypto
         ss << "send_" << src.rows() <<"_"<< dest.rows() << "_" << src.cols();
 
         auto s = ss.str();
-        programChl.asyncSend(std::move(s));
+        programChl.asyncSendCopy(s);
+        programChl.recv(s);
+        if (s != ss.str())
+            throw RTE_LOC;
+
 
         sendSelect(programChl, helpChl, std::move(src));
         helpDuplicate(programChl, dest.rows(), dest.cols());
 
         OblvPermutation oblvPerm;
-        oblvPerm.recv(programChl, helpChl, dest);
+        oblvPerm.recv(programChl, helpChl, dest, dest.rows(), mTag + "_sendRecv_final");
     }
 
-    void OblvSwitchNet::help(Channel& programChl, Channel& sendrChl, PRNG& prng, u32 destRows, u32 bytes)
+    void OblvSwitchNet::help(Channel& programChl, Channel& sendrChl, PRNG& prng, u32 destRows, u32 srcRows, u32 bytes)
     {
         std::stringstream ss;
         ss << "help_" << destRows << "_" << bytes;
 
         auto s = ss.str();
-        programChl.asyncSend(std::move(s));
+        programChl.asyncSendCopy(s);
+        programChl.recv(s);
+
+        if (s != ss.str())
+            throw RTE_LOC;
+
 
         Matrix<u8> temp(destRows, bytes);
-        recvSelect(programChl, sendrChl, temp);
+        recvSelect(programChl, sendrChl, temp, srcRows);
+
+        //programChl.recv(s);
+        //if (s != "test")
+        //    throw RTE_LOC;
+
         sendDuplicate(programChl, prng, temp);
 
         OblvPermutation oblvPerm;
-        oblvPerm.send(programChl, sendrChl, std::move(temp));
+        oblvPerm.send(programChl, sendrChl, std::move(temp), mTag + "_help_final");
     }
 
     void OblvSwitchNet::program(
@@ -45,11 +59,13 @@ namespace osuCrypto
         OutputType type)
     {
         {
-            std::string str;
-            sendrChl.recv(str);
             std::stringstream ss;
             ss << "send_" << prog.mSrcSize << "_" << dest.rows() << "_" << dest.cols();
 
+            sendrChl.asyncSendCopy(ss.str());
+
+            std::string str;
+            sendrChl.recv(str);
             if (str != ss.str())
             {
                 std::cout << "exp: " << ss.str() << std::endl;
@@ -60,11 +76,13 @@ namespace osuCrypto
         }
 
         {
-            std::string str;
-            helpChl.recv(str);
             std::stringstream ss;
             ss << "help_" << dest.rows() << "_" << dest.cols();
 
+            helpChl.asyncSendCopy(ss.str());
+
+            std::string str;
+            helpChl.recv(str);
             if (str != ss.str())
             {
                 std::cout << "exp: " << ss.str() << std::endl;
@@ -78,6 +96,9 @@ namespace osuCrypto
         Matrix<u8> temp(dest.rows(), dest.cols());
 
         programSelect(helpChl, sendrChl, prog, prng, temp);
+
+        //helpChl.send("test");
+
         programDuplicate(helpChl, sendrChl, prog, prng, temp);
 
         std::vector<u32> perm(prog.mSrcDests.size());
@@ -105,7 +126,7 @@ namespace osuCrypto
         }
 
         OblvPermutation oblvPerm;
-        oblvPerm.program(sendrChl, helpChl, std::move(perm), prng, dest, OutputType::Additive);
+        oblvPerm.program(sendrChl, helpChl, std::move(perm), prng, dest, mTag + "_prog_final", OutputType::Additive);
     }
 
 
@@ -113,13 +134,13 @@ namespace osuCrypto
     void OblvSwitchNet::sendSelect(Channel & programChl, Channel & helpChl, Matrix<u8> src)
     {
         OblvPermutation oblvPerm;
-        oblvPerm.send(programChl, helpChl, std::move(src));
+        oblvPerm.send(programChl, helpChl, std::move(src), mTag + "_send_select");
     }
 
-    void OblvSwitchNet::recvSelect(Channel & programChl, Channel & sendrChl, MatrixView<u8> dest)
+    void OblvSwitchNet::recvSelect(Channel & programChl, Channel & sendrChl, MatrixView<u8> dest, u64 srcRows)
     {
         OblvPermutation oblvPerm;
-        oblvPerm.recv(programChl, sendrChl, dest);
+        oblvPerm.recv(programChl, sendrChl, dest, srcRows, mTag + "_recv_select");
     }
 
 
@@ -168,7 +189,7 @@ namespace osuCrypto
         //}
 
         OblvPermutation oblvPerm;
-        oblvPerm.program(recvrChl, sendrChl, std::move(perm1), prng, dest);
+        oblvPerm.program(recvrChl, sendrChl, std::move(perm1), prng, dest, mTag + "_prog_select");
 
 
     }

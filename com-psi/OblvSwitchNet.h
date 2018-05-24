@@ -49,11 +49,13 @@ namespace osuCrypto
             void validate();
         };
 
-
-
+        std::string mTag;
+        OblvSwitchNet(std::string tag)
+            :mTag(tag)
+        {}
 
         void sendRecv(Channel& programChl, Channel& helpChl, Matrix<u8> src, MatrixView<u8> dest);
-        void help(Channel& programChl, Channel& sendrChl, PRNG& prng, u32 destRows, u32 bytes);
+        void help(Channel& programChl, Channel& sendrChl, PRNG& prng, u32 destRows, u32 srcRows, u32 bytes);
         void program(
             Channel& helpChl, 
             Channel& sendrChl,
@@ -65,7 +67,7 @@ namespace osuCrypto
 
 
         void sendSelect(Channel& programChl, Channel& helpChl, Matrix<u8> src);
-        void recvSelect(Channel& programChl, Channel& sendrChl, MatrixView<u8> dest);
+        void recvSelect(Channel& programChl, Channel& sendrChl, MatrixView<u8> dest, u64 srcRows);
         void programSelect(
             Channel& helpChl,
             Channel& sendrChl,

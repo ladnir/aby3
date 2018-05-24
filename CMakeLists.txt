@@ -5,7 +5,7 @@ set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/bin)
 set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/lib)
 set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/lib)
 
-set(CMAKE_C_FLAGS "-ffunction-sections -Wall  -maes -msse2 -msse4.1 -mpclmul -Wfatal-errors -pthread -fPIC -Wno-ignored-attributes ")
+set(CMAKE_C_FLAGS "-Wall  -maes -msse2 -msse4.1 -mavx -mpclmul -Wfatal-errors -pthread -Wno-ignored-attributes ")
 set(CMAKE_CXX_FLAGS  "${CMAKE_C_FLAGS}  -std=c++14")
 
 # Set a default build type for single-configuration
@@ -29,44 +29,34 @@ if(NOT ${CMAKE_BUILD_TYPE} STREQUAL "Release")
 endif()
 
 # Select flags.
-SET(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG") 
+SET(CMAKE_CXX_FLAGS_RELEASE "-Ofast -DNDEBUG") 
 SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO " -O2 -g -ggdb -rdynamic")
 SET(CMAKE_CXX_FLAGS_DEBUG  "-O0 -g -ggdb -rdynamic")
 
 
-# add the source files 
-file(GLOB_RECURSE SRCS SecureML/*.cpp)
+#############################################
+#       Library/includes locations          #
+#############################################
 
-SET(libOTe_dir ${CMAKE_SOURCE_DIR}/../libOTe)
+# default location for libOTe
+set(libOTe_Dirs "${CMAKE_SOURCE_DIR}/../libOTe/")
 
-include_directories("${CMAKE_SOURCE_DIR}/SecureML")
-include_directories("${CMAKE_SOURCE_DIR}/thirdparty/linux/eigen")
-include_directories(${libOTe_dir})
-include_directories(${libOTe_dir}/cryptoTools)
+# default location for miracl
+set(Miracl_Dirs "${libOTe_Dirs}/cryptoTools/thirdparty/linux/miracl/")
 
-link_directories(
-	"${libOTe_dir}lib" 
-	"${libOTe_dir}cryptoTools/thirdparty/linux/miracl/miracl/source/")
-
-add_executable(secureML  ${SRCS})
-target_link_libraries(secureML libOTe cryptoTools miracl)
+# default location for Boost
+set(BOOST_ROOT "${libOTe_Dirs}/cryptoTools/thirdparty/linux/boost/")
 
 
-## Boost
-###########################################################################
+#############################################
+#        Build aby3, com-psi, tests         #
+#############################################
+add_subdirectory(aby3)
+add_subdirectory(com-psi)
 
-set(BOOST_ROOT "${libOTe_dir}/cryptoTools/thirdparty/linux/boost/")
+add_subdirectory(aby3_tests)
+add_subdirectory(com-psi_tests)
 
-set(Boost_USE_STATIC_LIBS        ON) # only find static libs
-set(Boost_USE_MULTITHREADED      ON)
-set(Boost_USE_STATIC_RUNTIME     ON)
+add_subdirectory(frontend)
 
-find_package(Boost COMPONENTS system thread)
-
-if(NOT Boost_FOUND)
-    message(FATAL_ERROR "Failed to find boost at `" ${BOOST_ROOT} "`. Need system thread")
-endif()
-
-include_directories(${Boost_INCLUDE_DIR}) 
-target_link_libraries(secureML ${Boost_LIBRARIES})
 

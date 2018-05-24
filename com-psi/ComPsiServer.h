@@ -7,6 +7,7 @@
 #include "aby3/Engines/sh3/Sh3Encryptor.h"
 #include "aby3/Engines/sh3/Sh3Evaluator.h"
 #include "LowMC.h"
+#include <cryptoTools/Common/CuckooIndex.h>
 
 namespace osuCrypto
 {
@@ -57,12 +58,12 @@ namespace osuCrypto
 
 
         Matrix<u8> cuckooHashRecv(SharedTable & A);
-        void cuckooHashSend(SharedTable & A);
+        void cuckooHashSend(SharedTable & A, CuckooParam& cuckooParams);
         Matrix<u8> cuckooHash(SharedTable & A, aby3::Sh3::i64Matrix& keys);
 
 
         void selectCuckooPos(MatrixView<u8> cuckooHashTable, std::array<MatrixView<u8>, 3> dest);
-        void selectCuckooPos(u32 destRows, u32 bytes);
+        void selectCuckooPos(u32 destRows, u32 srcRows, u32 bytes);
         void selectCuckooPos(MatrixView<u8> cuckooHashTable, std::array<MatrixView<u8>, 3> dest, aby3::Sh3::i64Matrix& keys);
 
 

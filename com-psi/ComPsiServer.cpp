@@ -1,5 +1,4 @@
 #include "ComPsiServer.h"
-#include <cryptoTools/Common/CuckooIndex.h>
 #include "OblvPermutation.h"
 #include <iomanip>
 #include "OblvSwitchNet.h"
@@ -287,8 +286,9 @@ namespace osuCrypto
         }
         case 2:
         {
-            cuckooHashSend(A);
-            selectCuckooPos(B.rows(), bytes);
+            auto cuckooParams = CuckooIndex<>::selectParams(A.mKeys.rows(), ComPsiServer_ssp, 0, 3);
+            cuckooHashSend(A, cuckooParams);
+            selectCuckooPos(B.rows(), cuckooParams.numBins(), bytes);
             aby3::Sh3::sPackedBin intersectionFlags(B.rows(), 1);
             compare(B, intersectionFlags);
 
@@ -399,7 +399,7 @@ namespace osuCrypto
         }
 
         OblvPermutation oblvPerm;
-        oblvPerm.program(mComm.mNext, mComm.mPrev, std::move(perm), mPrng, share0, OutputType::Additive);
+        oblvPerm.program(mComm.mNext, mComm.mPrev, std::move(perm), mPrng, share0, (std::to_string(mIdx)) + "_cuckoo_hash", OutputType::Additive);
 
 
         //{
@@ -426,11 +426,10 @@ namespace osuCrypto
     }
 
 
-    void ComPsiServer::cuckooHashSend(SharedTable & A)
+    void ComPsiServer::cuckooHashSend(SharedTable & A, CuckooParam& cuckooParams)
     {
         if (mIdx != 2)
             throw std::runtime_error(LOCATION);
-        auto cuckooParams = CuckooIndex<>::selectParams(A.mKeys.rows(), ComPsiServer_ssp, 0, 3);
         Matrix<u8> share1(cuckooParams.numBins(), (A.mKeys.bitCount() + 7) / 8);
 
         //auto dest = share1.data();
@@ -450,7 +449,7 @@ namespace osuCrypto
         }
 
         OblvPermutation oblvPerm;
-        oblvPerm.send(mComm.mNext, mComm.mPrev, std::move(share1));
+        oblvPerm.send(mComm.mNext, mComm.mPrev, std::move(share1), (std::to_string(mIdx)) + "_cuckoo_hash_send");
 
         //mEnc.reveal(mRt.mComm, 0, A.mKeys);
     }
@@ -466,7 +465,7 @@ namespace osuCrypto
         share1.setZero();
 
         OblvPermutation oblvPerm;
-        oblvPerm.recv(mComm.mPrev, mComm.mNext, share1);
+        oblvPerm.recv(mComm.mPrev, mComm.mNext, share1, share1.rows(), (std::to_string(mIdx)) + "_cuckoo_hash_recv");
 
 
         //auto dest = share1.data();
@@ -503,7 +502,7 @@ namespace osuCrypto
 
         auto size = dest[0].rows();
 
-        OblvSwitchNet snet;
+        OblvSwitchNet snet(std::to_string(mIdx));
         for (u64 h = 0; h < 3; ++h)
         {
 
@@ -511,12 +510,12 @@ namespace osuCrypto
         }
     }
 
-    void ComPsiServer::selectCuckooPos(u32 destRows, u32 bytes)
+    void ComPsiServer::selectCuckooPos(u32 destRows, u32 srcRows, u32 bytes)
     {
-        OblvSwitchNet snet;
+        OblvSwitchNet snet(std::to_string(mIdx));
         for (u64 h = 0; h < 3; ++h)
         {
-            snet.help(mComm.mPrev, mComm.mNext, mPrng, destRows, bytes);
+            snet.help(mComm.mPrev, mComm.mNext, mPrng, destRows, srcRows, bytes);
         }
     }
 
@@ -539,7 +538,7 @@ namespace osuCrypto
         if (dest[0].rows() != keys.rows())
             throw std::runtime_error("");
 
-        OblvSwitchNet snet;
+        OblvSwitchNet snet(std::to_string(mIdx));
 
         std::array<OblvSwitchNet::Program, 3> progs;
         for (u64 h = 0; h < 3; ++h)

@@ -5,7 +5,11 @@
 namespace osuCrypto
 {
 
-    void OblvPermutation::send(Channel & programChl, Channel & recvrChl, Matrix<u8> src)
+    void OblvPermutation::send(
+        Channel & programChl, 
+        Channel & recvrChl, 
+        Matrix<u8> src,
+        std::string tag)
     {
         u32 rows = src.rows();
         //std::vector<u32> pi1(src.rows());
@@ -16,6 +20,10 @@ namespace osuCrypto
 
         u32 step = 1 << 14;
         block seed = ZeroBlock;
+
+        //ostreamLock(std::cout) << "send count " << (rows - 1 + step) / step << " (" << rows << ") " << tag << std::endl;
+
+
         //programChl.recv(seed);
         PRNG prng(seed, 256);
         for (u32 i = 0, j = rows; i < rows;)
@@ -70,12 +78,13 @@ namespace osuCrypto
     void OblvPermutation::recv(
         Channel & programChl,
         Channel & sendrChl,
-        MatrixView<u8> dest,
+        MatrixView<u8> dest, 
+        u64 srcRows,
+        std::string tag,
         OutputType type)
     {
-        u32 rows = dest.rows();
         u32 step = 1 << 14;
-        u32 recvCount = (rows + step - 1) / step;
+        u32 recvCount = (srcRows + step - 1) / step;
 
         std::vector<std::pair<std::future<void>, std::vector<u8>>> recvs1(recvCount);
         std::vector<std::pair<std::future<void>, std::vector<u32>>> recvs2(recvCount);
@@ -85,16 +94,20 @@ namespace osuCrypto
             recvs2[i].first = programChl.asyncRecv(recvs2[i].second);
 
         }
+        //ostreamLock(std::cout) << "recv count " << recvCount << " (" << srcRows <<") " << tag << std::endl;
 
         for (u32 i = 0; i < recvCount; ++i)
         {
             recvs1[i].first.get();
             recvs2[i].first.get();
 
+
             auto& perm = recvs2[i].second;
             auto& data = recvs1[i].second;
             if (perm.size() * dest.stride() != data.size())
                 throw std::runtime_error(LOCATION);
+
+            //ostreamLock(std::cout) << "recv size[" << i << "] -> " << data.size()<< " "<< tag << std::endl;
 
             auto iter = data.data();
             if (type == OutputType::Overwrite)
@@ -137,10 +150,19 @@ namespace osuCrypto
     }
 
 
-    void OblvPermutation::program(Channel & recvrChl, Channel & sendrChl, std::vector<u32> perm, PRNG& p, MatrixView<u8> dest, OutputType type)
+
+    void OblvPermutation::program(
+        Channel & recvrChl, 
+        Channel & sendrChl, 
+        std::vector<u32> perm, 
+        PRNG& p, 
+        MatrixView<u8> dest,
+        std::string tag,
+        OutputType type)
     {
         auto rows = perm.size();
 
+#ifndef NDEBUG
         if (true)
         {
             std::unordered_set<u32> set;
@@ -156,6 +178,8 @@ namespace osuCrypto
             }
 
         }
+#endif
+
         //std::vector<u32> pi1(rows);
         //for (u32 i = 0; i <rows; ++i)
         //{
@@ -166,6 +190,9 @@ namespace osuCrypto
         block seed = ZeroBlock;// p.get<block>();
         //sendrChl.asyncSend(seed);
         PRNG prng(seed, 256);
+
+        //ostreamLock(std::cout) << "prog count " << (rows - 1 + step) / step << " (" << rows << ") " << tag << std::endl;
+
 
         std::vector<u8> temp(dest.stride());
         for (u32 i = 0, j = rows; i < rows;)
@@ -212,6 +239,8 @@ namespace osuCrypto
                 recvrChl.asyncSend(data, size, [d = std::move(perm)](){});
             else
                 recvrChl.asyncSend(data, size);
+
+            //ostreamLock(std::cout) << "send size[" << i << "] -> " << size <<" " << tag << std::endl;
         }
 
         ///std::cout << "p0" << prng.get<int>() << std::endl;

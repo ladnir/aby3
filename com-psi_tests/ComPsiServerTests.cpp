@@ -5,6 +5,11 @@
 #include <unordered_set>
 using namespace oc;
 
+namespace osuCrypto
+{
+    extern int ComPsiServer_ssp;
+}
+
 void ComPsi_computeKeys_test()
 {
 
@@ -22,7 +27,7 @@ void ComPsi_computeKeys_test()
     srvs[1].init(1, s10, s12);
     srvs[2].init(2, s21, s20);
 
-    auto size =  10;
+    auto size =  1046;
     Table a, b;
     a.mKeys.resize(size, (srvs[0].mKeyBitCount + 63) / 64);
     b.mKeys.resize(size, (srvs[0].mKeyBitCount + 63) / 64);
@@ -56,6 +61,7 @@ void ComPsi_computeKeys_test()
                 //std::cout << (j ? ", " : ToString(i) + " : ") << r(i, j);
                 if (r0(i, j) != r0(i + 1, j))
                 {
+                    std::cout << i << std::endl;
                     //throw std::runtime_error(LOCATION);
                     failed = true;
                 }
@@ -125,7 +131,7 @@ void ComPsi_cuckooHash_test()
 
     // 80 bits;
     u32 hashSize = 80;
-    u32 rows = 100;
+    u32 rows = 1 << 10;
     u32 bytes = 8;
 
     PRNG prng(OneBlock);
@@ -168,7 +174,8 @@ void ComPsi_cuckooHash_test()
         auto i = 2;
         setThreadName("t_" + ToString(i));
         auto A = srvs[i].remoteInput(0, rows);
-        srvs[i].cuckooHashSend(A);
+        auto cuckooParams = CuckooIndex<>::selectParams(rows, ComPsiServer_ssp, 0, 3);
+        srvs[i].cuckooHashSend(A, cuckooParams);
     });
 
 
@@ -199,7 +206,7 @@ void ComPsi_Intersect_test()
 
     // 80 bits;
     u32 hashSize = 80;
-    u32 rows = 20;
+    u32 rows = 1025;
 
     PRNG prng(ZeroBlock);
     Table a, b;
@@ -219,8 +226,8 @@ void ComPsi_Intersect_test()
             b.mKeys(i, j) = i + 1 + (rows * out);
         }
 
-        std::cout << "a[" << i << "] = " << a.mKeys(i, 0) << std::endl;
-        std::cout << "b[" << i << "] = " << b.mKeys(i, 0) << std::endl;
+        //std::cout << "a[" << i << "] = " << a.mKeys(i, 0) << std::endl;
+        //std::cout << "b[" << i << "] = " << b.mKeys(i, 0) << std::endl;
 
         if (!out)
             map.emplace(a.mKeys(i, 0));
@@ -252,14 +259,20 @@ void ComPsi_Intersect_test()
            if (iter == map.end())
            {
                failed = true;
-               std::cout << "bad value: " << c(i, 0) << std::endl;
+               std::cout << "bad value in intersection: " << c(i, 0)  << " @ " <<i<< std::endl;
+           }
+           else
+           {
+               map.erase(iter);
            }
 
-           std::cout << "c[" << i << "] = " << c(i, 0) << std::endl;
-
+           //std::cout << "c[" << i << "] = " << c(i, 0) << std::endl;
         }
 
-
+        for (auto& v : map)
+        {
+            std::cout << "missing idx " << v  << std::endl;
+        }
     });
 
     auto t1 = std::thread([&]() {
