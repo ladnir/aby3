@@ -565,6 +565,8 @@ namespace aby3
     void Sh3BinaryEvaluator::roundCallback(Sh3::CommPkg& comm, Sh3Task task)
     {
 
+
+
         i32 shareCountDiv8 = (mMem.shareCount() + 7) / 8;
         i32 simdWidth128 = mMem.simdWidth();
         //auto simdWidth1024 = (simdWidth128 + 7) / 8;
@@ -616,6 +618,7 @@ namespace aby3
             auto seed1 = toBlock((task.getRuntime().mPartyIdx + 2) % 3);
             mShareGen.init(seed0, seed1, simdWidth128 * sizeof(block_type) / sizeof(block));
         }
+        validateMemory();
 
         block_type AllOneBlock;
         memset(&AllOneBlock, 0xFF, sizeof(block_type));
@@ -651,9 +654,9 @@ namespace aby3
             {
                 const auto& gate = *mGateIter;
                 const auto& type = gate.mType;
-                auto in0 = gate.mInput[0] * simdWidth128;
-                auto in1 = gate.mInput[1] * simdWidth128;
-                auto out = gate.mOutput * simdWidth128;
+                auto in0 = gate.mInput[0] * shares[0].stride();
+                auto in1 = gate.mInput[1] * shares[0].stride();
+                auto out = gate.mOutput * shares[0].stride();
                 auto s0_Out = &shares[0](out);
                 auto s1_Out = &shares[1](out);
                 auto s0_in0 = &shares[0](in0);
@@ -697,6 +700,11 @@ namespace aby3
                     z = getShares();
                     for (i32 k = 0; k < simdWidth128; k += 8)
                     {
+                        auto s0_in0_b0 = getBit(s0_in0[k]);
+                        auto s1_in0_b0 = getBit(s1_in0[k]);
+                        auto s0_in1_b0 = getBit(s0_in1[k]);
+                        auto s1_in1_b0 = getBit(s1_in1[k]);
+
                         t0[0] = s0_in0[k + 0] & s0_in1[k + 0];
                         t0[1] = s0_in0[k + 1] & s0_in1[k + 1];
                         t0[2] = s0_in0[k + 2] & s0_in1[k + 2];
@@ -705,7 +713,6 @@ namespace aby3
                         t0[5] = s0_in0[k + 5] & s0_in1[k + 5];
                         t0[6] = s0_in0[k + 6] & s0_in1[k + 6];
                         t0[7] = s0_in0[k + 7] & s0_in1[k + 7];
-
 
                         t1[0] = s0_in0[k + 0] & s1_in1[k + 0];
                         t1[1] = s0_in0[k + 1] & s1_in1[k + 1];
@@ -752,14 +759,15 @@ namespace aby3
                         t0[6] = t0[6] ^ z[0][k + 6];
                         t0[7] = t0[7] ^ z[0][k + 7];
 
-                        s0_Out[0] = t0[0] ^ z[1][k + 0];
-                        s0_Out[1] = t0[1] ^ z[1][k + 1];
-                        s0_Out[2] = t0[2] ^ z[1][k + 2];
-                        s0_Out[3] = t0[3] ^ z[1][k + 3];
-                        s0_Out[4] = t0[4] ^ z[1][k + 4];
-                        s0_Out[5] = t0[5] ^ z[1][k + 5];
-                        s0_Out[6] = t0[6] ^ z[1][k + 6];
-                        s0_Out[7] = t0[7] ^ z[1][k + 7];
+                        s0_Out[k + 0] = t0[0] ^ z[1][k + 0];
+                        s0_Out[k + 1] = t0[1] ^ z[1][k + 1];
+                        s0_Out[k + 2] = t0[2] ^ z[1][k + 2];
+                        s0_Out[k + 3] = t0[3] ^ z[1][k + 3];
+                        s0_Out[k + 4] = t0[4] ^ z[1][k + 4];
+                        s0_Out[k + 5] = t0[5] ^ z[1][k + 5];
+                        s0_Out[k + 6] = t0[6] ^ z[1][k + 6];
+                        s0_Out[k + 7] = t0[7] ^ z[1][k + 7];
+
 
                         //s0_Out[k]
                         //    = (s0_in0[k] & s0_in1[k]) // t0
@@ -815,24 +823,24 @@ namespace aby3
                         t2[7] = s1_in0[k + 7] ^ AllOneBlock;
 
                         // out = mem11
-                        s0_Out[0] = s1_in1[k + 0] ^ AllOneBlock;
-                        s0_Out[1] = s1_in1[k + 1] ^ AllOneBlock;
-                        s0_Out[2] = s1_in1[k + 2] ^ AllOneBlock;
-                        s0_Out[3] = s1_in1[k + 3] ^ AllOneBlock;
-                        s0_Out[4] = s1_in1[k + 4] ^ AllOneBlock;
-                        s0_Out[5] = s1_in1[k + 5] ^ AllOneBlock;
-                        s0_Out[6] = s1_in1[k + 6] ^ AllOneBlock;
-                        s0_Out[7] = s1_in1[k + 7] ^ AllOneBlock;
+                        s0_Out[k + 0] = s1_in1[k + 0] ^ AllOneBlock;
+                        s0_Out[k + 1] = s1_in1[k + 1] ^ AllOneBlock;
+                        s0_Out[k + 2] = s1_in1[k + 2] ^ AllOneBlock;
+                        s0_Out[k + 3] = s1_in1[k + 3] ^ AllOneBlock;
+                        s0_Out[k + 4] = s1_in1[k + 4] ^ AllOneBlock;
+                        s0_Out[k + 5] = s1_in1[k + 5] ^ AllOneBlock;
+                        s0_Out[k + 6] = s1_in1[k + 6] ^ AllOneBlock;
+                        s0_Out[k + 7] = s1_in1[k + 7] ^ AllOneBlock;
 
                         // t3 = mem11 & mem00
-                        s0_Out[0] = s0_Out[0] & t0[0];
-                        s0_Out[1] = s0_Out[1] & t0[1];
-                        s0_Out[2] = s0_Out[2] & t0[2];
-                        s0_Out[3] = s0_Out[3] & t0[3];
-                        s0_Out[4] = s0_Out[4] & t0[4];
-                        s0_Out[5] = s0_Out[5] & t0[5];
-                        s0_Out[6] = s0_Out[6] & t0[6];
-                        s0_Out[7] = s0_Out[7] & t0[7];
+                        s0_Out[k + 0] = s0_Out[k + 0] & t0[0];
+                        s0_Out[k + 1] = s0_Out[k + 1] & t0[1];
+                        s0_Out[k + 2] = s0_Out[k + 2] & t0[2];
+                        s0_Out[k + 3] = s0_Out[k + 3] & t0[3];
+                        s0_Out[k + 4] = s0_Out[k + 4] & t0[4];
+                        s0_Out[k + 5] = s0_Out[k + 5] & t0[5];
+                        s0_Out[k + 6] = s0_Out[k + 6] & t0[6];
+                        s0_Out[k + 7] = s0_Out[k + 7] & t0[7];
 
                         // t2 = mem10 & mem01
                         t2[0] = t2[0] & t1[0];
@@ -845,14 +853,14 @@ namespace aby3
                         t2[7] = t2[7] & t1[7];
 
                         // out = mem11 & mem00 ^ mem10 & mem01
-                        s0_Out[0] = s0_Out[0] ^ t2[0];
-                        s0_Out[1] = s0_Out[1] ^ t2[1];
-                        s0_Out[2] = s0_Out[2] ^ t2[2];
-                        s0_Out[3] = s0_Out[3] ^ t2[3];
-                        s0_Out[4] = s0_Out[4] ^ t2[4];
-                        s0_Out[5] = s0_Out[5] ^ t2[5];
-                        s0_Out[6] = s0_Out[6] ^ t2[6];
-                        s0_Out[7] = s0_Out[7] ^ t2[7];
+                        s0_Out[k + 0] = s0_Out[k + 0] ^ t2[0];
+                        s0_Out[k + 1] = s0_Out[k + 1] ^ t2[1];
+                        s0_Out[k + 2] = s0_Out[k + 2] ^ t2[2];
+                        s0_Out[k + 3] = s0_Out[k + 3] ^ t2[3];
+                        s0_Out[k + 4] = s0_Out[k + 4] ^ t2[4];
+                        s0_Out[k + 5] = s0_Out[k + 5] ^ t2[5];
+                        s0_Out[k + 6] = s0_Out[k + 6] ^ t2[6];
+                        s0_Out[k + 7] = s0_Out[k + 7] ^ t2[7];
 
                         // t1 = mem00 & mem01
                         t1[0] = t0[0] & t1[0];
@@ -865,34 +873,34 @@ namespace aby3
                         t1[7] = t0[7] & t1[7];
 
                         // out = mem11 & mem00 ^ mem10 & mem01 ^ mem00 & mem01
-                        s0_Out[0] = s0_Out[0] ^ t1[0];
-                        s0_Out[1] = s0_Out[1] ^ t1[1];
-                        s0_Out[2] = s0_Out[2] ^ t1[2];
-                        s0_Out[3] = s0_Out[3] ^ t1[3];
-                        s0_Out[4] = s0_Out[4] ^ t1[4];
-                        s0_Out[5] = s0_Out[5] ^ t1[5];
-                        s0_Out[6] = s0_Out[6] ^ t1[6];
-                        s0_Out[7] = s0_Out[7] ^ t1[7];
+                        s0_Out[k + 0] = s0_Out[k + 0] ^ t1[0];
+                        s0_Out[k + 1] = s0_Out[k + 1] ^ t1[1];
+                        s0_Out[k + 2] = s0_Out[k + 2] ^ t1[2];
+                        s0_Out[k + 3] = s0_Out[k + 3] ^ t1[3];
+                        s0_Out[k + 4] = s0_Out[k + 4] ^ t1[4];
+                        s0_Out[k + 5] = s0_Out[k + 5] ^ t1[5];
+                        s0_Out[k + 6] = s0_Out[k + 6] ^ t1[6];
+                        s0_Out[k + 7] = s0_Out[k + 7] ^ t1[7];
 
                         // out = mem11 & mem00 ^ mem10 & mem01 ^ mem00 & mem01 ^ z0
-                        s0_Out[0] = s0_Out[0] ^ z[0][k + 0];
-                        s0_Out[1] = s0_Out[1] ^ z[0][k + 1];
-                        s0_Out[2] = s0_Out[2] ^ z[0][k + 2];
-                        s0_Out[3] = s0_Out[3] ^ z[0][k + 3];
-                        s0_Out[4] = s0_Out[4] ^ z[0][k + 4];
-                        s0_Out[5] = s0_Out[5] ^ z[0][k + 5];
-                        s0_Out[6] = s0_Out[6] ^ z[0][k + 6];
-                        s0_Out[7] = s0_Out[7] ^ z[0][k + 7];
+                        s0_Out[k + 0] = s0_Out[k + 0] ^ z[0][k + 0];
+                        s0_Out[k + 1] = s0_Out[k + 1] ^ z[0][k + 1];
+                        s0_Out[k + 2] = s0_Out[k + 2] ^ z[0][k + 2];
+                        s0_Out[k + 3] = s0_Out[k + 3] ^ z[0][k + 3];
+                        s0_Out[k + 4] = s0_Out[k + 4] ^ z[0][k + 4];
+                        s0_Out[k + 5] = s0_Out[k + 5] ^ z[0][k + 5];
+                        s0_Out[k + 6] = s0_Out[k + 6] ^ z[0][k + 6];
+                        s0_Out[k + 7] = s0_Out[k + 7] ^ z[0][k + 7];
 
                         // out = mem11 & mem00 ^ mem10 & mem01 ^ mem00 & mem01 ^ z0 ^ z1
-                        s0_Out[0] = s0_Out[0] ^ z[1][k + 0];
-                        s0_Out[1] = s0_Out[1] ^ z[1][k + 1];
-                        s0_Out[2] = s0_Out[2] ^ z[1][k + 2];
-                        s0_Out[3] = s0_Out[3] ^ z[1][k + 3];
-                        s0_Out[4] = s0_Out[4] ^ z[1][k + 4];
-                        s0_Out[5] = s0_Out[5] ^ z[1][k + 5];
-                        s0_Out[6] = s0_Out[6] ^ z[1][k + 6];
-                        s0_Out[7] = s0_Out[7] ^ z[1][k + 7];
+                        s0_Out[k + 0] = s0_Out[k + 0] ^ z[1][k + 0];
+                        s0_Out[k + 1] = s0_Out[k + 1] ^ z[1][k + 1];
+                        s0_Out[k + 2] = s0_Out[k + 2] ^ z[1][k + 2];
+                        s0_Out[k + 3] = s0_Out[k + 3] ^ z[1][k + 3];
+                        s0_Out[k + 4] = s0_Out[k + 4] ^ z[1][k + 4];
+                        s0_Out[k + 5] = s0_Out[k + 5] ^ z[1][k + 5];
+                        s0_Out[k + 6] = s0_Out[k + 6] ^ z[1][k + 6];
+                        s0_Out[k + 7] = s0_Out[k + 7] ^ z[1][k + 7];
 
                         //auto mem00 = s0_in0[k] ^ AllOneBlock;
                         //auto mem01 = s0_in1[k] ^ AllOneBlock;
@@ -1087,7 +1095,7 @@ namespace aby3
 
                         auto bad = badOutput || badInput0 || badInput1;
 
-                        if (bad)
+                        if (bad || (gIdx == 0 && r == 0))
                         {
 
 

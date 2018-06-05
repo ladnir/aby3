@@ -6,8 +6,8 @@
 namespace osuCrypto
 {
     int ComPsiServer_ssp = 10;
-    bool ComPsiServer_debug = false;
-
+    bool ComPsiServer_debug = true;
+    bool debug_print = false;
     void ComPsiServer::init(u64 idx, Session & prev, Session & next)
     {
         mIdx = idx;
@@ -132,7 +132,7 @@ namespace osuCrypto
                     select[h](i, j) ^= a3[h](i, j);
                 }
 
-                if (h == 0)
+                if (debug_print && h == 0)
                 {
                     std::cout << "p " << mIdx << " Select[0][" << i << "] = " << hexString(&select[h](i, 0), a2[0].cols()) << " = " << hexString(&a2[h](i, 0), a2[h].cols()) << " ^ " << hexString(&a3[h](i, 0), a3[h].cols()) << std::endl;
 
@@ -170,7 +170,8 @@ namespace osuCrypto
                     auto destPtr = &select[h](i, 0);
                     auto srcPtr = &cuckooTable(hx[h], 0);
 
-                    std::cout << "h " << h << " i " << i << " " << hexString(destPtr, select[h].cols()) << " <- hx " << hx[h] << " " << hexString((u8*)&view[i], 10) << std::endl;
+                    if (debug_print)
+                        std::cout << "h " << h << " i " << i << " " << hexString(destPtr, select[h].cols()) << " <- hx " << hx[h] << " " << hexString((u8*)&view[i], 10) << std::endl;
 
                     for (u64 j = 0; j < select[h].cols(); ++j)
                     {
@@ -194,9 +195,13 @@ namespace osuCrypto
 
     SharedTable ComPsiServer::intersect(SharedTable & A, SharedTable & B)
     {
+        setTimePoint("intersect_start");
         std::array<SharedTable*, 2> AB{ &A,&B };
         std::array<u64, 2> reveals{ 0,1 };
         aby3::Sh3::i64Matrix keys = computeKeys(AB, reveals);
+
+        setTimePoint("intersect_compute_keys");
+
         auto bits = A.mKeys.bitCount();
         auto bytes = (bits + 7) / 8;
 
@@ -208,7 +213,7 @@ namespace osuCrypto
         {
         case 0:
         {
-            if (ComPsiServer_debug)
+            if (debug_print && ComPsiServer_debug)
             {
                 ostreamLock o(std::cout);
                 for (u64 i = 0; i < keys.rows(); ++i)
@@ -218,6 +223,10 @@ namespace osuCrypto
             }
 
             auto cuckooTable = cuckooHash(A, keys);
+
+            setTimePoint("intersect_cuckoo_hash");
+
+
             if (bytes != cuckooTable.cols())
                 throw std::runtime_error("");
 
@@ -230,12 +239,16 @@ namespace osuCrypto
 
             selectCuckooPos(cuckooTable, A2);
 
+            setTimePoint("intersect_select_cuckoo");
+
+
             if (ComPsiServer_debug)
                 p0CheckSelect(cuckooTable, A2);
 
 
             aby3::Sh3::sPackedBin intersectionFlags(B.rows(), 1);
             compare(B, A2, intersectionFlags);
+            setTimePoint("intersect_compare");
 
             //char c(0);
             //mComm.mNext.send(c);
@@ -244,11 +257,13 @@ namespace osuCrypto
             //mComm.mPrev.recv(c);
             mEnc.revealAll(mRt.noDependencies(), intersectionFlags, plainFlags).get();
 
+            setTimePoint("intersect_done");
+
             break;
         }
         case 1:
         {
-            if (ComPsiServer_debug)
+            if (debug_print && ComPsiServer_debug)
             {
                 ostreamLock o(std::cout);
                 for (u64 i = 0; i < keys.rows(); ++i)
@@ -258,6 +273,9 @@ namespace osuCrypto
             }
 
             auto cuckooTable = cuckooHashRecv(A);
+            setTimePoint("intersect_cuckoo_hash");
+
+
             Matrix<u8> a2(B.rows() * 3, cuckooTable.cols());
             std::array<MatrixView<u8>, 3> A2{
                 MatrixView<u8>(a2.data() + 0 * B.rows() * cuckooTable.cols(), B.rows(), cuckooTable.cols()),
@@ -267,13 +285,15 @@ namespace osuCrypto
 
             selectCuckooPos(cuckooTable, A2, keys);
 
+            setTimePoint("intersect_select_cuckoo");
+
             if (ComPsiServer_debug)
                 p1CheckSelect(cuckooTable, A2, keys);
-
 
             aby3::Sh3::sPackedBin intersectionFlags(B.rows(), 1);
             compare(B, A2, intersectionFlags);
 
+            setTimePoint("intersect_compare");
 
             //char c(0);
             //mComm.mNext.send(c);
@@ -282,15 +302,22 @@ namespace osuCrypto
             //mComm.mPrev.recv(c);
 
             mEnc.revealAll(mRt.noDependencies(), intersectionFlags, plainFlags).get();
+            setTimePoint("intersect_done");
             break;
         }
         case 2:
         {
             auto cuckooParams = CuckooIndex<>::selectParams(A.mKeys.rows(), ComPsiServer_ssp, 0, 3);
             cuckooHashSend(A, cuckooParams);
+            setTimePoint("intersect_cuckoo_hash");
+
             selectCuckooPos(B.rows(), cuckooParams.numBins(), bytes);
+            setTimePoint("intersect_select_cuckoo");
+
+
             aby3::Sh3::sPackedBin intersectionFlags(B.rows(), 1);
             compare(B, intersectionFlags);
+            setTimePoint("intersect_compare");
 
             //char c(0);
             //mComm.mNext.send(c);
@@ -298,6 +325,8 @@ namespace osuCrypto
             //mComm.mNext.recv(c);
             //mComm.mPrev.recv(c);
             mEnc.revealAll(mRt.noDependencies(), intersectionFlags, plainFlags).get();
+
+            setTimePoint("intersect_done");
             break;
         }
         default:
@@ -347,7 +376,7 @@ namespace osuCrypto
             throw std::runtime_error(LOCATION);
         span<block> view((block*)keys.data(), keys.rows());
 
-        if (ComPsiServer_debug)
+        if (debug_print && ComPsiServer_debug)
         {
             auto numBins = cuckoo.mBins.size();
             ostreamLock o(std::cout);
@@ -369,7 +398,7 @@ namespace osuCrypto
 
 
 
-        if (ComPsiServer_debug)
+        if (debug_print && ComPsiServer_debug)
             cuckoo.print();
 
         Matrix<u8> share0(cuckoo.mBins.size(), (A.mKeys.bitCount() + 7) / 8);
@@ -389,7 +418,7 @@ namespace osuCrypto
                 memcpy(dest, src, stride);
                 perm[inputIdx] = i;
 
-                if (ComPsiServer_debug)
+                if (debug_print && ComPsiServer_debug)
                     std::cout << "in[" << inputIdx << "] -> cuckoo[" << i << "]" << std::endl;
             }
             else
@@ -619,11 +648,12 @@ namespace osuCrypto
         eval.setInput(3, A[2]);
 
         std::vector<std::vector<aby3::Sh3BinaryEvaluator::DEBUG_Triple>>plainWires;
+        eval.distributeInputs();
+
         if (ComPsiServer_debug)
-        {
-            eval.distributeInputs();
             plainWires = eval.mPlainWires_DEBUG;
-        }
+
+        mRt.runAll();
 
         eval.asyncEvaluate(mRt.noDependencies()).get();
 
@@ -675,12 +705,14 @@ namespace osuCrypto
                         select[2](i, j) = aa[2](i, j) ^ a[2](i, j);
                     }
 
-                    std::cout << "p " << mIdx << " select[0][" << i << "] = " << hexString(&select[0](i, 0), a[0].cols()) << " = " << hexString(&aa[0](i, 0), a[0].cols()) << " ^ " << hexString(&a[0](i, 0), a[0].cols()) << std::endl;
+                    if (debug_print)
+                        std::cout << "p " << mIdx << " select[0][" << i << "] = " << hexString(&select[0](i, 0), a[0].cols()) << " = " << hexString(&aa[0](i, 0), a[0].cols()) << " ^ " << hexString(&a[0](i, 0), a[0].cols()) << std::endl;
                 }
 
                 for (auto i = 0; i < size; ++i)
                 {
-                    std::cout << "select[" << i << "] "
+                    if (debug_print)
+                        std::cout << "select[" << i << "] "
                         << hexString(select[0][i].data(), select[0][i].size()) << " "
                         << hexString(select[1][i].data(), select[1][i].size()) << " "
                         << hexString(select[2][i].data(), select[2][i].size()) << " vs "
@@ -747,8 +779,8 @@ namespace osuCrypto
                 u8 ii1 = *i1++;
                 u8 ii2 = *i2++;
 
-
-                o << "circuit[" << mIdx << "][" << i << "] "
+                if (debug_print)
+                    o << "circuit[" << mIdx << "][" << i << "] "
                     << " b  " << *(u64*)bb.row(i).data()
                     << " a0 " << *(u64*)select[0][i].data()
                     << " a1 " << *(u64*)select[1][i].data()
@@ -799,6 +831,8 @@ namespace osuCrypto
 
 
         eval.distributeInputs();
+
+        mRt.runAll();
 
         eval.asyncEvaluate(mRt.noDependencies()).get();
 
@@ -851,8 +885,8 @@ namespace osuCrypto
                 if (ff != (ii0 ^ ii1 ^ ii2))
                     throw std::runtime_error("");
 
-
-                o << "circuit[" << mIdx << "][" << i << "] -> " << int(ff) << " = (" << int(ii0) << " " << int(ii1) << " " << int(ii2) << ")" << std::endl;
+                if (debug_print)
+                    o << "circuit[" << mIdx << "][" << i << "] -> " << int(ff) << " = (" << int(ii0) << " " << int(ii1) << " " << int(ii2) << ")" << std::endl;
             }
         }
 
@@ -954,11 +988,16 @@ namespace osuCrypto
         r.addInputBundle(a0);
         r.addInputBundle(a1);
         r.addInputBundle(a2);
-        BetaBundle out(1), c0(1), c1(1), c2(1);
+        BetaBundle out(1),
+            c0(2), c1(2), c2(2),
+            ab0(mKeyBitCount), ab1(mKeyBitCount), ab2(mKeyBitCount);
         r.addOutputBundle(out);
         r.addOutputBundle(c0);
         r.addOutputBundle(c1);
         r.addOutputBundle(c2);
+        r.addTempWireBundle(ab0);
+        r.addTempWireBundle(ab1);
+        r.addTempWireBundle(ab2);
 
 
         // compute a0 = a0 ^ b ^ 1
@@ -967,9 +1006,9 @@ namespace osuCrypto
         auto size = mKeyBitCount;
         for (auto i = 0; i < size; ++i)
         {
-            r.addGate(a0[i], b[i], GateType::Nxor, a0[i]);
-            r.addGate(a1[i], b[i], GateType::Nxor, a1[i]);
-            r.addGate(a2[i], b[i], GateType::Nxor, a2[i]);
+            r.addGate(a0[i], b[i], GateType::Nxor, ab0[i]);
+            r.addGate(a1[i], b[i], GateType::Nxor, ab1[i]);
+            r.addGate(a2[i], b[i], GateType::Nxor, ab2[i]);
         }
 
         // check if a0,a1, or a2 are all ones, meaning ai == b
@@ -985,20 +1024,24 @@ namespace osuCrypto
         //}
         //for (i64 i = 1; i < size; ++i)
         //{
-        //    r.addGate(a0[0], a0[i], GateType::And, a0[0]);
+        //    r.addGate(a0[0], a0[i], GateType::And, a0[0]); 
         //    r.addGate(a1[0], a1[i], GateType::And, a1[0]);
         //    r.addGate(a2[0], a2[i], GateType::And, a2[0]);
         //}
 
-        r.addGate(a0[0], a0[1], GateType::And, c0[0]);
-        r.addGate(a1[0], a1[1], GateType::And, c1[0]);
-        r.addGate(a2[0], a2[1], GateType::And, c2[0]);
+        auto bit = 0;
+
+        r.addGate(ab0[0], ab0[1], GateType::And, c0[bit]);
+        r.addGate(ab1[0], ab1[1], GateType::And, c1[bit]);
+        r.addGate(ab2[0], ab2[1], GateType::And, c2[bit]);
 
         for (i64 i = 2; i < size; ++i)
         {
-            r.addGate(c0[0], a0[i], GateType::And, c0[0]);
-            r.addGate(c1[0], a1[i], GateType::And, c1[0]);
-            r.addGate(c2[0], a2[i], GateType::And, c2[0]);
+            r.addGate(c0[bit], ab0[i], GateType::And, c0[bit ^ 1]);
+            r.addGate(c1[bit], ab1[i], GateType::And, c1[bit ^ 1]);
+            r.addGate(c2[bit], ab2[i], GateType::And, c2[bit ^ 1]);
+
+            bit ^= 1;
         }
 
 
@@ -1008,8 +1051,8 @@ namespace osuCrypto
         // this will be 1 if a single items matchs. 
         // We should never have 2 matches so this is 
         // effectively the same as using GateType::Or
-        r.addGate(c0[0], c1[0], GateType::Xor, out[0]);
-        r.addGate(c2[0], out[0], GateType::Xor, out[0]);
+        r.addGate(c0[bit], c1[bit], GateType::Xor, out[0]);
+        r.addGate(c2[bit], out[0], GateType::Xor, out[0]);
 
         return r;
     }

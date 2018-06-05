@@ -131,7 +131,7 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
     debugComm[2] = { comms[2].mPrev.getSession().addChannel(), comms[2].mNext.getSession().addChannel() };
 
     cir->levelByAndDepth();
-    u64 width = 261;
+    u64 width = 1 << 12;
     bool failed = false;
     //bool manual = false;
 
@@ -149,6 +149,8 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
             b(i) = prng.get<i64>() & valMask;
         }
         ar(0) = prng.get<i64 >();
+
+        ostreamLock(std::cout) <<" * " << std::hex<< a(0) << " " << std::hex << b(0) << std::endl << std::dec;
 
         Sh3Runtime rt(i, comms[i]);
 

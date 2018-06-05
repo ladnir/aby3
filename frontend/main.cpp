@@ -68,32 +68,42 @@ void ComPsi_Intersect(u32 rows)
         auto B = srvs[i].localInput(b);
 
         timer.setTimePoint("inputs");
+        srvs[i].setTimer(timer);
 
-        auto C = srvs[i].intersect(A, B);
+        auto C = srvs[i].intersect(A, B); 
         timer.setTimePoint("intersect");
 
-        aby3::Sh3::i64Matrix c(C.mKeys.rows(), C.mKeys.i64Cols());
-        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mKeys, c);
-        timer.setTimePoint("reveal");
+        if (C.rows())
+        {
+            aby3::Sh3::i64Matrix c(C.mKeys.rows(), C.mKeys.i64Cols());
+            srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mKeys, c);
+            timer.setTimePoint("reveal");
 
-        if (c.rows() != intersectionSize)
+            if (c.rows() != intersectionSize)
+            {
+                failed = true;
+                std::cout << "bad size, exp: " << intersectionSize << ", act: " << c.rows() << std::endl;
+            }
+        }
+        else
         {
             failed = true;
-            std::cout << "bad size, exp: " << intersectionSize << ", act: " << c.rows() << std::endl;
         }
-
-        std::cout << timer << std::endl;
+        std::cout << timer << std::endl << srvs[i].getTimer() << std::endl;
     });
 
     auto t1 = std::thread([&]() {
         setThreadName("t1");
         auto i = 1;
         auto A = srvs[i].remoteInput(0, rows);
-        auto B = srvs[i].remoteInput(0, rows);
+        auto B = srvs[i].remoteInput(0, rows); 
 
         auto C = srvs[i].intersect(A, B);
-        aby3::Sh3::i64Matrix c(C.mKeys.rows(), C.mKeys.i64Cols());
-        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mKeys, c);
+        if (C.rows())
+        {
+            aby3::Sh3::i64Matrix c(C.mKeys.rows(), C.mKeys.i64Cols());
+            srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mKeys, c);
+        }
     });
     auto t2 = std::thread([&]() {
         setThreadName("t2");
@@ -102,8 +112,12 @@ void ComPsi_Intersect(u32 rows)
         auto B = srvs[i].remoteInput(0, rows);
 
         auto C = srvs[i].intersect(A, B);
-        aby3::Sh3::i64Matrix c(C.mKeys.rows(), C.mKeys.i64Cols());
-        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mKeys, c);
+
+        if (C.rows())
+        {
+            aby3::Sh3::i64Matrix c(C.mKeys.rows(), C.mKeys.i64Cols());
+            srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mKeys, c);
+        }
     });
 
 
@@ -113,7 +127,10 @@ void ComPsi_Intersect(u32 rows)
     t2.join();
 
     if (failed)
+    {
+        std::cout << "bad intersection" << std::endl;
         throw std::runtime_error("");
+    }
 
     //srvs[0].intersect(A, B);
 }
@@ -125,6 +142,13 @@ int main(int argc, char** argv)
 {
     oc::CLP cmd(argc, argv);
 
+    if (cmd.isSet("h"))
+    {
+        std::cout << "-u                 ~~ to run all tests" << std::endl;
+        std::cout << "-u n1 [n2 ...]     ~~ to run test n1, n2, ..." << std::endl;
+        std::cout << "-u -list           ~~ to list all tests" << std::endl;
+        std::cout << "-intersect -nn NN  ~~ to run the intersection benchmark with 2^NN set sizes" << std::endl;
+    }
     
     if (cmd.isSet(unitTestTag))
     {
@@ -158,4 +182,5 @@ int main(int argc, char** argv)
             ComPsi_Intersect(size);
         }
     }
+
  }

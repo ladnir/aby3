@@ -27,7 +27,7 @@ void ComPsi_computeKeys_test()
     srvs[1].init(1, s10, s12);
     srvs[2].init(2, s21, s20);
 
-    auto size =  1046;
+    auto size = 1046;
     Table a, b;
     a.mKeys.resize(size, (srvs[0].mKeyBitCount + 63) / 64);
     b.mKeys.resize(size, (srvs[0].mKeyBitCount + 63) / 64);
@@ -49,8 +49,8 @@ void ComPsi_computeKeys_test()
         auto A = srvs[i].localInput(a);
         auto B = srvs[i].localInput(b);
 
-        std::vector<SharedTable*> tables{ &A , &B};
-        std::vector<u64> reveals{ 0, 1};
+        std::vector<SharedTable*> tables{ &A , &B };
+        std::vector<u64> reveals{ 0, 1 };
         r0 = srvs[i].computeKeys(tables, reveals);
 
 
@@ -79,7 +79,7 @@ void ComPsi_computeKeys_test()
         auto A = srvs[i].remoteInput(0, size);
         auto B = srvs[i].remoteInput(0, size);
         std::vector<SharedTable*> tables{ &A, &B };
-        std::vector<u64> reveals{ 0 , 1};
+        std::vector<u64> reveals{ 0 , 1 };
         auto r = srvs[i].computeKeys(tables, reveals);
 
         if (i == 1)
@@ -97,7 +97,7 @@ void ComPsi_computeKeys_test()
 
     if (r0 != r1)
     {
-        std::cout<< std::hex << std::endl;
+        std::cout << std::hex << std::endl;
         std::cout << r0 << std::endl << std::endl;
         std::cout << r1 << std::endl;
 
@@ -186,6 +186,113 @@ void ComPsi_cuckooHash_test()
 
 }
 
+void ComPsi_compare_test()
+{
+
+    IOService ios;
+    Session s01(ios, "127.0.0.1", SessionMode::Server, "01");
+    Session s10(ios, "127.0.0.1", SessionMode::Client, "01");
+    Session s02(ios, "127.0.0.1", SessionMode::Server, "02");
+    Session s20(ios, "127.0.0.1", SessionMode::Client, "02");
+    Session s12(ios, "127.0.0.1", SessionMode::Server, "12");
+    Session s21(ios, "127.0.0.1", SessionMode::Client, "12");
+
+
+    ComPsiServer srvs[3];
+    srvs[0].init(0, s02, s01);
+    srvs[1].init(1, s10, s12);
+    srvs[2].init(2, s21, s20);
+
+
+    // 80 bits;
+    u32 hashSize = 80;
+    auto byteSize = hashSize / 8;
+    u32 rows =1 << 12;
+    Table b;
+    b.mKeys.resize(rows, (srvs[0].mKeyBitCount + 63) / 64);
+    b.mKeys.setZero();
+
+    std::vector<u8> expIntersection(rows, 0);
+    PRNG prng(ZeroBlock);
+
+    for (u64 i = 0; i < rows; ++i)
+    {
+        expIntersection[i] = prng.get<bool>();
+        prng.get((u8*)b.mKeys.row(i).data(), byteSize);
+    }
+
+    bool failed = false;
+
+    auto routine = [&](int i)
+    {
+        SharedTable B;
+
+        if (i == 0)
+            B = srvs[i].localInput(b);
+        else
+            B = srvs[i].remoteInput(0, rows);
+
+
+        aby3::Sh3::PackedBin plainFlags(B.rows(), 1);
+        aby3::Sh3::sPackedBin intersectionFlags(B.rows(), 1);
+
+        if (i < 2)
+        {
+            std::array<MatrixView<u8>, 3> selects;
+            std::array<Matrix<u8>, 3> selects2;
+
+            selects2[0].resize(rows, byteSize);
+            selects2[1].resize(rows, byteSize);
+            selects2[2].resize(rows, byteSize);
+
+            if (i == 0)
+            {
+
+                for (u64 j = 0; j < rows; ++j)
+                {
+                    if (expIntersection[j])
+                    {
+                        u8 idx = prng.get<u8>() % 3;
+                        memcpy(selects2[idx][j].data(), b.mKeys.row(j).data(), byteSize);
+                    }
+                }
+            }
+
+            selects[0] = selects2[0];
+            selects[1] = selects2[1];
+            selects[2] = selects2[2];
+
+
+            srvs[i].compare(B, selects, intersectionFlags);
+            srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), intersectionFlags, plainFlags).get();
+            BitIterator iter((u8*)plainFlags.mData.data(), 0);
+            for (u64 j = 0; j < rows; ++j)
+            {
+                if (*iter++ != expIntersection[j])
+                {
+                    failed = true;
+                }
+            }
+        }
+        else
+        {
+            srvs[i].compare(B, intersectionFlags);
+            srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), intersectionFlags, plainFlags).get();
+        }
+    };
+
+
+    auto t0 = std::thread(routine, 0);
+    auto t1 = std::thread(routine, 1);
+
+    routine(2);
+    t0.join();
+    t1.join();
+
+    if (failed)
+        throw RTE_LOC;
+}
+
 void ComPsi_Intersect_test()
 {
 
@@ -206,13 +313,13 @@ void ComPsi_Intersect_test()
 
     // 80 bits;
     u32 hashSize = 80;
-    u32 rows = 1025;
+    u32 rows = 1 << 14;
 
     PRNG prng(ZeroBlock);
     Table a, b;
     a.mKeys.resize(rows, (srvs[0].mKeyBitCount + 63) / 64);
     b.mKeys.resize(rows, (srvs[0].mKeyBitCount + 63) / 64);
-    auto intersectionSize = (rows +1)/ 2;
+    auto intersectionSize = (rows + 1) / 2;
 
     std::unordered_set<i64> map;
     map.reserve(intersectionSize);
@@ -255,23 +362,23 @@ void ComPsi_Intersect_test()
 
         for (u64 i = 0; i < c.rows(); ++i)
         {
-           auto iter = map.find(c(i, 0));
-           if (iter == map.end())
-           {
-               failed = true;
-               std::cout << "bad value in intersection: " << c(i, 0)  << " @ " <<i<< std::endl;
-           }
-           else
-           {
-               map.erase(iter);
-           }
+            auto iter = map.find(c(i, 0));
+            if (iter == map.end())
+            {
+                failed = true;
+                std::cout << "bad value in intersection: " << c(i, 0) << " @ " << i << std::endl;
+            }
+            else
+            {
+                map.erase(iter);
+            }
 
-           //std::cout << "c[" << i << "] = " << c(i, 0) << std::endl;
+            //std::cout << "c[" << i << "] = " << c(i, 0) << std::endl;
         }
 
         for (auto& v : map)
         {
-            std::cout << "missing idx " << v  << std::endl;
+            std::cout << "missing idx " << v << std::endl;
         }
     });
 

@@ -4,23 +4,11 @@
   "Items": [
     {
       "Id": "d868e2c2-3340-4964-a9b3-7fc58d480e9b",
-      "Command": "-u 29"
-    },
-    {
-      "Id": "5a055b31-983f-4f6c-bf30-57c3898759d6",
-      "Command": ""
-    },
-    {
-      "Id": "1d20faf8-6b19-4493-b9d1-8b5e24ffcb02",
-      "Command": ""
-    },
-    {
-      "Id": "708849ee-6d3d-4b50-943f-061f226ad150",
-      "Command": ""
+      "Command": "-u 22"
     },
     {
       "Id": "2f798f03-568e-4966-9174-c2a34166b8c4",
-      "Command": "-intersect -nn 16"
+      "Command": "-intersect -nn 18"
     }
   ]
 }

@@ -4,11 +4,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "aby3", "aby3\aby3.vcxproj", "{FD60CAE8-ABAB-433C-BC50-D867DE0234B2}"
-	ProjectSection(ProjectDependencies) = postProject
-		{8C3AF3C3-2ABF-43A7-8B72-C674E64BD0D6} = {8C3AF3C3-2ABF-43A7-8B72-C674E64BD0D6}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ivory", "..\Ivory-Runtime\ivory\ivory.vcxproj", "{8C3AF3C3-2ABF-43A7-8B72-C674E64BD0D6}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "aby3_tests", "aby3_tests\aby3_tests.vcxproj", "{E2622D5B-73B4-4EF0-B9AF-15CCA97D9729}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -34,9 +29,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "com-psi_tests", "com-psi_te
 	EndProjectSection
 EndProject
 Global
-	GlobalSection(Performance) = preSolution
-		HasPerformanceSessions = true
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
 		Release|x64 = Release|x64
@@ -46,8 +38,6 @@ Global
 		{FD60CAE8-ABAB-433C-BC50-D867DE0234B2}.Debug|x64.Build.0 = Debug|x64
 		{FD60CAE8-ABAB-433C-BC50-D867DE0234B2}.Release|x64.ActiveCfg = Release|x64
 		{FD60CAE8-ABAB-433C-BC50-D867DE0234B2}.Release|x64.Build.0 = Release|x64
-		{8C3AF3C3-2ABF-43A7-8B72-C674E64BD0D6}.Debug|x64.ActiveCfg = Debug|x64
-		{8C3AF3C3-2ABF-43A7-8B72-C674E64BD0D6}.Release|x64.ActiveCfg = Release|x64
 		{E2622D5B-73B4-4EF0-B9AF-15CCA97D9729}.Debug|x64.ActiveCfg = Debug|x64
 		{E2622D5B-73B4-4EF0-B9AF-15CCA97D9729}.Debug|x64.Build.0 = Debug|x64
 		{E2622D5B-73B4-4EF0-B9AF-15CCA97D9729}.Release|x64.ActiveCfg = Release|x64
@@ -70,6 +60,15 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C508BA5C-9F48-4BC1-A3C0-14625E51D6FB}
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true

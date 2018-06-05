@@ -30,7 +30,7 @@ void Perm3p_overwrite_Test()
     Channel chl21 = s21.addChannel();
 
 
-    int rows = 100;
+    int rows = 1 << 16;
     int bytes = 16;
 
     std::vector<u32> perm(rows);

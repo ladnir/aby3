@@ -8,7 +8,7 @@
 #include "aby3/Engines/sh3/Sh3Evaluator.h"
 #include "LowMC.h"
 #include <cryptoTools/Common/CuckooIndex.h>
-
+#include <cryptoTools/Common/Timer.h>
 namespace osuCrypto
 {
     using CommPkg = aby3::Sh3::CommPkg;
@@ -37,7 +37,7 @@ namespace osuCrypto
     };
 
 
-    class ComPsiServer
+    class ComPsiServer :public TimerAdapter
     {
     public:
         u64 mIdx, mKeyBitCount = 80;
