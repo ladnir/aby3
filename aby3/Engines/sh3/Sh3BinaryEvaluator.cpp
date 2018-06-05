@@ -700,10 +700,6 @@ namespace aby3
                     z = getShares();
                     for (i32 k = 0; k < simdWidth128; k += 8)
                     {
-                        auto s0_in0_b0 = getBit(s0_in0[k]);
-                        auto s1_in0_b0 = getBit(s1_in0[k]);
-                        auto s0_in1_b0 = getBit(s0_in1[k]);
-                        auto s1_in1_b0 = getBit(s1_in1[k]);
 
                         t0[0] = s0_in0[k + 0] & s0_in1[k + 0];
                         t0[1] = s0_in0[k + 1] & s0_in1[k + 1];
