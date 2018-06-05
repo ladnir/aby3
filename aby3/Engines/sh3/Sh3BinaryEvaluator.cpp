@@ -1091,7 +1091,7 @@ namespace aby3
 
                         auto bad = badOutput || badInput0 || badInput1;
 
-                        if (bad || (gIdx == 0 && r == 0))
+                        if (bad)
                         {
 
 

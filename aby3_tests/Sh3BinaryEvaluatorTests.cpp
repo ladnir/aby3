@@ -150,8 +150,6 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
         }
         ar(0) = prng.get<i64 >();
 
-        ostreamLock(std::cout) <<" * " << std::hex<< a(0) << " " << std::hex << b(0) << std::endl << std::dec;
-
         Sh3Runtime rt(i, comms[i]);
 
         Sh3::sbMatrix A(width, 64), B(width, 64), C(width, cir->mOutputs[0].size());
@@ -295,7 +293,7 @@ void Sh3_BinaryEngine_and_test()
         cir->levelByAndDepth();
 
         Sh3_BinaryEngine_test(cir, [](i64 a, i64 b) {return a & b; }, true);
-        Sh3_BinaryEngine_test(cir, [](i64 a, i64 b) {return a & b; }, true);
+        Sh3_BinaryEngine_test(cir, [](i64 a, i64 b) {return a & b; }, false);
     }
 
     // na_and
