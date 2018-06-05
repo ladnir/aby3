@@ -59,7 +59,7 @@ namespace aby3
         //auto simdWidth = (width + bits - 1) / bits;
 
         // each row of mem corresponds to a wire. Each column of mem corresponds to 64 SIMD bits
-        mMem.resize(width, mCir->mWireCount, 8);
+        mMem.reset(width, mCir->mWireCount, 8);
         //mMem[0].resize(cir->mWireCount, simdWidth);
         //mMem[1].resize(cir->mWireCount, simdWidth);
         //mMem[0].setZero();
@@ -1180,7 +1180,7 @@ namespace aby3
     void Sh3BinaryEvaluator::getOutput(const std::vector<oc::BetaWire>& outWires, Sh3::sPackedBin & out)
     {
 
-        out.resize(mMem.shareCount(), outWires.size());
+        out.reset(mMem.shareCount(), outWires.size());
 
         auto simdWidth128 = mMem.simdWidth();
 

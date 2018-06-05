@@ -25,10 +25,11 @@ namespace aby3
                 const std::array<oc::MatrixView<u8>, 2>& b,
                 u64 bitCount);
 
+
             template<typename T>
             bool areEqual(
-                const std::array<oc::Matrix<T>, 2>& a,
-                const std::array<oc::Matrix<T>, 2>& b,
+                const std::array<oc::MatrixView<T>, 2>& a,
+                const std::array<oc::MatrixView<T>, 2>& b,
                 u64 bitCount)
             {
                 std::array<oc::MatrixView<u8>, 2> aa;
@@ -41,6 +42,18 @@ namespace aby3
                 bb[1] = oc::MatrixView<u8>((u8*)b[1].data(), b[1].rows(), b[1].cols() * sizeof(T));
 
                 return areEqualImpl(aa, bb, bitCount);
+            }
+            template<typename T>
+            bool areEqual(
+                const std::array<oc::Matrix<T>, 2>& a,
+                const std::array<oc::Matrix<T>, 2>& b,
+                u64 bitCount)
+            {
+
+                std::array<oc::MatrixView<T>, 2> aa{ a[0], a[1] };
+                std::array<oc::MatrixView<T>, 2> bb{ b[0], b[1] };
+
+                return areEqual(aa, bb, bitCount);
             }
 
             void trimImpl(oc::MatrixView<u8> a, u64 bits);
@@ -238,22 +251,61 @@ namespace aby3
             static_assert(std::is_pod<T>::value, "must be pod");
             u64 mShareCount;
 
-            std::array<oc::Matrix<T>, 2> mShares;
+            std::array<oc::MatrixView<T>, 2> mShares;
+            std::unique_ptr<T[]> mBacking;
 
             sPackedBinBase() = default;
             sPackedBinBase(u64 shareCount, u64 bitCount, u64 wordMultiple = 1)
             {
-                resize(shareCount, bitCount, wordMultiple);
+                reset(shareCount, bitCount, wordMultiple);
             }
 
-            void resize(u64 shareCount, u64 bitCount, u64 wordMultiple = 1)
+            //void resize(u64 shareCount, u64 bitCount, u64 wordMultiple = 1)
+            //{
+            //    mShareCount = shareCount;
+            //    auto bitsPerWord = 8 * sizeof(T);
+            //    auto wordCount = (shareCount + bitsPerWord - 1) / bitsPerWord;
+            //    wordCount = oc::roundUpTo(wordCount, wordMultiple);
+
+            //    auto oldBacking = mBacking;
+            //    auto old = mShares;
+
+            //    mShares[0].resize(bitCount, wordCount, oc::AllocType::Uninitialized);
+            //    mShares[1].resize(bitCount, wordCount, oc::AllocType::Uninitialized);
+            //}
+
+            // resize without copy
+            void reset(u64 shareCount, u64 bitCount, u64 wordMultiple = 1)
             {
-                mShareCount = shareCount;
+
                 auto bitsPerWord = 8 * sizeof(T);
                 auto wordCount = (shareCount + bitsPerWord - 1) / bitsPerWord;
                 wordCount = oc::roundUpTo(wordCount, wordMultiple);
-                mShares[0].resize(bitCount, wordCount, oc::AllocType::Uninitialized);
-                mShares[1].resize(bitCount, wordCount, oc::AllocType::Uninitialized);
+
+
+                if (shareCount != mShareCount || wordCount != mShares[0].stride())
+                {
+                    mShareCount = shareCount;
+
+                    auto sizeT = bitCount * wordCount;
+                    auto sizeBytes = (sizeT + 1) * sizeof(T);
+                    auto totalT = 2 * sizeT + 1; // plus one to make sure we have enought space for aligned storage.
+
+                    mBacking.reset(new T[totalT]); 
+
+                    void* ptr = mBacking.get();
+                    auto alignment = alignof(T);
+                    
+                    if (!std::align(alignment, sizeT * sizeof(T), ptr, sizeBytes))
+                        throw RTE_LOC;
+
+                    T* aligned0 = static_cast<T*>(ptr);
+                    T* aligned1 = aligned0 + sizeT;
+
+                    mShares[0] = oc::MatrixView<T>(aligned0, bitCount, wordCount);
+                    mShares[1] = oc::MatrixView<T>(aligned1, bitCount, wordCount);
+                }
+
             }
 
             u64 size() const { return mShares[0].size(); }
@@ -349,9 +401,9 @@ namespace aby3
                     throw std::runtime_error(LOCATION);
 
                 PackedBinBase<T> r(shareCount(), bitCount());
-                    for (u64 j = 0; j < mData.size(); ++j)
-                    {
-                        r.mData(j) = mData(j) ^ rhs.mData(j);
+                for (u64 j = 0; j < mData.size(); ++j)
+                {
+                    r.mData(j) = mData(j) ^ rhs.mData(j);
                 }
                 return r;
             }

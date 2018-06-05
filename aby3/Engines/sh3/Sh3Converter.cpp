@@ -9,7 +9,7 @@ namespace aby3
 
     void Sh3Converter::toPackedBin(const Sh3::sbMatrix & in, Sh3::sPackedBin & dest)
     {
-        dest.resize(in.rows(), in.bitCount());
+        dest.reset(in.rows(), in.bitCount());
 
         for (u64 i = 0; i < 2; ++i)
         {

@@ -622,9 +622,9 @@ namespace osuCrypto
 
 
         std::array<aby3::Sh3::sPackedBin, 3> A;
-        A[0].resize(size, mKeyBitCount),
-            A[1].resize(size, mKeyBitCount),
-            A[2].resize(size, mKeyBitCount);
+        A[0].reset(size, mKeyBitCount);
+        A[1].reset(size, mKeyBitCount);
+        A[2].reset(size, mKeyBitCount);
 
         auto t0 = mEnc.localPackedBinary(mRt.noDependencies(), a[0], A[0], true);
         auto t1 = mEnc.localPackedBinary(mRt.noDependencies(), a[1], A[1], true);
@@ -742,9 +742,9 @@ namespace osuCrypto
                 }
             }
 
-            aby3::Sh3::sPackedBin r0 = intersectionFlags;
-            aby3::Sh3::sPackedBin r1 = intersectionFlags;
-            aby3::Sh3::sPackedBin r2 = intersectionFlags;
+            aby3::Sh3::sPackedBin r0(intersectionFlags.shareCount(), intersectionFlags.bitCount());
+            aby3::Sh3::sPackedBin r1(intersectionFlags.shareCount(), intersectionFlags.bitCount());
+            aby3::Sh3::sPackedBin r2(intersectionFlags.shareCount(), intersectionFlags.bitCount());
             r0.mShares[0].setZero();
             r0.mShares[1].setZero();
             r1.mShares[0].setZero();
@@ -779,7 +779,11 @@ namespace osuCrypto
                 u8 ii1 = *i1++;
                 u8 ii2 = *i2++;
 
-                if (debug_print)
+                auto t0 = ii0 != exp[i][0];
+                auto t1 = ii1 != exp[i][1];
+                auto t2 = ii2 != exp[i][2];
+
+                if (debug_print || t0 || t1 || t2)
                     o << "circuit[" << mIdx << "][" << i << "] "
                     << " b  " << *(u64*)bb.row(i).data()
                     << " a0 " << *(u64*)select[0][i].data()
@@ -787,13 +791,13 @@ namespace osuCrypto
                     << " a2 " << *(u64*)select[2][i].data()
                     << " -> " << int(ff) << " = (" << int(ii0) << " " << int(ii1) << " " << int(ii2) << ")" << std::endl;
 
-                if (ii0 != exp[i][0])
+                if (t0)
                     throw std::runtime_error("");
 
-                if (ii1 != exp[i][1])
+                if (t1)
                     throw std::runtime_error("");
 
-                if (ii2 != exp[i][2])
+                if (t2)
                     throw std::runtime_error("");
 
             }
@@ -844,9 +848,9 @@ namespace osuCrypto
             aby3::Sh3::i64Matrix bb(B.mKeys.rows(), B.mKeys.i64Cols());
             mEnc.revealAll(mComm, B.mKeys, bb);
 
-            aby3::Sh3::sPackedBin a0 = intersectionFlags;
-            aby3::Sh3::sPackedBin a1 = intersectionFlags;
-            aby3::Sh3::sPackedBin a2 = intersectionFlags;
+            aby3::Sh3::sPackedBin a0(intersectionFlags.shareCount(), intersectionFlags.bitCount());
+            aby3::Sh3::sPackedBin a1(intersectionFlags.shareCount(), intersectionFlags.bitCount());
+            aby3::Sh3::sPackedBin a2(intersectionFlags.shareCount(), intersectionFlags.bitCount());
 
             a0.mShares[0].setZero();
             a0.mShares[1].setZero();
@@ -954,7 +958,7 @@ namespace osuCrypto
         {
             //auto shareCount = tables[i]->mKeys.shareCount();
             auto shareCount = tables[i]->mKeys.rows();
-            temps[i].resize(shareCount, blockSize);
+            temps[i].reset(shareCount, blockSize);
 
             if (reveals[i] == mIdx)
             {
@@ -989,7 +993,7 @@ namespace osuCrypto
         r.addInputBundle(a1);
         r.addInputBundle(a2);
         BetaBundle out(1),
-            c0(2), c1(2), c2(2),
+            c0(1), c1(1), c2(1),
             ab0(mKeyBitCount), ab1(mKeyBitCount), ab2(mKeyBitCount);
         r.addOutputBundle(out);
         r.addOutputBundle(c0);
@@ -1029,19 +1033,15 @@ namespace osuCrypto
         //    r.addGate(a2[0], a2[i], GateType::And, a2[0]);
         //}
 
-        auto bit = 0;
-
-        r.addGate(ab0[0], ab0[1], GateType::And, c0[bit]);
-        r.addGate(ab1[0], ab1[1], GateType::And, c1[bit]);
-        r.addGate(ab2[0], ab2[1], GateType::And, c2[bit]);
+        r.addGate(ab0[0], ab0[1], GateType::And, c0[0]);
+        r.addGate(ab1[0], ab1[1], GateType::And, c1[0]);
+        r.addGate(ab2[0], ab2[1], GateType::And, c2[0]);
 
         for (i64 i = 2; i < size; ++i)
         {
-            r.addGate(c0[bit], ab0[i], GateType::And, c0[bit ^ 1]);
-            r.addGate(c1[bit], ab1[i], GateType::And, c1[bit ^ 1]);
-            r.addGate(c2[bit], ab2[i], GateType::And, c2[bit ^ 1]);
-
-            bit ^= 1;
+            r.addGate(c0[0], ab0[i], GateType::And, c0[0]);
+            r.addGate(c1[0], ab1[i], GateType::And, c1[0]);
+            r.addGate(c2[0], ab2[i], GateType::And, c2[0]);
         }
 
 
@@ -1051,8 +1051,8 @@ namespace osuCrypto
         // this will be 1 if a single items matchs. 
         // We should never have 2 matches so this is 
         // effectively the same as using GateType::Or
-        r.addGate(c0[bit], c1[bit], GateType::Xor, out[0]);
-        r.addGate(c2[bit], out[0], GateType::Xor, out[0]);
+        r.addGate(c0[0], c1[0], GateType::Xor, out[0]);
+        r.addGate(c2[0], out[0], GateType::Xor, out[0]);
 
         return r;
     }
