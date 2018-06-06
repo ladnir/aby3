@@ -6,7 +6,7 @@
 namespace osuCrypto
 {
     int ComPsiServer_ssp = 10;
-    bool ComPsiServer_debug = true;
+    bool ComPsiServer_debug = false;
     bool debug_print = false;
     void ComPsiServer::init(u64 idx, Session & prev, Session & next)
     {
@@ -988,20 +988,19 @@ namespace osuCrypto
         BetaCircuit r;
 
         BetaBundle a0(mKeyBitCount), a1(mKeyBitCount), a2(mKeyBitCount), b(mKeyBitCount);
+        BetaBundle out(1), c0(1), c1(1), c2(1);
         r.addInputBundle(b);
         r.addInputBundle(a0);
         r.addInputBundle(a1);
         r.addInputBundle(a2);
-        BetaBundle out(1),
-            c0(1), c1(1), c2(1),
-            ab0(mKeyBitCount), ab1(mKeyBitCount), ab2(mKeyBitCount);
         r.addOutputBundle(out);
-        r.addOutputBundle(c0);
-        r.addOutputBundle(c1);
-        r.addOutputBundle(c2);
-        r.addTempWireBundle(ab0);
-        r.addTempWireBundle(ab1);
-        r.addTempWireBundle(ab2);
+
+        if (ComPsiServer_debug)
+        {
+            r.addOutputBundle(c0);
+            r.addOutputBundle(c1);
+            r.addOutputBundle(c2);
+        }
 
 
         // compute a0 = a0 ^ b ^ 1
@@ -1010,49 +1009,37 @@ namespace osuCrypto
         auto size = mKeyBitCount;
         for (auto i = 0; i < size; ++i)
         {
-            r.addGate(a0[i], b[i], GateType::Nxor, ab0[i]);
-            r.addGate(a1[i], b[i], GateType::Nxor, ab1[i]);
-            r.addGate(a2[i], b[i], GateType::Nxor, ab2[i]);
+            r.addGate(a0[i], b[i], GateType::Nxor, a0[i]);
+            r.addGate(a1[i], b[i], GateType::Nxor, a1[i]);
+            r.addGate(a2[i], b[i], GateType::Nxor, a2[i]);
         }
 
         // check if a0,a1, or a2 are all ones, meaning ai == b
-        //while (size != 1)
-        //{
-        //    for (u64 i = 0, j = size - 1; i < j; ++i, --j)
-        //    {
-        //        r.addGate(a0[i], a0[j], GateType::And, a0[i]);
-        //        r.addGate(a1[i], a1[j], GateType::And, a1[i]);
-        //        r.addGate(a2[i], a2[j], GateType::And, a2[i]);
-        //    }
-        //    size = (size + 1) / 2;
-        //}
-        //for (i64 i = 1; i < size; ++i)
-        //{
-        //    r.addGate(a0[0], a0[i], GateType::And, a0[0]); 
-        //    r.addGate(a1[0], a1[i], GateType::And, a1[0]);
-        //    r.addGate(a2[0], a2[i], GateType::And, a2[0]);
-        //}
-
-        r.addGate(ab0[0], ab0[1], GateType::And, c0[0]);
-        r.addGate(ab1[0], ab1[1], GateType::And, c1[0]);
-        r.addGate(ab2[0], ab2[1], GateType::And, c2[0]);
-
-        for (i64 i = 2; i < size; ++i)
+        while (size != 1)
         {
-            r.addGate(c0[0], ab0[i], GateType::And, c0[0]);
-            r.addGate(c1[0], ab1[i], GateType::And, c1[0]);
-            r.addGate(c2[0], ab2[i], GateType::And, c2[0]);
+            for (u64 i = 0, j = size - 1; i < j; ++i, --j)
+            {
+                r.addGate(a0[i], a0[j], GateType::And, a0[i]);
+                r.addGate(a1[i], a1[j], GateType::And, a1[i]);
+                r.addGate(a2[i], a2[j], GateType::And, a2[i]);
+            }
+            size = (size + 1) / 2;
         }
 
 
-
-        //TODO("enable this, make sure to not use colliding hash function values on a single items")
         // return the parity if the three eq tests. 
         // this will be 1 if a single items matchs. 
         // We should never have 2 matches so this is 
         // effectively the same as using GateType::Or
-        r.addGate(c0[0], c1[0], GateType::Xor, out[0]);
-        r.addGate(c2[0], out[0], GateType::Xor, out[0]);
+        r.addGate(a0[0], a1[0], GateType::Xor, out[0]);
+        r.addGate(a2[0], out[0], GateType::Xor, out[0]);
+
+        if (ComPsiServer_debug)
+        {
+            r.addCopy(a0[0], c0[0]);
+            r.addCopy(a1[0], c1[0]);
+            r.addCopy(a2[0], c2[0]);
+        }
 
         return r;
     }

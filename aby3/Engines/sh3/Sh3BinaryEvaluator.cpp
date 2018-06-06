@@ -588,7 +588,7 @@ namespace aby3
 
                 auto iter = mRecvData.begin();
 
-                for (i32 j = 0; j < mRecvLocs.size(); ++j)
+                for (u64 j = 0; j < mRecvLocs.size(); ++j)
                 {
                     auto out = mRecvLocs[j];
                     memcpy(&mMem.mShares[1](out), &*iter, shareCountDiv8);
@@ -614,14 +614,42 @@ namespace aby3
         else
         {
             mGateIter = mCir->mGates.data();
+
+            TODO("Security Warning: use real seeds.");
             auto seed0 = toBlock((task.getRuntime().mPartyIdx));
             auto seed1 = toBlock((task.getRuntime().mPartyIdx + 2) % 3);
-            mShareGen.init(seed0, seed1, simdWidth128 * sizeof(block_type) / sizeof(block));
-        }
-        validateMemory();
 
-        block_type AllOneBlock;
+#define NEW_SHARE
+#ifdef NEW_SHARE
+
+            mShareIdx = 0;
+            mShareAES[0].setKey(seed0);
+            mShareAES[1].setKey(seed1);
+            mShareBacking.reset();
+            mShareBacking.reset(new block_type[simdWidth128 + 1]);
+
+
+            // see if new returned a pointer with the correct alignment
+            auto offset = u64(mShareBacking.get()) % alignof(block_type);
+
+            // if not, compute how many bytes to move it forward.
+            if (offset)
+                offset = alignof(block_type)-offset;
+
+            // correct the pointer
+            auto alignedPtr = (block_type*)((u8*)mShareBacking.get() + offset);
+
+            // wrap the aligned pointer in a span for safety.
+            mShareBuff = span<block_type>(alignedPtr, simdWidth128);
+#else
+            mShareGen.init(seed0, seed1, simdWidth128 * sizeof(block_type) / sizeof(block));
+#endif
+        }
+
+
+        block_type AllOneBlock, CCBlock;
         memset(&AllOneBlock, 0xFF, sizeof(block_type));
+        memset(&CCBlock, 0xCC, sizeof(block_type));
 
         const bool debug = mDebug;
         auto& shares = mMem.mShares;
@@ -644,13 +672,13 @@ namespace aby3
             sendBuff.resize(andGateCount * shareCountDiv8);
             mRecvData.resize(andGateCount * shareCountDiv8);
             auto writeIter = sendBuff.begin();
-            auto prevSendIdx = 0;
+            auto prevSendIdx = 0ull;
             auto nextSendIdx = std::min<i32>(bufferSize, sendBuff.size());
 
             //std::vector<block_type> s0_in0_data(simdWidth128), s0_in1_data(simdWidth128);
             //std::vector<block_type> s1_in0_data(simdWidth128), s1_in1_data(simdWidth128);
 
-            for (i32 j = 0; j < gateCount; ++j, ++mGateIter)
+            for (u64 j = 0; j < gateCount; ++j, ++mGateIter)
             {
                 const auto& gate = *mGateIter;
                 const auto& type = gate.mType;
@@ -664,8 +692,9 @@ namespace aby3
                 auto s1_in0 = &shares[1](in0);
                 auto s1_in1 = &shares[1](in1);
 
-                std::array<block_type*, 2> z{ nullptr, nullptr };
-
+                //span<block_type> z{ nullptr };
+                //std::array<block_type*, 2> z{ nullptr, nullptr };
+                block_type* z = nullptr;
                 //memcpy(s0_in0_data.data(), s0_in0, simdWidth128 * sizeof(block_type));
                 //memcpy(s0_in1_data.data(), s0_in1, simdWidth128 * sizeof(block_type));
                 //memcpy(s1_in0_data.data(), s1_in0, simdWidth128 * sizeof(block_type));
@@ -745,25 +774,29 @@ namespace aby3
                         t0[5] = t0[5] ^ t1[5];
                         t0[6] = t0[6] ^ t1[6];
                         t0[7] = t0[7] ^ t1[7];
+                        
+                        //t0[0] = t0[0] ^ z[0][k + 0];
+                        //t0[1] = t0[1] ^ z[0][k + 1];
+                        //t0[2] = t0[2] ^ z[0][k + 2];
+                        //t0[3] = t0[3] ^ z[0][k + 3];
+                        //t0[4] = t0[4] ^ z[0][k + 4];
+                        //t0[5] = t0[5] ^ z[0][k + 5];
+                        //t0[6] = t0[6] ^ z[0][k + 6];
+                        //t0[7] = t0[7] ^ z[0][k + 7];
 
-                        t0[0] = t0[0] ^ z[0][k + 0];
-                        t0[1] = t0[1] ^ z[0][k + 1];
-                        t0[2] = t0[2] ^ z[0][k + 2];
-                        t0[3] = t0[3] ^ z[0][k + 3];
-                        t0[4] = t0[4] ^ z[0][k + 4];
-                        t0[5] = t0[5] ^ z[0][k + 5];
-                        t0[6] = t0[6] ^ z[0][k + 6];
-                        t0[7] = t0[7] ^ z[0][k + 7];
+                        s0_Out[k + 0] = t0[0] ^ z[k + 0];
+                        s0_Out[k + 1] = t0[1] ^ z[k + 1];
+                        s0_Out[k + 2] = t0[2] ^ z[k + 2];
+                        s0_Out[k + 3] = t0[3] ^ z[k + 3];
+                        s0_Out[k + 4] = t0[4] ^ z[k + 4];
+                        s0_Out[k + 5] = t0[5] ^ z[k + 5];
+                        s0_Out[k + 6] = t0[6] ^ z[k + 6];
+                        s0_Out[k + 7] = t0[7] ^ z[k + 7];
 
-                        s0_Out[k + 0] = t0[0] ^ z[1][k + 0];
-                        s0_Out[k + 1] = t0[1] ^ z[1][k + 1];
-                        s0_Out[k + 2] = t0[2] ^ z[1][k + 2];
-                        s0_Out[k + 3] = t0[3] ^ z[1][k + 3];
-                        s0_Out[k + 4] = t0[4] ^ z[1][k + 4];
-                        s0_Out[k + 5] = t0[5] ^ z[1][k + 5];
-                        s0_Out[k + 6] = t0[6] ^ z[1][k + 6];
-                        s0_Out[k + 7] = t0[7] ^ z[1][k + 7];
-
+                        //if (k == 0)
+                        //{
+                        //    ostreamLock(std::cout) << *(block*)&z[0] << std::endl;
+                        //}
 
                         //s0_Out[k]
                         //    = (s0_in0[k] & s0_in1[k]) // t0
@@ -878,25 +911,25 @@ namespace aby3
                         s0_Out[k + 6] = s0_Out[k + 6] ^ t1[6];
                         s0_Out[k + 7] = s0_Out[k + 7] ^ t1[7];
 
-                        // out = mem11 & mem00 ^ mem10 & mem01 ^ mem00 & mem01 ^ z0
-                        s0_Out[k + 0] = s0_Out[k + 0] ^ z[0][k + 0];
-                        s0_Out[k + 1] = s0_Out[k + 1] ^ z[0][k + 1];
-                        s0_Out[k + 2] = s0_Out[k + 2] ^ z[0][k + 2];
-                        s0_Out[k + 3] = s0_Out[k + 3] ^ z[0][k + 3];
-                        s0_Out[k + 4] = s0_Out[k + 4] ^ z[0][k + 4];
-                        s0_Out[k + 5] = s0_Out[k + 5] ^ z[0][k + 5];
-                        s0_Out[k + 6] = s0_Out[k + 6] ^ z[0][k + 6];
-                        s0_Out[k + 7] = s0_Out[k + 7] ^ z[0][k + 7];
+                        //// out = mem11 & mem00 ^ mem10 & mem01 ^ mem00 & mem01 ^ z0
+                        //s0_Out[k + 0] = s0_Out[k + 0] ^ z[0][k + 0];
+                        //s0_Out[k + 1] = s0_Out[k + 1] ^ z[0][k + 1];
+                        //s0_Out[k + 2] = s0_Out[k + 2] ^ z[0][k + 2];
+                        //s0_Out[k + 3] = s0_Out[k + 3] ^ z[0][k + 3];
+                        //s0_Out[k + 4] = s0_Out[k + 4] ^ z[0][k + 4];
+                        //s0_Out[k + 5] = s0_Out[k + 5] ^ z[0][k + 5];
+                        //s0_Out[k + 6] = s0_Out[k + 6] ^ z[0][k + 6];
+                        //s0_Out[k + 7] = s0_Out[k + 7] ^ z[0][k + 7];
 
                         // out = mem11 & mem00 ^ mem10 & mem01 ^ mem00 & mem01 ^ z0 ^ z1
-                        s0_Out[k + 0] = s0_Out[k + 0] ^ z[1][k + 0];
-                        s0_Out[k + 1] = s0_Out[k + 1] ^ z[1][k + 1];
-                        s0_Out[k + 2] = s0_Out[k + 2] ^ z[1][k + 2];
-                        s0_Out[k + 3] = s0_Out[k + 3] ^ z[1][k + 3];
-                        s0_Out[k + 4] = s0_Out[k + 4] ^ z[1][k + 4];
-                        s0_Out[k + 5] = s0_Out[k + 5] ^ z[1][k + 5];
-                        s0_Out[k + 6] = s0_Out[k + 6] ^ z[1][k + 6];
-                        s0_Out[k + 7] = s0_Out[k + 7] ^ z[1][k + 7];
+                        s0_Out[k + 0] = s0_Out[k + 0] ^ z[k + 0];
+                        s0_Out[k + 1] = s0_Out[k + 1] ^ z[k + 1];
+                        s0_Out[k + 2] = s0_Out[k + 2] ^ z[k + 2];
+                        s0_Out[k + 3] = s0_Out[k + 3] ^ z[k + 3];
+                        s0_Out[k + 4] = s0_Out[k + 4] ^ z[k + 4];
+                        s0_Out[k + 5] = s0_Out[k + 5] ^ z[k + 5];
+                        s0_Out[k + 6] = s0_Out[k + 6] ^ z[k + 6];
+                        s0_Out[k + 7] = s0_Out[k + 7] ^ z[k + 7];
 
                         //auto mem00 = s0_in0[k] ^ AllOneBlock;
                         //auto mem01 = s0_in1[k] ^ AllOneBlock;
@@ -985,8 +1018,7 @@ namespace aby3
                             = ((AllOneBlock ^ s0_in0[k]) & s0_in1[k])
                             ^ ((AllOneBlock ^ s0_in0[k]) & s1_in1[k])
                             ^ ((AllOneBlock ^ s1_in0[k]) & s0_in1[k])
-                            ^ z[0][k]
-                            ^ z[1][k];
+                            ^ z[k];
 
 #ifndef NDEBUG
                         if (eq(s1_in0[k], CCBlock) || eq(s1_in1[k], CCBlock))
@@ -1197,7 +1229,7 @@ namespace aby3
                 auto wire = outWires[wireIdx];
 
                 auto md = mMem.mShares[j].data();
-                auto ms = mMem.mShares[j].size();
+                //auto ms = mMem.mShares[j].size();
                 auto src = md + wire * simdWidth128;
                 auto size = out.simdWidth() * sizeof(i64);
 
@@ -1358,9 +1390,45 @@ namespace aby3
         }
     }
 
-    std::array<Sh3BinaryEvaluator::block_type*, 2> Sh3BinaryEvaluator::getShares()
+    Sh3BinaryEvaluator::block_type*
+            Sh3BinaryEvaluator::getShares()
     {
+#ifdef NEW_SHARE
+        std::array<block, 8> temp;
 
+        auto rem = mShareBuff.size() * sizeof(block_type) / sizeof(block);
+        auto dest = (block*)mShareBuff.data();
+
+        if (rem % 8)
+            throw RTE_LOC;
+
+        while (rem)
+        {
+            mShareAES[0].ecbEncCounterMode(mShareIdx, 8, temp.data());
+            mShareAES[1].ecbEncCounterMode(mShareIdx, 8, dest);
+            dest[0] = dest[0] ^ temp[0];
+            dest[1] = dest[1] ^ temp[1];
+            dest[2] = dest[2] ^ temp[2];
+            dest[3] = dest[3] ^ temp[3];
+            dest[4] = dest[4] ^ temp[4];
+            dest[5] = dest[5] ^ temp[5];
+            dest[6] = dest[6] ^ temp[6];
+            dest[7] = dest[7] ^ temp[7];
+
+            mShareIdx += 8;
+            dest += 8;
+            rem -= 8;
+        }
+#ifdef BINARY_ENGINE_DEBUG
+        if (mDebug)
+        {
+            memset(mShareBuff.data(), 0, mShareBuff.size() * sizeof(block_type));
+        }
+#endif
+
+        return mShareBuff.data();
+
+#else
         mShareGen.refillBuffer();
         auto* z0 = (block_type*)mShareGen.mShareBuff[0].data();
         auto* z1 = (block_type*)mShareGen.mShareBuff[1].data();
@@ -1372,9 +1440,16 @@ namespace aby3
             memset(mShareGen.mShareBuff[1].data(), 0, mShareGen.mShareBuff[0].size() * sizeof(block));
         }
 #endif
-        return { z0, z1 };
-    }
+        for (u64 i = 0; i < mShareGen.mShareBuff[0].size(); ++i)
+        {
+            mShareGen.mShareBuff[0][i] = mShareGen.mShareBuff[0][i] ^ mShareGen.mShareBuff[1][i];
+        }
 
+        return  z0;
+#endif
+
+    }
+     
 
 #ifdef BINARY_ENGINE_DEBUG
 
@@ -1431,9 +1506,9 @@ namespace aby3
                 auto in11 = in1.mBits[bb];
 
                 t[b]
-                    = in00 & in10
-                    ^ in00 & in11
-                    ^ in01 & in10;
+                    = (in00 & in10)
+                    ^ (in00 & in11)
+                    ^ (in01 & in10);
             }
 
             mBits = t;
@@ -1456,9 +1531,9 @@ namespace aby3
                 auto in11 = in1.mBits[bb];
 
                 t[b]
-                    = in00 & in10
-                    ^ in00 & in11
-                    ^ in01 & in10;
+                    = (in00 & in10)
+                    ^ (in00 & in11)
+                    ^ (in01 & in10);
             }
 
             mBits = t;
@@ -1478,9 +1553,9 @@ namespace aby3
                 auto in11 = 1 ^ in1.mBits[bb];
 
                 t[b]
-                    = in00 & in10
-                    ^ in00 & in11
-                    ^ in01 & in10;
+                    = (in00 & in10)
+                    ^ (in00 & in11)
+                    ^ (in01 & in10);
             }
 
             mBits = t;

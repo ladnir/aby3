@@ -233,7 +233,7 @@ namespace aby3
 
             void trim()
             {
-                for (auto i = 0; i < mShares.size(); ++i)
+                for (auto i = 0ull; i < mShares.size(); ++i)
                 {
                     details::trim(mShares[i], bitCount());
                 }

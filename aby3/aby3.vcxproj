@@ -93,6 +93,7 @@
       <PreprocessorDefinitions>NDEBUG;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ShowIncludes>false</ShowIncludes>
+      <AdditionalOptions>/arch:AVX /arch:AVX2 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>C:/libs/boost/stage/lib;C:\libs\mpir\lib\x64\$(Configuration);C:\libs\NTL\x64/$(Configuration);$(ProjectDir)../../libOTe/x64/$(Configuration);$(ProjectDir)../../relic/lib/$(Configuration);$(ProjectDir)../../emp/emp-tool/x64/$(Configuration)</AdditionalLibraryDirectories>
@@ -110,6 +111,7 @@
       <PreprocessorDefinitions>NDEBUG;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ShowIncludes>false</ShowIncludes>
+      <AdditionalOptions>/arch:AVX /arch:AVX2 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>

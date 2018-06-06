@@ -142,7 +142,7 @@ namespace aby3
         }
 
 
-        Sh3TaskBase* get(u64 taskIdx)
+        Sh3TaskBase* get(i64 taskIdx)
         {
             if (size())
             {

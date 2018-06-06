@@ -94,10 +94,10 @@ namespace aby3
 
     void Sh3Encryptor::localIntMatrix(Sh3::CommPkg & comm, const Sh3::i64Matrix & m, Sh3::si64Matrix & ret)
     {
-        if (ret.cols() != m.cols() || ret.size() != m.size())
+        if (ret.cols() != static_cast<u64>(m.cols()) ||
+            ret.size() != static_cast<u64>(m.size()))
             throw std::runtime_error(LOCATION);
-
-        for (u64 i = 0; i < ret.mShares[0].size(); ++i)
+        for (i64 i = 0; i < ret.mShares[0].size(); ++i)
             ret.mShares[0](i) = mShareGen.getShare() + m(i);
 
         comm.mNext.asyncSendCopy(ret.mShares[0].data(), ret.mShares[0].size());
@@ -109,10 +109,10 @@ namespace aby3
 
         return dep.then([this, &m, &ret](Sh3::CommPkg& comm, Sh3Task& self) {
 
-            if (ret.cols() != m.cols() || ret.size() != m.size())
+            if (ret.cols() != static_cast<u64>(m.cols()) ||
+                ret.size() != static_cast<u64>(m.size()))
                 throw std::runtime_error(LOCATION);
-
-            for (u64 i = 0; i < ret.mShares[0].size(); ++i)
+            for (i64 i = 0; i < ret.mShares[0].size(); ++i)
                 ret.mShares[0](i) = mShareGen.getShare() + m(i);
 
             comm.mNext.asyncSendCopy(ret.mShares[0].data(), ret.mShares[0].size());
@@ -128,7 +128,7 @@ namespace aby3
     void Sh3Encryptor::remoteIntMatrix(Sh3::CommPkg & comm, Sh3::si64Matrix & ret)
     {
 
-        for (u64 i = 0; i < ret.mShares[0].size(); ++i)
+        for (i64 i = 0; i < ret.mShares[0].size(); ++i)
             ret.mShares[0](i) = mShareGen.getShare();
 
         comm.mNext.asyncSendCopy(ret.mShares[0].data(), ret.mShares[0].size());
@@ -139,7 +139,7 @@ namespace aby3
     {
         return dep.then([this, &ret](Sh3::CommPkg& comm, Sh3Task& self) {
 
-            for (u64 i = 0; i < ret.mShares[0].size(); ++i)
+            for (i64 i = 0; i < ret.mShares[0].size(); ++i)
                 ret.mShares[0](i) = mShareGen.getShare();
 
             comm.mNext.asyncSendCopy(ret.mShares[0].data(), ret.mShares[0].size());
@@ -154,8 +154,8 @@ namespace aby3
 
     void Sh3Encryptor::localBinMatrix(Sh3::CommPkg & comm, const Sh3::i64Matrix & m, Sh3::sbMatrix & ret)
     {
-        auto b0 = ret.i64Cols() != m.cols();
-        auto b1 = ret.i64Size() != m.size();
+        auto b0 = ret.i64Cols() != static_cast<u64>(m.cols());
+        auto b1 = ret.i64Size() != static_cast<u64>(m.size());
         if (b0 || b1)
             throw std::runtime_error(LOCATION);
 
@@ -170,8 +170,8 @@ namespace aby3
     {
         return dep.then([this, &m, &ret](Sh3::CommPkg& comm, Sh3Task self) {
 
-            auto b0 = ret.i64Cols() != m.cols();
-            auto b1 = ret.i64Size() != m.size();
+            auto b0 = ret.i64Cols() != static_cast<u64>(m.cols());
+            auto b1 = ret.i64Size() != static_cast<u64>(m.size());
             if (b0 || b1)
                 throw std::runtime_error(LOCATION);
 
@@ -216,7 +216,7 @@ namespace aby3
     {
         if (dest.bitCount() != m.cols() * sizeof(i64) * 8)
             throw std::runtime_error(LOCATION);
-        if (dest.shareCount() != m.rows())
+        if (dest.shareCount() != static_cast<u64>(m.rows()))
             throw std::runtime_error(LOCATION);
 
         auto bits = sizeof(i64) * 8;
@@ -445,11 +445,11 @@ namespace aby3
 
     void Sh3Encryptor::reveal(Sh3::CommPkg & comm, const Sh3::si64Matrix & x, Sh3::i64Matrix & dest)
     {
-        if (dest.rows() != x.rows() || dest.cols() != x.cols())
+        if (dest.rows() != static_cast<i64>(x.rows()) || dest.cols() != static_cast<i64>(x.cols()))
             throw std::runtime_error(LOCATION);
 
         comm.mNext.recv(dest.data(), dest.size());
-        for (u64 i = 0; i < dest.size(); ++i)
+        for (i64 i = 0; i < dest.size(); ++i)
         {
             dest(i) += x.mShares[0](i) + x.mShares[1](i);
         }
@@ -469,11 +469,11 @@ namespace aby3
 
     void Sh3Encryptor::reveal(Sh3::CommPkg & comm, const Sh3::sbMatrix & x, Sh3::i64Matrix & dest)
     {
-        if (dest.rows() != x.rows() || dest.cols() != x.i64Cols())
+        if (dest.rows() != static_cast<i64>(x.rows()) || dest.cols() != static_cast<i64>(x.i64Cols()))
             throw std::runtime_error(LOCATION);
 
         comm.mNext.recv(dest.data(), dest.size());
-        for (u64 i = 0; i < dest.size(); ++i)
+        for (i64 i = 0; i < dest.size(); ++i)
         {
             dest(i) ^= x.mShares[0](i) ^ x.mShares[1](i);
         }
@@ -503,7 +503,7 @@ namespace aby3
             comm.mNext.recv(buff.data(), buff.size());
 
 
-            for (u64 i = 0; i < buff.size(); ++i)
+            for (i64 i = 0; i < buff.size(); ++i)
             {
                 buff(i) ^= A.mShares[0](i);
                 buff(i) ^= A.mShares[1](i);
@@ -544,7 +544,7 @@ namespace aby3
         comm.mNext.recv(buff.data(), buff.size());
 
 
-        for (u64 i = 0; i < buff.size(); ++i)
+        for (i64 i = 0; i < buff.size(); ++i)
         {
             buff(i) = buff(i) ^ A.mShares[0](i) ^ A.mShares[1](i);
         }

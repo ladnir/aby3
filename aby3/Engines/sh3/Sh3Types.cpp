@@ -34,8 +34,8 @@ bool aby3::Sh3::details::areEqualImpl(
         }
 
         if (mask & (
-                a[0](i, div8) ^ b[0](i, div8) |
-                a[1](i, div8) ^ b[1](i, div8)
+                (a[0](i, div8) ^ b[0](i, div8)) |
+                (a[1](i, div8) ^ b[1](i, div8))
             ))
             return false;
     }

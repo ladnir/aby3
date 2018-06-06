@@ -60,7 +60,7 @@ namespace aby3
 
         base->mDepCount = deps.size();
 
-        for (u64 i = 0; i < deps.size(); ++i)
+        for (i64 i = 0; i < deps.size(); ++i)
         {
             auto dIdx = deps[i].mTaskIdx;
             if (dIdx >= mTasks.mPopIdx)

@@ -12,7 +12,12 @@ namespace aby3
 	class Sh3BinaryEvaluator
 	{
 	public:
+#if defined(__AVX2__) || defined(_MSC_VER)
         using block_type = __m256i;
+#else
+        using block_type = block; 
+#endif
+
 #define BINARY_ENGINE_DEBUG
 #ifdef BINARY_ENGINE_DEBUG
     private:
@@ -94,8 +99,12 @@ namespace aby3
             return b;
         }
 
+        std::unique_ptr<block_type[]> mShareBacking;
+        span<block_type> mShareBuff;
+        u64 mShareIdx;
+        std::array<oc::AES, 2> mShareAES;
 
-        std::array<block_type*, 2> getShares();
+        block_type* getShares();
         Sh3ShareGen mShareGen;
         //std::array<oc::PRNG, 2> mGens;
 	};
