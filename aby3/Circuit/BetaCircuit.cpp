@@ -1077,6 +1077,8 @@ namespace osuCrypto
         read(mLevelCounts.data(), mLevelCounts.size(), in);
         read(mLevelAndCounts.data(), mLevelAndCounts.size(), in);
 
+        mNonlinearGateCount = std::accumulate(mLevelAndCounts.begin(), mLevelAndCounts.end(), 0ull);
+
         std::string msg;
         read(count, in);
         mPrints.resize(count);

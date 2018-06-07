@@ -5,7 +5,7 @@
 
 namespace osuCrypto
 {
-    int ComPsiServer_ssp = 10;
+    int ComPsiServer_ssp = 40;
     bool ComPsiServer_debug = false;
     bool debug_print = false;
     void ComPsiServer::init(u64 idx, Session & prev, Session & next)
@@ -54,6 +54,8 @@ namespace osuCrypto
             mLowMCCir.readBin(in);
         }
 
+
+        std::cout << "count " << mLowMCCir.mNonlinearGateCount << std::endl;
     }
 
     SharedTable ComPsiServer::localInput(Table & t)
@@ -338,7 +340,6 @@ namespace osuCrypto
         auto size = 0;
 
 
-        ostreamLock o(std::cout);
         for (u64 i = 0; i < B.rows(); ++i)
         {
 

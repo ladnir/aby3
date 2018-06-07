@@ -8,7 +8,7 @@
     },
     {
       "Id": "2f798f03-568e-4966-9174-c2a34166b8c4",
-      "Command": "-intersect -nn 18"
+      "Command": "-intersect -nn 20 "
     }
   ]
 }
