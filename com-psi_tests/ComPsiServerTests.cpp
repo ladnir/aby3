@@ -28,16 +28,16 @@ void ComPsi_computeKeys_test()
     srvs[2].init(2, s21, s20);
 
     auto size = 1046;
-    Table a, b;
-    a.mKeys.resize(size, (srvs[0].mKeyBitCount + 63) / 64);
-    b.mKeys.resize(size, (srvs[0].mKeyBitCount + 63) / 64);
+    auto keyBitCount = srvs[0].mKeyBitCount;
+    Table a(size, { ColumnInfo{ "key", TypeID::IntID, keyBitCount } })
+        , b(size, { ColumnInfo{ "key", TypeID::IntID, keyBitCount } });
 
     for (u64 i = 0; i < size; ++i)
     {
-        for (u64 j = 0; j < a.mKeys.cols(); ++j)
+        for (u64 j = 0; j < a.mColumns[0].cols(); ++j)
         {
-            a.mKeys(i, j) = i >> 1;
-            b.mKeys(i, j) = a.mKeys(i, j);
+            a.mColumns[0](i, j) = i >> 1;
+            b.mColumns[0](i, j) = a.mColumns[0](i, j);
         }
     }
     bool failed = false;
@@ -56,7 +56,7 @@ void ComPsi_computeKeys_test()
 
         for (u64 i = 0; i < size - 1; i += 2)
         {
-            for (u64 j = 0; j < a.mKeys.cols(); ++j)
+            for (u64 j = 0; j < a.mColumns[0].cols(); ++j)
             {
                 //std::cout << (j ? ", " : ToString(i) + " : ") << r(i, j);
                 if (r0(i, j) != r0(i + 1, j))
@@ -76,8 +76,8 @@ void ComPsi_computeKeys_test()
     {
         setThreadName("t_" + ToString(i));
 
-        auto A = srvs[i].remoteInput(0, size);
-        auto B = srvs[i].remoteInput(0, size);
+        auto A = srvs[i].remoteInput(0);
+        auto B = srvs[i].remoteInput(0);
         std::vector<SharedTable*> tables{ &A, &B };
         std::vector<u64> reveals{ 0 , 1 };
         auto r = srvs[i].computeKeys(tables, reveals);
@@ -138,14 +138,14 @@ void ComPsi_cuckooHash_test()
     aby3::Sh3::i64Matrix hashs(rows, (hashSize + 63) / 64);
     hashs.setZero();
 
-    Table a;
-    a.mKeys.resize(rows, (srvs[0].mKeyBitCount + 63) / 64);
+    auto keyBitCount = srvs[0].mKeyBitCount;
+    Table a(rows, { ColumnInfo{ "key", TypeID::IntID, keyBitCount } });
 
     for (u64 i = 0; i < rows; ++i)
     {
-        for (u64 j = 0; j < a.mKeys.cols(); ++j)
+        for (u64 j = 0; j < a.mColumns[0].cols(); ++j)
         {
-            a.mKeys(i, j) = i;
+            a.mColumns[0](i, j) = i;
         }
 
         prng.get((u8*)hashs.row(i).data(), hashSize / 8);
@@ -166,14 +166,14 @@ void ComPsi_cuckooHash_test()
     auto t1 = std::thread([&]() {
         auto i = 1;
         setThreadName("t_" + ToString(i));
-        auto A = srvs[i].remoteInput(0, rows);
+        auto A = srvs[i].remoteInput(0);
         srvs[i].cuckooHashRecv(A);
     });
 
     auto t2 = std::thread([&]() {
         auto i = 2;
         setThreadName("t_" + ToString(i));
-        auto A = srvs[i].remoteInput(0, rows);
+        auto A = srvs[i].remoteInput(0);
         auto cuckooParams = CuckooIndex<>::selectParams(rows, ComPsiServer_ssp, 0, 3);
         srvs[i].cuckooHashSend(A, cuckooParams);
     });
@@ -208,9 +208,11 @@ void ComPsi_compare_test()
     u32 hashSize = 80;
     auto byteSize = hashSize / 8;
     u32 rows =1 << 12;
-    Table b;
-    b.mKeys.resize(rows, (srvs[0].mKeyBitCount + 63) / 64);
-    b.mKeys.setZero();
+    //Table b;
+    //b.mColumns[0].resize(rows, (srvs[0].mKeyBitCount + 63) / 64);
+    auto keyBitCount = srvs[0].mKeyBitCount;
+    Table b(rows, { ColumnInfo{ "key", TypeID::IntID, keyBitCount } });
+    b.mColumns[0].setZero();
 
     std::vector<u8> expIntersection(rows, 0);
     PRNG prng(ZeroBlock);
@@ -218,7 +220,7 @@ void ComPsi_compare_test()
     for (u64 i = 0; i < rows; ++i)
     {
         expIntersection[i] = prng.get<bool>();
-        prng.get((u8*)b.mKeys.row(i).data(), byteSize);
+        prng.get((u8*)b.mColumns[0].row(i).data(), byteSize);
     }
 
     bool failed = false;
@@ -230,7 +232,7 @@ void ComPsi_compare_test()
         if (i == 0)
             B = srvs[i].localInput(b);
         else
-            B = srvs[i].remoteInput(0, rows);
+            B = srvs[i].remoteInput(0);
 
 
         aby3::Sh3::PackedBin plainFlags(B.rows(), 1);
@@ -253,7 +255,7 @@ void ComPsi_compare_test()
                     if (expIntersection[j])
                     {
                         u8 idx = prng.get<u8>() % 3;
-                        memcpy(selects2[idx][j].data(), b.mKeys.row(j).data(), byteSize);
+                        memcpy(selects2[idx][j].data(), b.mColumns[0].row(j).data(), byteSize);
                     }
                 }
             }
@@ -311,14 +313,13 @@ void ComPsi_Intersect_test()
     srvs[2].init(2, s21, s20);
 
 
-    // 80 bits;
-    u32 hashSize = 80;
     u32 rows = 1 << 14;
 
     PRNG prng(ZeroBlock);
-    Table a, b;
-    a.mKeys.resize(rows, (srvs[0].mKeyBitCount + 63) / 64);
-    b.mKeys.resize(rows, (srvs[0].mKeyBitCount + 63) / 64);
+
+    auto keyBitCount = srvs[0].mKeyBitCount;
+    Table a(rows, { ColumnInfo{ "key", TypeID::IntID, keyBitCount } })
+        , b(rows, { ColumnInfo{ "key", TypeID::IntID, keyBitCount } });
     auto intersectionSize = (rows + 1) / 2;
 
     std::unordered_set<i64> map;
@@ -327,17 +328,17 @@ void ComPsi_Intersect_test()
     for (u64 i = 0; i < rows; ++i)
     {
         auto out = (i >= intersectionSize);
-        for (u64 j = 0; j < a.mKeys.cols(); ++j)
+        for (u64 j = 0; j < a.mColumns[0].cols(); ++j)
         {
-            a.mKeys(i, j) = i + 1;
-            b.mKeys(i, j) = i + 1 + (rows * out);
+            a.mColumns[0](i, j) = i + 1;
+            b.mColumns[0](i, j) = i + 1 + (rows * out);
         }
 
-        //std::cout << "a[" << i << "] = " << a.mKeys(i, 0) << std::endl;
-        //std::cout << "b[" << i << "] = " << b.mKeys(i, 0) << std::endl;
+        //std::cout << "a[" << i << "] = " << a.mColumns[0](i, 0) << std::endl;
+        //std::cout << "b[" << i << "] = " << b.mColumns[0](i, 0) << std::endl;
 
         if (!out)
-            map.emplace(a.mKeys(i, 0));
+            map.emplace(a.mColumns[0](i, 0));
     }
 
 
@@ -350,8 +351,8 @@ void ComPsi_Intersect_test()
 
         auto C = srvs[i].intersect(A, B);
 
-        aby3::Sh3::i64Matrix c(C.mKeys.rows(), C.mKeys.i64Cols());
-        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mKeys, c);
+        aby3::Sh3::i64Matrix c(C.mColumns[0].rows(), C.mColumns[0].i64Cols());
+        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[0], c);
 
         if (c.rows() != intersectionSize)
         {
@@ -385,22 +386,22 @@ void ComPsi_Intersect_test()
     auto t1 = std::thread([&]() {
         setThreadName("t1");
         auto i = 1;
-        auto A = srvs[i].remoteInput(0, rows);
-        auto B = srvs[i].remoteInput(0, rows);
+        auto A = srvs[i].remoteInput(0);
+        auto B = srvs[i].remoteInput(0);
 
         auto C = srvs[i].intersect(A, B);
-        aby3::Sh3::i64Matrix c(C.mKeys.rows(), C.mKeys.i64Cols());
-        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mKeys, c);
+        aby3::Sh3::i64Matrix c(C.mColumns[0].rows(), C.mColumns[0].i64Cols());
+        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[0], c);
     });
     auto t2 = std::thread([&]() {
         setThreadName("t2");
         auto i = 2;
-        auto A = srvs[i].remoteInput(0, rows);
-        auto B = srvs[i].remoteInput(0, rows);
+        auto A = srvs[i].remoteInput(0);
+        auto B = srvs[i].remoteInput(0);
 
         auto C = srvs[i].intersect(A, B);
-        aby3::Sh3::i64Matrix c(C.mKeys.rows(), C.mKeys.i64Cols());
-        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mKeys, c);
+        aby3::Sh3::i64Matrix c(C.mColumns[0].rows(), C.mColumns[0].i64Cols());
+        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[0], c);
     });
 
 

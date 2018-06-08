@@ -53,29 +53,63 @@ namespace osuCrypto
         {
             mLowMCCir.readBin(in);
         }
-
-
-        std::cout << "count " << mLowMCCir.mNonlinearGateCount << std::endl;
     }
 
     SharedTable ComPsiServer::localInput(Table & t)
     {
         SharedTable ret;
-        //ret.mKeys.resize(t.mKeys.rows(), mKeyBitCount);
-        //mEnc.localPackedBinary(mRt.mComm, t.mKeys, ret.mKeys);
-        ret.mKeys.resize(t.mKeys.rows(), mKeyBitCount);
-        mEnc.localBinMatrix(mRt.mComm, t.mKeys, ret.mKeys);
+        ret.mColumns.resize(t.mColumns.size());
+
+        u64 rows = t.rows();
+
+        mComm.mNext.asyncSendCopy(rows);
+        mComm.mPrev.asyncSendCopy(rows);
+
+        std::vector<std::array<u64, 2>> sizes(t.mColumns.size());
+        for (u64 i = 0; i < t.mColumns.size(); ++i)
+            sizes[i] = { t.mColumns[i].getBitCount(), (u64)t.mColumns[i].getTypeID() };
+
+        mComm.mNext.asyncSendCopy(sizes);
+        mComm.mPrev.asyncSend(std::move(sizes));
+
+        for (u64 i = 0; i < t.mColumns.size(); ++i)
+        {
+            ret.mColumns[i].mType = t.mColumns[i].mType;
+            ret.mColumns[i].resize(rows, t.mColumns[i].getBitCount());
+
+            mComm.mNext.asyncSendCopy(t.mColumns[i].mName);
+            mComm.mPrev.asyncSendCopy(t.mColumns[i].mName);
+
+            mEnc.localBinMatrix(mRt.mComm, t.mColumns[i], ret.mColumns[i]);
+        }
 
         return ret;
     }
 
-    SharedTable ComPsiServer::remoteInput(u64 partyIdx, u64 numRows)
+    SharedTable ComPsiServer::remoteInput(u64 partyIdx)
     {
         SharedTable ret;
-        //ret.mKeys.resize(numRows, mKeyBitCount);
-        //mEnc.remotePackedBinary(mRt.mComm, ret.mKeys);
-        ret.mKeys.resize(numRows, mKeyBitCount);
-        mEnc.remoteBinMatrix(mRt.mComm, ret.mKeys);
+        auto chl = ((mIdx + 1) % 3 == partyIdx) ? mComm.mNext : mComm.mPrev;
+
+        u64 rows;
+        chl.recv(rows);
+        std::vector<std::array<u64, 2>> sizes;
+        chl.recv(sizes);
+
+        ret.mColumns.resize(sizes.size());
+
+        for (u64 i = 0; i < ret.mColumns.size(); ++i)
+        {
+            if (sizes[i][1] == (u64)TypeID::IntID)
+                ret.mColumns[i].mType = std::make_shared<IntType>(sizes[i][0]);
+            if (sizes[i][1] == (u64)TypeID::StringID)
+                ret.mColumns[i].mType = std::make_shared<StringType>(sizes[i][0]);
+
+            ret.mColumns[i].resize(rows, sizes[i][0]);
+            chl.recv(ret.mColumns[i].mName);
+            mEnc.remoteBinMatrix(mRt.mComm, ret.mColumns[i]);
+        }
+
         return ret;
     }
 
@@ -204,11 +238,11 @@ namespace osuCrypto
 
         setTimePoint("intersect_compute_keys");
 
-        auto bits = A.mKeys.bitCount();
+        auto bits = A.mColumns[0].getBitCount();
         auto bytes = (bits + 7) / 8;
 
-        SharedTable C;
-        C.mKeys.resize(B.mKeys.rows(), mKeyBitCount);
+
+        //C.mKeys.resize(B.mKeys.rows(), mKeyBitCount);
         aby3::Sh3::PackedBin plainFlags(B.rows(), 1);
 
         switch (mIdx)
@@ -309,7 +343,7 @@ namespace osuCrypto
         }
         case 2:
         {
-            auto cuckooParams = CuckooIndex<>::selectParams(A.mKeys.rows(), ComPsiServer_ssp, 0, 3);
+            auto cuckooParams = CuckooIndex<>::selectParams(A.rows(), ComPsiServer_ssp, 0, 3);
             cuckooHashSend(A, cuckooParams);
             setTimePoint("intersect_cuckoo_hash");
 
@@ -338,7 +372,16 @@ namespace osuCrypto
 
         BitIterator iter((u8*)plainFlags.mData.data(), 0);
         auto size = 0;
+        SharedTable C;
+        C.mColumns.resize(B.mColumns.size());
 
+        auto rows = std::min<u64>(A.rows(), B.rows());
+        for (u64 j = 0; j < B.mColumns.size(); ++j)
+        {
+            C.mColumns[j].mType = B.mColumns[j].mType;
+            C.mColumns[j].mName = B.mColumns[j].mName;
+            C.mColumns[j].resize(rows, B.mColumns[j].getBitCount());
+        }
 
         for (u64 i = 0; i < B.rows(); ++i)
         {
@@ -346,13 +389,16 @@ namespace osuCrypto
             //std::cout << mIdx << " " << i << " " << *iter << std::endl;;
             if (*iter)
             {
-                auto s0 = &B.mKeys.mShares[0](i, 0);
-                auto s1 = &B.mKeys.mShares[1](i, 0);
-                auto d0 = &C.mKeys.mShares[0](size, 0);
-                auto d1 = &C.mKeys.mShares[1](size, 0);
+                for (u64 j = 0; j < B.mColumns.size(); ++j)
+                {
+                    auto s0 = &B.mColumns[j].mShares[0](i, 0);
+                    auto s1 = &B.mColumns[j].mShares[1](i, 0);
+                    auto d0 = &C.mColumns[j].mShares[0](size, 0);
+                    auto d1 = &C.mColumns[j].mShares[1](size, 0);
 
-                memcpy(d0, s0, bytes);
-                memcpy(d1, s1, bytes);
+                    memcpy(d0, s0, bytes);
+                    memcpy(d1, s1, bytes);
+                }
 
                 ++size;
             }
@@ -360,7 +406,10 @@ namespace osuCrypto
             ++iter;
         }
 
-        C.mKeys.resize(size, bits);
+        for (u64 j = 0; j < B.mColumns.size(); ++j)
+        {
+            C.mColumns[j].resize(size, C.mColumns[j].getBitCount());
+        }
 
         return C;
     }
@@ -370,7 +419,7 @@ namespace osuCrypto
         if (mIdx != 0)
             throw std::runtime_error(LOCATION);
         CuckooIndex<CuckooTypes::NotThreadSafe> cuckoo;
-        cuckoo.init(A.mKeys.rows(), ComPsiServer_ssp, 0, 3);
+        cuckoo.init(A.rows(), ComPsiServer_ssp, 0, 3);
 
 
         if (keys.cols() != 2)
@@ -402,19 +451,19 @@ namespace osuCrypto
         if (debug_print && ComPsiServer_debug)
             cuckoo.print();
 
-        Matrix<u8> share0(cuckoo.mBins.size(), (A.mKeys.bitCount() + 7) / 8);
+        Matrix<u8> share0(cuckoo.mBins.size(), (A.mColumns[0].getBitCount() + 7) / 8);
         //Matrix<u8> share2(cuckoo.mBins.size(), (A.mKeys.bitCount() + 7) / 8);
 
         auto stride = share0.cols();
         std::vector<u32> perm(cuckoo.mBins.size(), -1);
 
-        u32 next = A.mKeys.rows();
+        u32 next = A.rows();
         for (u32 i = 0; i < cuckoo.mBins.size(); ++i)
         {
             if (cuckoo.mBins[i].isEmpty() == false)
             {
                 auto inputIdx = cuckoo.mBins[i].idx();
-                auto src = &A.mKeys.mShares[0](inputIdx, 0);
+                auto src = &A.mColumns[0].mShares[0](inputIdx, 0);
                 auto dest = &share0(i, 0);
                 memcpy(dest, src, stride);
                 perm[inputIdx] = i;
@@ -460,13 +509,13 @@ namespace osuCrypto
     {
         if (mIdx != 2)
             throw std::runtime_error(LOCATION);
-        Matrix<u8> share1(cuckooParams.numBins(), (A.mKeys.bitCount() + 7) / 8);
+        Matrix<u8> share1(cuckooParams.numBins(), (A.mColumns[0].getBitCount() + 7) / 8);
 
         //auto dest = share1.data();
-        for (u32 i = 0; i < A.mKeys.rows(); ++i)
+        for (u32 i = 0; i < A.rows(); ++i)
         {
-            auto src0 = (u8*)(A.mKeys.mShares[0].data() + i * A.mKeys.i64Cols());
-            auto src1 = (u8*)(A.mKeys.mShares[1].data() + i * A.mKeys.i64Cols());
+            auto src0 = (u8*)(A.mColumns[0].mShares[0].data() + i * A.mColumns[0].i64Cols());
+            auto src1 = (u8*)(A.mColumns[0].mShares[1].data() + i * A.mColumns[0].i64Cols());
 
             //std::cout << std::dec << " src[" << i << "] = ";
 
@@ -490,8 +539,8 @@ namespace osuCrypto
         if (mIdx != 1)
             throw std::runtime_error(LOCATION);
 
-        auto cuckooParams = CuckooIndex<>::selectParams(A.mKeys.rows(), ComPsiServer_ssp, 0, 3);
-        Matrix<u8> share1(cuckooParams.numBins(), (A.mKeys.bitCount() + 7) / 8);
+        auto cuckooParams = CuckooIndex<>::selectParams(A.mColumns[0].rows(), ComPsiServer_ssp, 0, 3);
+        Matrix<u8> share1(cuckooParams.numBins(), (A.mColumns[0].bitCount() + 7) / 8);
         share1.setZero();
 
         OblvPermutation oblvPerm;
@@ -640,7 +689,7 @@ namespace osuCrypto
             eval.enableDebug(mIdx, mComm.mPrev, mComm.mNext);
 
         eval.setCir(&cir, size);
-        eval.setInput(0, B.mKeys);
+        eval.setInput(0, B.mColumns[0]);
         t0.get();
         eval.setInput(1, A[0]);
         t1.get();
@@ -663,8 +712,8 @@ namespace osuCrypto
         if (ComPsiServer_debug)
         {
 
-            aby3::Sh3::i64Matrix bb(B.mKeys.rows(), B.mKeys.i64Cols());
-            mEnc.revealAll(mComm, B.mKeys, bb);
+            aby3::Sh3::i64Matrix bb(B.mColumns[0].rows(), B.mColumns[0].i64Cols());
+            mEnc.revealAll(mComm, B.mColumns[0], bb);
             std::array<Matrix<u8>, 3> aa, select;
             aa[0].resize(a[0].rows(), a[0].cols());
             aa[1].resize(a[1].rows(), a[1].cols());
@@ -826,7 +875,7 @@ namespace osuCrypto
         if (ComPsiServer_debug)
             eval.enableDebug(mIdx, mComm.mPrev, mComm.mNext);
         eval.setCir(&cir, size);
-        eval.setInput(0, B.mKeys);
+        eval.setInput(0, B.mColumns[0]);
         t0.get();
         eval.setInput(1, A0);
         t1.get();
@@ -846,8 +895,8 @@ namespace osuCrypto
         if (ComPsiServer_debug)
         {
 
-            aby3::Sh3::i64Matrix bb(B.mKeys.rows(), B.mKeys.i64Cols());
-            mEnc.revealAll(mComm, B.mKeys, bb);
+            aby3::Sh3::i64Matrix bb(B.mColumns[0].rows(), B.mColumns[0].i64Cols());
+            mEnc.revealAll(mComm, B.mColumns[0], bb);
 
             aby3::Sh3::sPackedBin a0(intersectionFlags.shareCount(), intersectionFlags.bitCount());
             aby3::Sh3::sPackedBin a1(intersectionFlags.shareCount(), intersectionFlags.bitCount());
@@ -911,7 +960,7 @@ namespace osuCrypto
         for (u64 i = 0; i < tables.size(); ++i)
         {
             //auto shareCount = tables[i]->mKeys.shareCount();
-            auto shareCount = tables[i]->mKeys.rows();
+            auto shareCount = tables[i]->mColumns[0].rows();
 
             //if (i == 0)
             //{
@@ -919,7 +968,7 @@ namespace osuCrypto
             //}
             binEvals[i].setCir(&mLowMCCir, shareCount);
 
-            binEvals[i].setInput(0, tables[i]->mKeys);
+            binEvals[i].setInput(0, tables[i]->mColumns[0]);
         }
 
         for (u64 j = 0; j < rounds; ++j)
@@ -958,7 +1007,7 @@ namespace osuCrypto
         for (u64 i = 0; i < tables.size(); ++i)
         {
             //auto shareCount = tables[i]->mKeys.shareCount();
-            auto shareCount = tables[i]->mKeys.rows();
+            auto shareCount = tables[i]->mColumns[0].rows();
             temps[i].reset(shareCount, blockSize);
 
             if (reveals[i] == mIdx)
@@ -1047,6 +1096,6 @@ namespace osuCrypto
 
     u64 SharedTable::rows()
     {
-        return mKeys.rows();
+        return mColumns.size() ?  mColumns[0].rows() : 0;
     }
 }

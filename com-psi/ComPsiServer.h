@@ -9,32 +9,12 @@
 #include "LowMC.h"
 #include <cryptoTools/Common/CuckooIndex.h>
 #include <cryptoTools/Common/Timer.h>
+
+#include "com-psi/Table.h"
+
 namespace osuCrypto
 {
     using CommPkg = aby3::Sh3::CommPkg;
-    class Table
-    {
-    public:
-        
-        struct Column
-        {
-            u64 mBitLenth;
-            aby3::Sh3::i64Matrix mData;
-        };
-
-        aby3::Sh3::i64Matrix mKeys;
-    };
-
-    class SharedTable
-    {
-    public:
-
-        // shared keys are stored in packed binary format. i.e. XOR shared and trasposed.
-        //aby3::Sh3::sPackedBin mKeys;
-        aby3::Sh3::sbMatrix mKeys;
-
-        u64 rows();
-    };
 
 
     class ComPsiServer :public TimerAdapter
@@ -51,7 +31,7 @@ namespace osuCrypto
 
 
         SharedTable localInput(Table& t);
-        SharedTable remoteInput(u64 partyIdx, u64 numRows);
+        SharedTable remoteInput(u64 partyIdx);
 
 
         SharedTable intersect(SharedTable& A, SharedTable& B);

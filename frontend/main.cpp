@@ -41,19 +41,20 @@ void ComPsi_Intersect(u32 rows)
     
 
     PRNG prng(ZeroBlock);
-    Table a, b;
-    a.mKeys.resize(rows, (srvs[0].mKeyBitCount + 63) / 64);
-    b.mKeys.resize(rows, (srvs[0].mKeyBitCount + 63) / 64);
+    
+    auto keyBitCount = srvs[0].mKeyBitCount;
+    Table a(rows, { ColumnInfo{ "key", TypeID::IntID, keyBitCount } })
+        , b(rows, { ColumnInfo{ "key", TypeID::IntID, keyBitCount } });
     auto intersectionSize = (rows + 1) / 2;
 
 
     for (u64 i = 0; i < rows; ++i)
     {
         auto out = (i >= intersectionSize);
-        for (u64 j = 0; j < a.mKeys.cols(); ++j)
+        for (u64 j = 0; j < a.mColumns[0].cols(); ++j)
         {
-            a.mKeys(i, j) = i + 1;
-            b.mKeys(i, j) = i + 1 + (rows * out);
+            a.mColumns[0](i, j) = i + 1;
+            b.mColumns[0](i, j) = i + 1 + (rows * out);
         }
     }
 
@@ -75,8 +76,8 @@ void ComPsi_Intersect(u32 rows)
 
         if (C.rows())
         {
-            aby3::Sh3::i64Matrix c(C.mKeys.rows(), C.mKeys.i64Cols());
-            srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mKeys, c);
+            aby3::Sh3::i64Matrix c(C.mColumns[0].rows(), C.mColumns[0].i64Cols());
+            srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[0], c);
             timer.setTimePoint("reveal");
 
             if (c.rows() != intersectionSize)
@@ -95,28 +96,28 @@ void ComPsi_Intersect(u32 rows)
     auto t1 = std::thread([&]() {
         setThreadName("t1");
         auto i = 1;
-        auto A = srvs[i].remoteInput(0, rows);
-        auto B = srvs[i].remoteInput(0, rows); 
+        auto A = srvs[i].remoteInput(0);
+        auto B = srvs[i].remoteInput(0); 
 
         auto C = srvs[i].intersect(A, B);
         if (C.rows())
         {
-            aby3::Sh3::i64Matrix c(C.mKeys.rows(), C.mKeys.i64Cols());
-            srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mKeys, c);
+            aby3::Sh3::i64Matrix c(C.mColumns[0].rows(), C.mColumns[0].i64Cols());
+            srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[0], c);
         }
     });
     auto t2 = std::thread([&]() {
         setThreadName("t2");
         auto i = 2;
-        auto A = srvs[i].remoteInput(0, rows);
-        auto B = srvs[i].remoteInput(0, rows);
+        auto A = srvs[i].remoteInput(0);
+        auto B = srvs[i].remoteInput(0);
 
         auto C = srvs[i].intersect(A, B);
 
         if (C.rows())
         {
-            aby3::Sh3::i64Matrix c(C.mKeys.rows(), C.mKeys.i64Cols());
-            srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mKeys, c);
+            aby3::Sh3::i64Matrix c(C.mColumns[0].rows(), C.mColumns[0].i64Cols());
+            srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[0], c);
         }
     });
 

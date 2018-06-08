@@ -129,11 +129,13 @@
     <ClInclude Include="LowMC.h" />
     <ClInclude Include="OblvPermutation.h" />
     <ClInclude Include="OblvSwitchNet.h" />
+    <ClInclude Include="Table.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ComPsiServer.cpp" />
     <ClCompile Include="OblvPermutation.cpp" />
     <ClCompile Include="OblvSwitchNet.cpp" />
+    <ClCompile Include="Table.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="..\..\libOTe\cryptoTools\cryptoTools\gsl\GSL.natvis" />
