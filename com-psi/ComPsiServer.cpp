@@ -6,7 +6,7 @@
 namespace osuCrypto
 {
     int ComPsiServer_ssp = 40;
-    bool ComPsiServer_debug = false;
+    bool ComPsiServer_debug = true;
     bool debug_print = false;
     void ComPsiServer::init(u64 idx, Session & prev, Session & next)
     {
@@ -451,10 +451,17 @@ namespace osuCrypto
         if (debug_print && ComPsiServer_debug)
             cuckoo.print();
 
-        Matrix<u8> share0(cuckoo.mBins.size(), (A.mColumns[0].getBitCount() + 7) / 8);
+        u64 totalBytes = 0;
+        std::vector<u64> strides(A.mColumns.size());
+        for (u64 j = 0; j < A.mColumns.size(); ++j)
+        {
+            strides[j] = (A.mColumns[j].getBitCount() + 7) / 8;
+            totalBytes += strides[j];
+        }
+
+        Matrix<u8> share0(cuckoo.mBins.size(), totalBytes);
         //Matrix<u8> share2(cuckoo.mBins.size(), (A.mKeys.bitCount() + 7) / 8);
 
-        auto stride = share0.cols();
         std::vector<u32> perm(cuckoo.mBins.size(), -1);
 
         u32 next = A.rows();
@@ -463,13 +470,20 @@ namespace osuCrypto
             if (cuckoo.mBins[i].isEmpty() == false)
             {
                 auto inputIdx = cuckoo.mBins[i].idx();
-                auto src = &A.mColumns[0].mShares[0](inputIdx, 0);
-                auto dest = &share0(i, 0);
-                memcpy(dest, src, stride);
                 perm[inputIdx] = i;
+                auto dest = &share0(i, 0);
 
                 if (debug_print && ComPsiServer_debug)
                     std::cout << "in[" << inputIdx << "] -> cuckoo[" << i << "]" << std::endl;
+
+                for (u64 j = 0; j < A.mColumns.size(); ++j)
+                {
+                    auto& t = A.mColumns[j];
+
+                    auto src = &t.mShares[0](inputIdx, 0);
+                    memcpy(dest, src, strides[j]);
+                    dest += strides[j];
+                }
             }
             else
             {
@@ -509,20 +523,36 @@ namespace osuCrypto
     {
         if (mIdx != 2)
             throw std::runtime_error(LOCATION);
-        Matrix<u8> share1(cuckooParams.numBins(), (A.mColumns[0].getBitCount() + 7) / 8);
+
+
+        u64 totalBytes = 0;
+        std::vector<u64> strides(A.mColumns.size());
+        for (u64 j = 0; j < A.mColumns.size(); ++j)
+        {
+            strides[j] = (A.mColumns[j].getBitCount() + 7) / 8;
+            totalBytes += strides[j];
+        }
+
+        Matrix<u8> share1(cuckooParams.numBins(), totalBytes);
 
         //auto dest = share1.data();
         for (u32 i = 0; i < A.rows(); ++i)
         {
-            auto src0 = (u8*)(A.mColumns[0].mShares[0].data() + i * A.mColumns[0].i64Cols());
-            auto src1 = (u8*)(A.mColumns[0].mShares[1].data() + i * A.mColumns[0].i64Cols());
 
-            //std::cout << std::dec << " src[" << i << "] = ";
-
-            for (u32 j = 0; j < share1.cols(); ++j)
+            u64 h = 0;
+            for (u64 j = 0; j < strides.size(); ++j)
             {
-                share1(i, j) = src0[j] ^ src1[j];
-                //std::cout << " " << std::setw(2) << std::hex << int(share1(i, j));
+                auto& t = A.mColumns[j];
+                auto src0 = (u8*)(t.mShares[0].data() + i * t.i64Cols());
+                auto src1 = (u8*)(t.mShares[1].data() + i * t.i64Cols());
+
+                //std::cout << std::dec << " src[" << i << "] = ";
+
+                for (u32 k = 0; k < strides[j]; ++k, ++h)
+                {
+                    share1(i, h) = src0[k] ^ src1[k];
+                    //std::cout << " " << std::setw(2) << std::hex << int(share1(i, j));
+                }
             }
             //std::cout << std::dec << std::endl;
         }
@@ -539,8 +569,17 @@ namespace osuCrypto
         if (mIdx != 1)
             throw std::runtime_error(LOCATION);
 
-        auto cuckooParams = CuckooIndex<>::selectParams(A.mColumns[0].rows(), ComPsiServer_ssp, 0, 3);
-        Matrix<u8> share1(cuckooParams.numBins(), (A.mColumns[0].bitCount() + 7) / 8);
+        u64 totalBytes = 0;
+        std::vector<u64> strides(A.mColumns.size());
+        for (u64 j = 0; j < A.mColumns.size(); ++j)
+        {
+            strides[j] = (A.mColumns[j].getBitCount() + 7) / 8;
+            totalBytes += strides[j];
+        }
+
+        auto cuckooParams = CuckooIndex<>::selectParams(A.rows(), ComPsiServer_ssp, 0, 3);
+        Matrix<u8> share1(cuckooParams.numBins(), totalBytes);
+
         share1.setZero();
 
         OblvPermutation oblvPerm;
@@ -1096,6 +1135,6 @@ namespace osuCrypto
 
     u64 SharedTable::rows()
     {
-        return mColumns.size() ?  mColumns[0].rows() : 0;
+        return mColumns.size() ? mColumns[0].rows() : 0;
     }
 }
