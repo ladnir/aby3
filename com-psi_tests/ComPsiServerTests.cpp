@@ -49,7 +49,7 @@ void ComPsi_computeKeys_test()
         auto A = srvs[i].localInput(a);
         auto B = srvs[i].localInput(b);
 
-        std::vector<SharedTable*> tables{ &A , &B };
+        std::vector<SharedTable::ColRef> tables{ A["key"], B["key"] };
         std::vector<u64> reveals{ 0, 1 };
         r0 = srvs[i].computeKeys(tables, reveals);
 
@@ -78,7 +78,7 @@ void ComPsi_computeKeys_test()
 
         auto A = srvs[i].remoteInput(0);
         auto B = srvs[i].remoteInput(0);
-        std::vector<SharedTable*> tables{ &A, &B };
+        std::vector<SharedTable::ColRef> tables{ A["key"], B["key"] };
         std::vector<u64> reveals{ 0 , 1 };
         auto r = srvs[i].computeKeys(tables, reveals);
 
@@ -158,8 +158,9 @@ void ComPsi_cuckooHash_test()
 
         setThreadName("t_" + ToString(i));
         auto A = srvs[i].localInput(a);
+        std::vector<SharedTable::ColRef> select{ A["key"] };
 
-        srvs[i].cuckooHash(A, hashs);
+        srvs[i].cuckooHash(select, hashs);
     });
 
 

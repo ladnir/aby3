@@ -75,6 +75,7 @@ namespace osuCrypto
         for (u64 i = 0; i < t.mColumns.size(); ++i)
         {
             ret.mColumns[i].mType = t.mColumns[i].mType;
+            ret.mColumns[i].mName = t.mColumns[i].mName;
             ret.mColumns[i].resize(rows, t.mColumns[i].getBitCount());
 
             mComm.mNext.asyncSendCopy(t.mColumns[i].mName);
@@ -231,19 +232,42 @@ namespace osuCrypto
 
     SharedTable ComPsiServer::intersect(SharedTable & A, SharedTable & B)
     {
+        auto aa = A[A.mColumns[0].mName];
+        auto bb = B[B.mColumns[0].mName];
+        return join(aa, bb, { aa });
+    }
+
+
+    SharedTable ComPsiServer::join(
+        SharedTable::ColRef leftJoinCol, 
+        SharedTable::ColRef rightJoinCol, 
+        std::vector<SharedTable::ColRef> selects)
+    {
+
         setTimePoint("intersect_start");
-        std::array<SharedTable*, 2> AB{ &A,&B };
+        std::array<SharedTable::ColRef, 2> AB{ leftJoinCol,rightJoinCol };
         std::array<u64, 2> reveals{ 0,1 };
         aby3::Sh3::i64Matrix keys = computeKeys(AB, reveals);
 
         setTimePoint("intersect_compute_keys");
 
-        auto bits = A.mColumns[0].getBitCount();
+        auto bits = leftJoinCol.mCol.getBitCount();
         auto bytes = (bits + 7) / 8;
 
+        auto& A = leftJoinCol.mTable;
+        auto& B = rightJoinCol.mTable;
 
         //C.mKeys.resize(B.mKeys.rows(), mKeyBitCount);
         aby3::Sh3::PackedBin plainFlags(B.rows(), 1);
+
+
+        // all of the coolumns out of the left table that need to be selected.
+        std::vector<SharedTable::ColRef> leftSelect;
+        leftSelect.reserve(A.mColumns.size());
+        leftSelect.push_back(leftJoinCol);
+        for (auto& c : selects)
+            if (&leftJoinCol.mCol != &c.mCol && &c.mTable == &A)
+                leftSelect.push_back(c);
 
         switch (mIdx)
         {
@@ -258,7 +282,7 @@ namespace osuCrypto
                 }
             }
 
-            auto cuckooTable = cuckooHash(A, keys);
+            auto cuckooTable = cuckooHash(leftSelect, keys);
 
             setTimePoint("intersect_cuckoo_hash");
 
@@ -414,12 +438,14 @@ namespace osuCrypto
         return C;
     }
 
-    Matrix<u8> ComPsiServer::cuckooHash(SharedTable & A, aby3::Sh3::i64Matrix& keys)
+
+
+    Matrix<u8> ComPsiServer::cuckooHash(span<SharedTable::ColRef> selects, aby3::Sh3::i64Matrix& keys)
     {
         if (mIdx != 0)
             throw std::runtime_error(LOCATION);
         CuckooIndex<CuckooTypes::NotThreadSafe> cuckoo;
-        cuckoo.init(A.rows(), ComPsiServer_ssp, 0, 3);
+        cuckoo.init(keys.rows(), ComPsiServer_ssp, 0, 3);
 
 
         if (keys.cols() != 2)
@@ -451,11 +477,12 @@ namespace osuCrypto
         if (debug_print && ComPsiServer_debug)
             cuckoo.print();
 
+
         u64 totalBytes = 0;
-        std::vector<u64> strides(A.mColumns.size());
-        for (u64 j = 0; j < A.mColumns.size(); ++j)
+        std::vector<u64> strides(selects.size());
+        for (u64 j = 0; j < selects.size(); ++j)
         {
-            strides[j] = (A.mColumns[j].getBitCount() + 7) / 8;
+            strides[j] = (selects[j].mCol.getBitCount() + 7) / 8;
             totalBytes += strides[j];
         }
 
@@ -464,7 +491,7 @@ namespace osuCrypto
 
         std::vector<u32> perm(cuckoo.mBins.size(), -1);
 
-        u32 next = A.rows();
+        u32 next = keys.rows();
         for (u32 i = 0; i < cuckoo.mBins.size(); ++i)
         {
             if (cuckoo.mBins[i].isEmpty() == false)
@@ -476,9 +503,9 @@ namespace osuCrypto
                 if (debug_print && ComPsiServer_debug)
                     std::cout << "in[" << inputIdx << "] -> cuckoo[" << i << "]" << std::endl;
 
-                for (u64 j = 0; j < A.mColumns.size(); ++j)
+                for (u64 j = 0; j < selects.size(); ++j)
                 {
-                    auto& t = A.mColumns[j];
+                    auto& t = selects[j].mCol;
 
                     auto src = &t.mShares[0](inputIdx, 0);
                     memcpy(dest, src, strides[j]);
@@ -987,19 +1014,19 @@ namespace osuCrypto
 
 
 
-    aby3::Sh3::i64Matrix ComPsiServer::computeKeys(span<SharedTable*> tables, span<u64> reveals)
+    aby3::Sh3::i64Matrix ComPsiServer::computeKeys(span<SharedTable::ColRef> cols, span<u64> reveals)
     {
         aby3::Sh3::i64Matrix ret;
-        std::vector<aby3::Sh3BinaryEvaluator> binEvals(tables.size());
+        std::vector<aby3::Sh3BinaryEvaluator> binEvals(cols.size());
 
         auto blockSize = mLowMCCir.mInputs[0].size();
         auto rounds = mLowMCCir.mInputs.size() - 1;
 
         aby3::Sh3::sbMatrix oprfRoundKey(1, blockSize);// , temp;
-        for (u64 i = 0; i < tables.size(); ++i)
+        for (u64 i = 0; i < cols.size(); ++i)
         {
             //auto shareCount = tables[i]->mKeys.shareCount();
-            auto shareCount = tables[i]->mColumns[0].rows();
+            auto shareCount = cols[i].mTable.rows();
 
             //if (i == 0)
             //{
@@ -1007,14 +1034,14 @@ namespace osuCrypto
             //}
             binEvals[i].setCir(&mLowMCCir, shareCount);
 
-            binEvals[i].setInput(0, tables[i]->mColumns[0]);
+            binEvals[i].setInput(0, cols[i].mCol);
         }
 
         for (u64 j = 0; j < rounds; ++j)
         {
             mEnc.rand(oprfRoundKey);
 
-            for (u64 i = 0; i < tables.size(); ++i)
+            for (u64 i = 0; i < cols.size(); ++i)
             {
                 //temp.resize(shareCount, blockSize);
                 //for (u64 k = 0; k < shareCount; ++k)
@@ -1030,7 +1057,7 @@ namespace osuCrypto
             }
         }
 
-        for (u64 i = 0; i < tables.size(); ++i)
+        for (u64 i = 0; i < cols.size(); ++i)
         {
 
 
@@ -1041,12 +1068,12 @@ namespace osuCrypto
         mRt.runAll();
 
 
-        std::vector<aby3::Sh3::sPackedBin> temps(tables.size());
+        std::vector<aby3::Sh3::sPackedBin> temps(cols.size());
 
-        for (u64 i = 0; i < tables.size(); ++i)
+        for (u64 i = 0; i < cols.size(); ++i)
         {
             //auto shareCount = tables[i]->mKeys.shareCount();
-            auto shareCount = tables[i]->mColumns[0].rows();
+            auto shareCount = cols[i].mCol.rows();
             temps[i].reset(shareCount, blockSize);
 
             if (reveals[i] == mIdx)

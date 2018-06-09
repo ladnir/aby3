@@ -37,9 +37,18 @@ namespace osuCrypto
         SharedTable intersect(SharedTable& A, SharedTable& B);
 
 
+        // join on leftJoinCol == rightJoinCol and select the select values.
+        SharedTable join(
+            SharedTable::ColRef leftJoinCol,
+            SharedTable::ColRef rightJoinCol,
+            std::vector<SharedTable::ColRef> selects
+        );
+
+
+
         Matrix<u8> cuckooHashRecv(SharedTable & A);
         void cuckooHashSend(SharedTable & A, CuckooParam& cuckooParams);
-        Matrix<u8> cuckooHash(SharedTable & A, aby3::Sh3::i64Matrix& keys);
+        Matrix<u8> cuckooHash(span<SharedTable::ColRef> selects, aby3::Sh3::i64Matrix& keys);
 
 
         void selectCuckooPos(MatrixView<u8> cuckooHashTable, std::array<MatrixView<u8>, 3> dest);
@@ -50,7 +59,7 @@ namespace osuCrypto
         void compare(SharedTable& B, std::array<MatrixView<u8>,3> selectedA, aby3::Sh3::sPackedBin& intersectionFlags);
         void compare(SharedTable& B, aby3::Sh3::sPackedBin& intersectionFlags);
 
-        aby3::Sh3::i64Matrix computeKeys(span<SharedTable*> tables, span<u64> reveals);
+        aby3::Sh3::i64Matrix computeKeys(span<SharedTable::ColRef> tables, span<u64> reveals);
 
 
         BetaCircuit getBasicCompare();

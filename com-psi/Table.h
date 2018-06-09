@@ -117,6 +117,10 @@ namespace osuCrypto
         }
 
         u64 rows() { return mColumns.size() ? mColumns[0].rows() : 0; }
+
+
+
+
     };
 
     class SharedTable
@@ -124,6 +128,33 @@ namespace osuCrypto
     public:
         // shared keys are stored in packed binary format. i.e. XOR shared and trasposed.
         std::vector<SharedColumn> mColumns;
+
+        struct ColRef
+        {
+            SharedTable& mTable;
+            SharedColumn& mCol;
+
+            ColRef(SharedTable& t, SharedColumn& c)
+                : mTable(t), mCol(c)
+            {}
+
+            ColRef(const ColRef&) = default;
+            ColRef(ColRef&&) = default;
+
+        };
+
+
+        ColRef operator[](std::string c)
+        {
+            for (u64 i = 0; i < mColumns.size(); ++i)
+            {
+                if (mColumns[i].mName == c)
+                    return { *this, mColumns[i] };
+            }
+
+            throw RTE_LOC;
+        }
+
 
         u64 rows();
     };

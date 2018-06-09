@@ -74,6 +74,8 @@ void ComPsi_Intersect(u32 rows)
         auto C = srvs[i].intersect(A, B); 
         timer.setTimePoint("intersect");
 
+        auto D = srvs[i].join(A["key"], B["key"], { A["key"], B["name"], A["salary"] });
+
         if (C.rows())
         {
             aby3::Sh3::i64Matrix c(C.mColumns[0].rows(), C.mColumns[0].i64Cols());
