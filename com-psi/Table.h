@@ -39,8 +39,10 @@ namespace osuCrypto
 
     };
 
-    struct ColumnBase 
+    class ColumnBase 
     {
+    public:
+
         std::shared_ptr<const DataType> mType;
         std::string mName;
 
@@ -63,8 +65,9 @@ namespace osuCrypto
         TypeID getTypeID() const { return mType->getTypeID(); }
     };
 
-    struct Column : public ColumnBase , public aby3::Sh3::i64Matrix
+    class Column : public ColumnBase
     {
+    public: 
 
         Column() = delete;
         Column(const Column&) = default;
@@ -73,10 +76,14 @@ namespace osuCrypto
         Column(std::string name, TypeID type, u64 size)
             : ColumnBase(std::move(name), type, size)
         { }
+
+        aby3::Sh3::i64Matrix mData;
     };
 
-    struct SharedColumn : public ColumnBase, public aby3::Sh3::sbMatrix
+    class SharedColumn : public ColumnBase, public aby3::Sh3::sbMatrix
     {
+    public:
+
         SharedColumn() = default;
         SharedColumn(const SharedColumn&) = default;
         SharedColumn(SharedColumn&&) = default;
@@ -112,11 +119,11 @@ namespace osuCrypto
                     std::get<2>(columns[i])
                 );
                 auto size = (std::get<2>(columns[i]) + 63) / 64;
-                mColumns.back().resize(rows, size);
+                mColumns.back().mData.resize(rows, size);
             }
         }
 
-        u64 rows() { return mColumns.size() ? mColumns[0].rows() : 0; }
+        u64 rows() { return mColumns.size() ? mColumns[0].mData.rows() : 0; }
 
 
 

@@ -46,8 +46,8 @@ namespace osuCrypto
 
 
 
-        Matrix<u8> cuckooHashRecv(SharedTable & A);
-        void cuckooHashSend(SharedTable & A, CuckooParam& cuckooParams);
+        Matrix<u8> cuckooHashRecv(span<SharedTable::ColRef> selects);
+        void cuckooHashSend(span<SharedTable::ColRef> selects, CuckooParam& cuckooParams);
         Matrix<u8> cuckooHash(span<SharedTable::ColRef> selects, aby3::Sh3::i64Matrix& keys);
 
 
@@ -56,16 +56,29 @@ namespace osuCrypto
         void selectCuckooPos(MatrixView<u8> cuckooHashTable, std::array<MatrixView<u8>, 3> dest, aby3::Sh3::i64Matrix& keys);
 
 
-        void compare(SharedTable& B, std::array<MatrixView<u8>,3> selectedA, aby3::Sh3::sPackedBin& intersectionFlags);
-        void compare(SharedTable& B, aby3::Sh3::sPackedBin& intersectionFlags);
+        void compare(
+            SharedTable::ColRef leftJoinCol,
+            SharedTable::ColRef rightJoinCol,
+            std::array<MatrixView<u8>,3> leftInData, 
+            span<SharedTable::ColRef> outcolumns, 
+            aby3::Sh3::sPackedBin& outFlags);
+
+        void compare(
+            SharedTable::ColRef leftJoinCol,
+            SharedTable::ColRef rightJoinCol,
+            span<SharedTable::ColRef> outColumns,
+            aby3::Sh3::sPackedBin& outGlafs);
 
         aby3::Sh3::i64Matrix computeKeys(span<SharedTable::ColRef> tables, span<u64> reveals);
 
 
-        BetaCircuit getBasicCompare();
+        BetaCircuit getBasicCompare(
+            SharedTable::ColRef leftJoinCol,
+            span<SharedTable::ColRef> cols);
         //LowMC2<> mLowMC;
         BetaCircuit mLowMCCir;
 
+        CuckooIndex<CuckooTypes::NotThreadSafe> mCuckoo;
 
 
 

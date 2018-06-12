@@ -3,11 +3,24 @@
 #include <cryptoTools/Network/IOService.h>
 #include "ComPsiServerTests.h"
 #include <unordered_set>
+#include <iomanip>
 using namespace oc;
 
 namespace osuCrypto
 {
     extern int ComPsiServer_ssp;
+}
+
+
+std::string hexString(u8* ptr, u32 size)
+{
+    std::stringstream ss;
+    for (u64 i = 0; i < size; ++i)
+    {
+        ss << std::hex << std::setw(2) << std::setfill('0') << u32(ptr[i]);
+    }
+
+    return ss.str();
 }
 
 void ComPsi_computeKeys_test()
@@ -34,10 +47,10 @@ void ComPsi_computeKeys_test()
 
     for (u64 i = 0; i < size; ++i)
     {
-        for (u64 j = 0; j < a.mColumns[0].cols(); ++j)
+        for (u64 j = 0; j < a.mColumns[0].mData.cols(); ++j)
         {
-            a.mColumns[0](i, j) = i >> 1;
-            b.mColumns[0](i, j) = a.mColumns[0](i, j);
+            a.mColumns[0].mData(i, j) = i >> 1;
+            b.mColumns[0].mData(i, j) = a.mColumns[0].mData(i, j);
         }
     }
     bool failed = false;
@@ -56,7 +69,7 @@ void ComPsi_computeKeys_test()
 
         for (u64 i = 0; i < size - 1; i += 2)
         {
-            for (u64 j = 0; j < a.mColumns[0].cols(); ++j)
+            for (u64 j = 0; j < a.mColumns[0].mData.cols(); ++j)
             {
                 //std::cout << (j ? ", " : ToString(i) + " : ") << r(i, j);
                 if (r0(i, j) != r0(i + 1, j))
@@ -130,37 +143,37 @@ void ComPsi_cuckooHash_test()
 
 
     // 80 bits;
-    u32 hashSize = 80;
+    auto keyBitCount = srvs[0].mKeyBitCount;
     u32 rows = 1 << 10;
     u32 bytes = 8;
 
     PRNG prng(OneBlock);
-    aby3::Sh3::i64Matrix hashs(rows, (hashSize + 63) / 64);
+    aby3::Sh3::i64Matrix hashs(rows, (keyBitCount + 63) / 64);
     hashs.setZero();
 
-    auto keyBitCount = srvs[0].mKeyBitCount;
-    Table a(rows, { ColumnInfo{ "key", TypeID::IntID, keyBitCount } });
+    Table a(rows, {
+        ColumnInfo{ "key", TypeID::IntID, keyBitCount } ,
+        ColumnInfo{ "data", TypeID::IntID, 64 }
+        });
 
     for (u64 i = 0; i < rows; ++i)
     {
-        for (u64 j = 0; j < a.mColumns[0].cols(); ++j)
-        {
-            a.mColumns[0](i, j) = i;
-        }
+        a.mColumns[0].mData(i, 0) = i;
+        a.mColumns[1].mData(i, 0) = i;
 
-        prng.get((u8*)hashs.row(i).data(), hashSize / 8);
+        prng.get((u8*)hashs.row(i).data(), keyBitCount / 8);
     }
 
-
+    oc::Matrix<u8> m1, m2;
 
     auto t0 = std::thread([&]() {
         auto i = 0;
 
         setThreadName("t_" + ToString(i));
         auto A = srvs[i].localInput(a);
-        std::vector<SharedTable::ColRef> select{ A["key"] };
+        std::vector<SharedTable::ColRef> select{ A["key"], A["data"] };
 
-        srvs[i].cuckooHash(select, hashs);
+        m1 = srvs[i].cuckooHash(select, hashs);
     });
 
 
@@ -168,21 +181,49 @@ void ComPsi_cuckooHash_test()
         auto i = 1;
         setThreadName("t_" + ToString(i));
         auto A = srvs[i].remoteInput(0);
-        srvs[i].cuckooHashRecv(A);
+        std::vector<SharedTable::ColRef> select{ A["key"] , A["data"] };
+        m2 = srvs[i].cuckooHashRecv(select);
     });
 
     auto t2 = std::thread([&]() {
         auto i = 2;
         setThreadName("t_" + ToString(i));
         auto A = srvs[i].remoteInput(0);
+        std::vector<SharedTable::ColRef> select{ A["key"] , A["data"] };
         auto cuckooParams = CuckooIndex<>::selectParams(rows, ComPsiServer_ssp, 0, 3);
-        srvs[i].cuckooHashSend(A, cuckooParams);
+        srvs[i].cuckooHashSend(select, cuckooParams);
     });
-
 
     t0.join();
     t1.join();
     t2.join();
+
+    for (u64 i = 0; i < m1.size(); ++i)
+        m1(i) ^= m2(i);
+
+    if (m1.cols() != 18)
+        throw RTE_LOC;
+
+    std::vector<u8> temp(m1.cols());
+    span<block> view((block*)hashs.data(), hashs.rows());
+    for (u64 i = 0; i < view.size(); ++i)
+    {
+        auto j = srvs[0].mCuckoo.find(view[i]);
+
+        if (!j)
+            throw RTE_LOC;
+
+        ((u64*)&(temp[0]))[0] = i;
+        ((u64*)&(temp[10]))[0] = i;
+
+        if (memcmp(m1[j.mCuckooPositon].data(), temp.data(), 18) != 0)
+        {
+            std::cout << i << "  "
+                << hexString((u8*)m1[j.mCuckooPositon].data(), 18) << " vs \n"
+                << hexString((u8*)temp.data(), 18) << std::endl;
+            throw RTE_LOC;
+        }
+    }
 
 
 }
@@ -206,47 +247,77 @@ void ComPsi_compare_test()
 
 
     // 80 bits;
-    u32 hashSize = 80;
-    auto byteSize = hashSize / 8;
-    u32 rows =1 << 12;
+    auto keyBitCount = srvs[0].mKeyBitCount;
+    u32 rows =  1 << 12;
     //Table b;
     //b.mColumns[0].resize(rows, (srvs[0].mKeyBitCount + 63) / 64);
-    auto keyBitCount = srvs[0].mKeyBitCount;
-    Table b(rows, { ColumnInfo{ "key", TypeID::IntID, keyBitCount } });
-    b.mColumns[0].setZero();
+    Table b(rows, {
+        ColumnInfo{ "key", TypeID::IntID, keyBitCount }
+        ,ColumnInfo{ "data", TypeID::IntID, 64 }
+        });
+
+
+    b.mColumns[0].mData.setZero();
 
     std::vector<u8> expIntersection(rows, 0);
-    PRNG prng(ZeroBlock);
+    PRNG prng(OneBlock);
 
     for (u64 i = 0; i < rows; ++i)
     {
         expIntersection[i] = prng.get<bool>();
-        prng.get((u8*)b.mColumns[0].row(i).data(), byteSize);
+        u8* d = (u8*)b.mColumns[0].mData.row(i).data();
+        auto size = b.mColumns[0].mData.cols();
+        prng.get(d, size);
     }
 
     bool failed = false;
 
     auto routine = [&](int i)
     {
-        SharedTable B;
+        SharedTable B, C;
 
         if (i == 0)
             B = srvs[i].localInput(b);
         else
             B = srvs[i].remoteInput(0);
 
+        C.mColumns.resize(2);
+        C.mColumns[0].mShares   = B.mColumns[0].mShares;
+        C.mColumns[0].mName     = B.mColumns[0].mName;
+        C.mColumns[0].mType     = B.mColumns[0].mType;
+        C.mColumns[0].mBitCount = B.mColumns[0].mBitCount;
+
+        C.mColumns[1].mShares   = B.mColumns[1].mShares;
+        C.mColumns[1].mName     = B.mColumns[1].mName;
+        C.mColumns[1].mType     = B.mColumns[1].mType;
+        C.mColumns[1].mBitCount = B.mColumns[1].mBitCount;
+
+        C.mColumns[0].mShares[0].setZero();
+        C.mColumns[0].mShares[1].setZero();
+        C.mColumns[1].mShares[0].setZero();
+        C.mColumns[1].mShares[1].setZero();
 
         aby3::Sh3::PackedBin plainFlags(B.rows(), 1);
         aby3::Sh3::sPackedBin intersectionFlags(B.rows(), 1);
 
         if (i < 2)
         {
+
+            std::vector<SharedTable::ColRef> outCols{ C["key"], C["data"] }; //};
+
+            auto leftJoin = B["key"];
+            auto rightJoin = B["key"];
+
+            auto selectBytes = (leftJoin.mCol.getBitCount() + 7) / 8;
+            for (auto& c : outCols)
+                selectBytes += (c.mCol.getBitCount() + 7) / 8;
+
             std::array<MatrixView<u8>, 3> selects;
             std::array<Matrix<u8>, 3> selects2;
 
-            selects2[0].resize(rows, byteSize);
-            selects2[1].resize(rows, byteSize);
-            selects2[2].resize(rows, byteSize);
+            selects2[0].resize(rows, selectBytes);
+            selects2[1].resize(rows, selectBytes);
+            selects2[2].resize(rows, selectBytes);
 
             if (i == 0)
             {
@@ -256,7 +327,19 @@ void ComPsi_compare_test()
                     if (expIntersection[j])
                     {
                         u8 idx = prng.get<u8>() % 3;
-                        memcpy(selects2[idx][j].data(), b.mColumns[0].row(j).data(), byteSize);
+
+                        auto dest = selects2[idx][j].data();
+                        auto src = b.mColumns[0].mData.row(j).data();
+                        auto size = (b.mColumns[0].getBitCount() + 7) / 8;
+
+                        if (selectBytes != 2 * size + ((C["data"].mCol.getBitCount() + 7) / 8))
+                            throw RTE_LOC;
+
+                        memcpy(dest, src, size);
+                        dest += size;
+                        memcpy(dest, src, size);
+                        dest += size;
+                        *(u64*)dest = j;
                     }
                 }
             }
@@ -266,21 +349,58 @@ void ComPsi_compare_test()
             selects[2] = selects2[2];
 
 
-            srvs[i].compare(B, selects, intersectionFlags);
+            srvs[i].compare(leftJoin, rightJoin, selects, outCols, intersectionFlags);
             srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), intersectionFlags, plainFlags).get();
             BitIterator iter((u8*)plainFlags.mData.data(), 0);
+
+            auto stride = C.mColumns[0].i64Cols();
+            aby3::Sh3::i64Matrix c0(C.rows(), stride), c1(C.rows(), 1);
+            srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), C.mColumns[0], c0).get();
+            srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), C.mColumns[1], c1).get();
+
+            //ostreamLock o(std::cout);
             for (u64 j = 0; j < rows; ++j)
             {
-                if (*iter++ != expIntersection[j])
+
+                //o << "out[" << j << "] = " 
+                //    << hexString((u8*)c0.row(j).data(), c0.cols() * sizeof(u64)) << " "
+                //    << hexString((u8*)c1.row(j).data(), c1.cols() * sizeof(u64)) << " " << int(*iter) << std::endl;;
+
+                if (*iter != expIntersection[j])
                 {
                     failed = true;
+
                 }
+                else
+                {
+                    for (u64 k = 0; k < stride; ++k)
+                    {
+                        if (c0(j, k) != *iter * b.mColumns[0].mData(j, k))
+                            failed = true;
+                    }
+
+
+                    if (c1(j, 0) != *iter * j)
+                        failed = true;
+                }
+
+                ++iter;
             }
         }
         else
         {
-            srvs[i].compare(B, intersectionFlags);
+            std::vector<SharedTable::ColRef> outCols{ C["key"], C["data"] };
+
+            auto leftJoin = B["key"];
+            auto rightJoin = B["key"];
+
+            srvs[i].compare(leftJoin, rightJoin, outCols, intersectionFlags);
             srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), intersectionFlags, plainFlags).get();
+
+            aby3::Sh3::i64Matrix c(C.rows(), C.mColumns[0].i64Cols()), c1(C.rows(), 1);
+            srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), C.mColumns[0], c).get();
+            srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), C.mColumns[1], c1).get();
+
         }
     };
 
@@ -320,7 +440,11 @@ void ComPsi_Intersect_test()
 
     auto keyBitCount = srvs[0].mKeyBitCount;
     Table a(rows, { ColumnInfo{ "key", TypeID::IntID, keyBitCount } })
-        , b(rows, { ColumnInfo{ "key", TypeID::IntID, keyBitCount } });
+        , b(rows, {
+        ColumnInfo{ "key", TypeID::IntID, keyBitCount },
+        ColumnInfo{ "data", TypeID::IntID, 64}
+    });
+
     auto intersectionSize = (rows + 1) / 2;
 
     std::unordered_set<i64> map;
@@ -329,17 +453,19 @@ void ComPsi_Intersect_test()
     for (u64 i = 0; i < rows; ++i)
     {
         auto out = (i >= intersectionSize);
-        for (u64 j = 0; j < a.mColumns[0].cols(); ++j)
+        for (u64 j = 0; j < a.mColumns[0].mData.cols(); ++j)
         {
-            a.mColumns[0](i, j) = i + 1;
-            b.mColumns[0](i, j) = i + 1 + (rows * out);
+            a.mColumns[0].mData(i, j) = i + 1;
+            b.mColumns[0].mData(i, j) = i + 1 + (rows * out);
         }
+
+        b.mColumns[1].mData(i, 0) = 2 * i;
 
         //std::cout << "a[" << i << "] = " << a.mColumns[0](i, 0) << std::endl;
         //std::cout << "b[" << i << "] = " << b.mColumns[0](i, 0) << std::endl;
 
         if (!out)
-            map.emplace(a.mColumns[0](i, 0));
+            map.emplace(a.mColumns[0].mData(i, 0));
     }
 
 
@@ -350,10 +476,14 @@ void ComPsi_Intersect_test()
         auto A = srvs[i].localInput(a);
         auto B = srvs[i].localInput(b);
 
-        auto C = srvs[i].intersect(A, B);
+        auto C = srvs[i].join(
+            /* where  */ A["key"],/* = */ B["key"],
+            /* select */ { A["key"], B["data"] });
 
         aby3::Sh3::i64Matrix c(C.mColumns[0].rows(), C.mColumns[0].i64Cols());
+        aby3::Sh3::i64Matrix c2(C.mColumns[0].rows(), C.mColumns[1].i64Cols());
         srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[0], c);
+        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[1], c2);
 
         if (c.rows() != intersectionSize)
         {
@@ -368,10 +498,16 @@ void ComPsi_Intersect_test()
             if (iter == map.end())
             {
                 failed = true;
-                std::cout << "bad value in intersection: " << c(i, 0) << " @ " << i << std::endl;
+                std::cout << "bad key in intersection: " << c(i, 0) << " @ " << i << std::endl;
             }
             else
             {
+                if (c2(i, 0) != 2 * i)
+                {
+                    failed = true;
+                    std::cout << "bad label in intersection: " << c2(i, 0) << " @ " << i << std::endl;
+                }
+
                 map.erase(iter);
             }
 
@@ -390,9 +526,11 @@ void ComPsi_Intersect_test()
         auto A = srvs[i].remoteInput(0);
         auto B = srvs[i].remoteInput(0);
 
-        auto C = srvs[i].intersect(A, B);
+        auto C = srvs[i].join(A["key"], B["key"], { A["key"], B["data"] });
         aby3::Sh3::i64Matrix c(C.mColumns[0].rows(), C.mColumns[0].i64Cols());
+        aby3::Sh3::i64Matrix c2(C.mColumns[0].rows(), C.mColumns[1].i64Cols());
         srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[0], c);
+        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[1], c2);
     });
     auto t2 = std::thread([&]() {
         setThreadName("t2");
@@ -400,9 +538,11 @@ void ComPsi_Intersect_test()
         auto A = srvs[i].remoteInput(0);
         auto B = srvs[i].remoteInput(0);
 
-        auto C = srvs[i].intersect(A, B);
+        auto C = srvs[i].join(A["key"], B["key"], { A["key"], B["data"] });
         aby3::Sh3::i64Matrix c(C.mColumns[0].rows(), C.mColumns[0].i64Cols());
+        aby3::Sh3::i64Matrix c2(C.mColumns[0].rows(), C.mColumns[1].i64Cols());
         srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[0], c);
+        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[1], c2);
     });
 
 

@@ -51,10 +51,10 @@ void ComPsi_Intersect(u32 rows)
     for (u64 i = 0; i < rows; ++i)
     {
         auto out = (i >= intersectionSize);
-        for (u64 j = 0; j < a.mColumns[0].cols(); ++j)
+        for (u64 j = 0; j < a.mColumns[0].mData.cols(); ++j)
         {
-            a.mColumns[0](i, j) = i + 1;
-            b.mColumns[0](i, j) = i + 1 + (rows * out);
+            a.mColumns[0].mData(i, j) = i + 1;
+            b.mColumns[0].mData(i, j) = i + 1 + (rows * out);
         }
     }
 
@@ -74,7 +74,6 @@ void ComPsi_Intersect(u32 rows)
         auto C = srvs[i].intersect(A, B); 
         timer.setTimePoint("intersect");
 
-        auto D = srvs[i].join(A["key"], B["key"], { A["key"], B["name"], A["salary"] });
 
         if (C.rows())
         {

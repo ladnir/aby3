@@ -538,7 +538,7 @@ namespace aby3
 
     std::ostream& operator<<(std::ostream& out, Sh3BinaryEvaluator::DEBUG_Triple& triple)
     {
-        out << "(" << (int) triple.mBits[0] << " " << (int)triple.mBits[1] << " " << (int)triple.mBits[2] << ") = " << triple.val();
+        out << "(" << (int)triple.mBits[0] << " " << (int)triple.mBits[1] << " " << (int)triple.mBits[2] << ") = " << triple.val();
 
         return out;
     }
@@ -582,7 +582,7 @@ namespace aby3
         {
             if (mRecvLocs.size())
             {
-                for(auto& fu : mRecvFutr)
+                for (auto& fu : mRecvFutr)
                     fu.get();
                 mRecvFutr.clear();
 
@@ -774,7 +774,7 @@ namespace aby3
                         t0[5] = t0[5] ^ t1[5];
                         t0[6] = t0[6] ^ t1[6];
                         t0[7] = t0[7] ^ t1[7];
-                        
+
                         //t0[0] = t0[0] ^ z[0][k + 0];
                         //t0[1] = t0[1] ^ z[0][k + 1];
                         //t0[2] = t0[2] ^ z[0][k + 2];
@@ -1102,14 +1102,14 @@ namespace aby3
                         m[gOut].assign(inTriple0, inTriple1, gate.mType);
 
                         auto badOutput = s0_out != m[gOut].mBits[mDebugPartyIdx];
-                        auto badInput0 = 
+                        auto badInput0 =
                             s0_in0_val != inTriple0.mBits[mDebugPartyIdx] ||
                             s1_in0_val != inTriple0.mBits[prevIdx];
-                        auto badInput1 = 
+                        auto badInput1 =
                             s0_in1_val != inTriple1.mBits[mDebugPartyIdx] ||
                             s1_in1_val != inTriple1.mBits[prevIdx];
 
-                        if (gIn0 == gOut){
+                        if (gIn0 == gOut) {
                             badInput0 = false;
                             s0_in0_val = -1;
                             s1_in0_val = -1;
@@ -1128,7 +1128,7 @@ namespace aby3
 
 
                             ostreamLock(std::cout)
-                                << "\np "<< mDebugPartyIdx << " gate[" << gIdx << "] r" << r <<": "
+                                << "\np " << mDebugPartyIdx << " gate[" << gIdx << "] r" << r << ": "
                                 << gIn0 << " " << gateToString(type) << " " << gIn1 << " -> " << int(gOut)
                                 << " exp: " << m[gOut] << "\n"
                                 << " act: " << prettyShare(mDebugPartyIdx, s0_out) << "\n"
@@ -1227,10 +1227,16 @@ namespace aby3
                 //if (mCir->isInvert(outWires[wireIdx]))
                 //	throw std::runtime_error(LOCATION);
                 auto wire = outWires[wireIdx];
+                if (wire >= mMem.bitCount())
+                    throw RTE_LOC;
 
                 auto md = mMem.mShares[j].data();
                 //auto ms = mMem.mShares[j].size();
                 auto src = md + wire * simdWidth128;
+                auto src2 = &mMem.mShares[j](wire, 0);
+                if (src != src2)
+                    throw RTE_LOC;
+
                 auto size = out.simdWidth() * sizeof(i64);
 
                 //if (src + simdWidth > md + ms)
@@ -1391,7 +1397,7 @@ namespace aby3
     }
 
     Sh3BinaryEvaluator::block_type*
-            Sh3BinaryEvaluator::getShares()
+        Sh3BinaryEvaluator::getShares()
     {
 #ifdef NEW_SHARE
         std::array<block, 8> temp;
@@ -1449,7 +1455,7 @@ namespace aby3
 #endif
 
     }
-     
+
 
 #ifdef BINARY_ENGINE_DEBUG
 
