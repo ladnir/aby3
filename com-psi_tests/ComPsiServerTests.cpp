@@ -158,9 +158,11 @@ void ComPsi_cuckooHash_test()
 
     for (u64 i = 0; i < rows; ++i)
     {
-        a.mColumns[0].mData(i, 0) = i;
-        a.mColumns[1].mData(i, 0) = i;
+        //a.mColumns[0].mData(i, 0) = i;
+        //a.mColumns[1].mData(i, 0) = i;
 
+        prng.get((u8*)a.mColumns[0].mData.row(i).data(), keyBitCount / 8);
+        prng.get((u8*)a.mColumns[1].mData.row(i).data(), 8);
         prng.get((u8*)hashs.row(i).data(), keyBitCount / 8);
     }
 
@@ -203,6 +205,7 @@ void ComPsi_cuckooHash_test()
 
     if (m1.cols() != 18)
         throw RTE_LOC;
+    bool failed = false;
 
     std::vector<u8> temp(m1.cols());
     span<block> view((block*)hashs.data(), hashs.rows());
@@ -213,17 +216,23 @@ void ComPsi_cuckooHash_test()
         if (!j)
             throw RTE_LOC;
 
-        ((u64*)&(temp[0]))[0] = i;
-        ((u64*)&(temp[10]))[0] = i;
+        auto s0 = keyBitCount / 8;
+        auto s1 = 8;
+
+        memcpy(temp.data(), a.mColumns[0].mData.row(i).data(), s0);
+        memcpy(temp.data() + s0, a.mColumns[1].mData.row(i).data(), s1);
 
         if (memcmp(m1[j.mCuckooPositon].data(), temp.data(), 18) != 0)
         {
-            std::cout << i << "  "
-                << hexString((u8*)m1[j.mCuckooPositon].data(), 18) << " vs \n"
+            std::cout << i << "\n  "
+                << hexString((u8*)m1[j.mCuckooPositon].data(), 18) << " vs \n  "
                 << hexString((u8*)temp.data(), 18) << std::endl;
-            throw RTE_LOC;
+            failed = true;
         }
     }
+
+    if(failed)
+        throw RTE_LOC;
 
 
 }
