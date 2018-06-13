@@ -60,7 +60,7 @@ namespace osuCrypto
             else
                 throw RTE_LOC;
         }
-
+        u64 getByteCount() const { return (getBitCount() + 7 ) / 8; }
         u64 getBitCount() const { return mType->getBitCount(); }
         TypeID getTypeID() const { return mType->getTypeID(); }
     };

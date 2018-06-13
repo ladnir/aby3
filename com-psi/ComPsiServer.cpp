@@ -253,6 +253,226 @@ namespace osuCrypto
 
         setTimePoint("intersect_compute_keys");
 
+        auto& leftTable = leftJoinCol.mTable;
+        auto& rightTable = rightJoinCol.mTable;
+
+
+        // the number of bits
+        u64 selectByteCount = leftJoinCol.mCol.getByteCount();
+        // all of the columns out of the right table that need to be selected.
+        std::vector<SharedTable::ColRef> circuitInputCols;
+        circuitInputCols.reserve(rightTable.mColumns.size());
+        circuitInputCols.push_back(leftJoinCol);
+
+        SharedTable C;
+        C.mColumns.resize(selects.size());
+
+        std::vector<SharedTable::ColRef> circuitOutCols;
+        circuitOutCols.reserve(circuitInputCols.size() - 1);
+        for (u64 j = 0; j < selects.size(); ++j)
+        {
+            auto& s = selects[j];
+            C.mColumns[j].mType = s.mCol.mType;
+            C.mColumns[j].mName = s.mCol.mName;
+            C.mColumns[j].resize(rightTable.rows(), s.mCol.getBitCount());
+            C.mColumns[j].mShares[0].setZero();
+            C.mColumns[j].mShares[1].setZero();
+
+            if (&leftJoinCol.mCol != &s.mCol && &s.mTable == &rightTable)
+            {
+                selectByteCount += s.mCol.getByteCount();
+                circuitInputCols.push_back(s);
+                circuitOutCols.push_back(C[s.mCol.mName]);
+            }
+        }
+
+
+        std::vector<SharedTable::ColRef> srcColumns; srcColumns.reserve(selects.size());
+        for (u64 i = 0; i < selects.size(); ++i)
+        {
+            // if the select column is from the left table (which stays in place), we will simply copy the
+            // shares out of the left table into the result table
+            if (&selects[i].mTable == &leftTable)
+                srcColumns.push_back(leftTable[selects[i].mCol.mName]);
+
+            // if the select column is from the right table (which gets permuted), but in the column that we are 
+            // joining on, then observe that we can actaully use the left table's join column, since they will be equal
+            // for all items in the intersection. This is more efficient since it does not need to go through the circuit.
+            else if(&selects[i].mTable == &rightTable &&&selects[i].mCol == &rightJoinCol.mCol)
+                srcColumns.push_back(leftTable[leftJoinCol.mCol.mName]);
+
+            // finally, if the select column is from the right table we will make the src column the output
+            // column itself. Note that when we do the final copy, the src and dest columns will be the same, 
+            // however, the copy will move the rows around which is desired.
+            else if (&selects[i].mTable == &rightTable)
+                srcColumns.push_back(C[selects[i].mCol.mName]);
+
+            // throw if the select column is not from the left or right table.
+            else
+                throw RTE_LOC;
+        }
+        
+
+        aby3::Sh3::sPackedBin intersectionFlags;// (rightTable.rows(), 1);
+        switch (mIdx)
+        {
+        case 0:
+        {
+            if (debug_print && ComPsiServer_debug)
+            {
+                ostreamLock o(std::cout);
+                for (u64 i = 0; i < keys.rows(); ++i)
+                    o << "A.key[" << i << "] = " << hexString((u8*)&keys(i, 0), 10) << std::endl;
+            }
+
+            auto cuckooTable = cuckooHash(circuitInputCols, keys);
+
+            setTimePoint("intersect_cuckoo_hash");
+
+
+            Matrix<u8> a2(rightTable.rows() * 3, cuckooTable.cols());
+            std::array<MatrixView<u8>, 3> circuitInputShare{
+                MatrixView<u8>(a2.data() + 0 * rightTable.rows() * cuckooTable.cols(), rightTable.rows(), cuckooTable.cols()),
+                MatrixView<u8>(a2.data() + 1 * rightTable.rows() * cuckooTable.cols(), rightTable.rows(), cuckooTable.cols()),
+                MatrixView<u8>(a2.data() + 2 * rightTable.rows() * cuckooTable.cols(), rightTable.rows(), cuckooTable.cols()),
+            };
+
+            selectCuckooPos(cuckooTable, circuitInputShare);
+            setTimePoint("intersect_select_cuckoo");
+
+
+            if (ComPsiServer_debug)
+                p0CheckSelect(cuckooTable, circuitInputShare);
+
+            intersectionFlags.reset(rightTable.rows(), 1);
+            compare(leftJoinCol, rightJoinCol, circuitInputShare, circuitOutCols, intersectionFlags);
+
+            break;
+        }
+        case 1:
+        {
+            if (debug_print && ComPsiServer_debug)
+            {
+                ostreamLock o(std::cout);
+                for (u64 i = 0; i < keys.rows(); ++i)
+                {
+                    o << "B.key[" << i << "] = " << hexString((u8*)&keys(i, 0), 10) << std::endl;
+                }
+            }
+
+            auto cuckooTable = cuckooHashRecv(circuitInputCols);
+            setTimePoint("intersect_cuckoo_hash");
+
+
+            Matrix<u8> a2(rightTable.rows() * 3, cuckooTable.cols());
+            std::array<MatrixView<u8>, 3> circuitInputShare{
+                MatrixView<u8>(a2.data() + 0 * rightTable.rows() * cuckooTable.cols(), rightTable.rows(), cuckooTable.cols()),
+                MatrixView<u8>(a2.data() + 1 * rightTable.rows() * cuckooTable.cols(), rightTable.rows(), cuckooTable.cols()),
+                MatrixView<u8>(a2.data() + 2 * rightTable.rows() * cuckooTable.cols(), rightTable.rows(), cuckooTable.cols()),
+            };
+
+            selectCuckooPos(cuckooTable, circuitInputShare, keys);
+
+            setTimePoint("intersect_select_cuckoo");
+
+            if (ComPsiServer_debug)
+                p1CheckSelect(cuckooTable, circuitInputShare, keys);
+
+            intersectionFlags.reset(rightTable.rows(), 1);
+            compare(leftJoinCol, rightJoinCol, circuitInputShare, circuitOutCols, intersectionFlags);
+
+            break;
+        }
+        case 2:
+        {
+            auto cuckooParams = CuckooIndex<>::selectParams(leftTable.rows(), ComPsiServer_ssp, 0, 3);
+            cuckooHashSend(circuitInputCols, cuckooParams);
+            setTimePoint("intersect_cuckoo_hash");
+
+            selectCuckooPos(rightTable.rows(), cuckooParams.numBins(), selectByteCount);
+            setTimePoint("intersect_select_cuckoo");
+
+            intersectionFlags.reset(rightTable.rows(), 1);
+            compare(leftJoinCol, rightJoinCol, circuitOutCols, intersectionFlags);
+
+            break;
+        }
+        default:
+            throw std::runtime_error("");
+        }
+
+        setTimePoint("intersect_compare");
+
+        aby3::Sh3::PackedBin plainFlags(rightTable.rows(), 1);
+        mEnc.revealAll(mRt.noDependencies(), intersectionFlags, plainFlags).get();
+        setTimePoint("intersect_done");
+        BitIterator iter((u8*)plainFlags.mData.data(), 0);
+
+        std::vector<u64> sizes(srcColumns.size());
+        for (u64 i = 0; i < sizes.size(); ++i)
+            sizes[i] = srcColumns[i].mCol.getByteCount();
+
+        auto size = 0;
+        for (u64 i = 0; i < rightTable.rows(); ++i)
+        {
+
+            //std::cout << mIdx << " " << i << " " << *iter << std::endl;;
+            if (*iter)
+            {
+                for (u64 j = 0; j < srcColumns.size(); ++j)
+                {
+                    auto s0 = &srcColumns[j].mCol.mShares[0](i, 0);
+                    auto s1 = &srcColumns[j].mCol.mShares[1](i, 0);
+                    auto d0 = &C.mColumns[j].mShares[0](size, 0);
+                    auto d1 = &C.mColumns[j].mShares[1](size, 0);
+
+                    memmove(d0, s0, sizes[j]);
+                    memmove(d1, s1, sizes[j]);
+                }
+
+                ++size;
+            }
+
+            ++iter;
+        }
+
+        for (u64 j = 0; j < C.mColumns.size(); ++j)
+        {
+            C.mColumns[j].resize(size, C.mColumns[j].getBitCount());
+        }
+
+        return C;
+    }
+
+
+
+    SharedTable ComPsiServer::leftUnion(
+        SharedTable::ColRef leftJoinCol,
+        SharedTable::ColRef rightJoinCol,
+        std::vector<SharedTable::ColRef> leftSelects,
+        std::vector<SharedTable::ColRef> rightSelects)
+    {
+        return {};
+
+#ifdef UNION_ENABLED
+
+        if (leftSelects.size() != rightSelects.size())
+            throw RTE_LOC;
+
+        for (u64 i = 0; i < leftSelects.size(); ++i)
+        {
+            if (leftSelects[i].mCol.getTypeID() != rightSelects[i].mCol.getTypeID() ||
+                leftSelects[i].mCol.getBitCount() != rightSelects[i].mCol.getBitCount())
+                throw RTE_LOC;
+        }
+
+        setTimePoint("union_start");
+        std::array<SharedTable::ColRef, 2> AB{ leftJoinCol,rightJoinCol };
+        std::array<u64, 2> reveals{ 0,1 };
+        aby3::Sh3::i64Matrix keys = computeKeys(AB, reveals);
+
+        setTimePoint("union_compute_keys");
+
         auto bits = leftJoinCol.mCol.getBitCount();
         auto bytes = (bits + 7) / 8;
 
@@ -292,16 +512,16 @@ namespace osuCrypto
         {
             if (&selects[i].mTable == &B)
                 srcColumns.push_back(B[selects[i].mCol.mName]);
-            else if(&selects[i].mTable == &A &&&selects[i].mCol == &leftJoinCol.mCol)
+            else if (&selects[i].mTable == &A &&&selects[i].mCol == &leftJoinCol.mCol)
                 srcColumns.push_back(B[rightJoinCol.mCol.mName]);
             else if (&selects[i].mTable == &A)
                 srcColumns.push_back(C[selects[i].mCol.mName]);
             else
                 throw RTE_LOC;
         }
-        
 
-        aby3::Sh3::sPackedBin intersectionFlags;// (B.rows(), 1);
+
+        aby3::Sh3::sPackedBin intersectionFlags;// (rightTable.rows(), 1);
         switch (mIdx)
         {
         case 0:
@@ -315,7 +535,7 @@ namespace osuCrypto
 
             auto cuckooTable = cuckooHash(leftSelect, keys);
 
-            setTimePoint("intersect_cuckoo_hash");
+            setTimePoint("union_cuckoo_hash");
 
 
             Matrix<u8> a2(B.rows() * 3, cuckooTable.cols());
@@ -326,7 +546,7 @@ namespace osuCrypto
             };
 
             selectCuckooPos(cuckooTable, A2);
-            setTimePoint("intersect_select_cuckoo");
+            setTimePoint("union_select_cuckoo");
 
 
             if (ComPsiServer_debug)
@@ -349,7 +569,7 @@ namespace osuCrypto
             }
 
             auto cuckooTable = cuckooHashRecv(leftSelect);
-            setTimePoint("intersect_cuckoo_hash");
+            setTimePoint("union_cuckoo_hash");
 
 
             Matrix<u8> a2(B.rows() * 3, cuckooTable.cols());
@@ -361,7 +581,7 @@ namespace osuCrypto
 
             selectCuckooPos(cuckooTable, A2, keys);
 
-            setTimePoint("intersect_select_cuckoo");
+            setTimePoint("union_select_cuckoo");
 
             if (ComPsiServer_debug)
                 p1CheckSelect(cuckooTable, A2, keys);
@@ -375,10 +595,10 @@ namespace osuCrypto
         {
             auto cuckooParams = CuckooIndex<>::selectParams(A.rows(), ComPsiServer_ssp, 0, 3);
             cuckooHashSend(leftSelect, cuckooParams);
-            setTimePoint("intersect_cuckoo_hash");
+            setTimePoint("union_cuckoo_hash");
 
             selectCuckooPos(B.rows(), cuckooParams.numBins(), bytes);
-            setTimePoint("intersect_select_cuckoo");
+            setTimePoint("union_select_cuckoo");
 
             intersectionFlags.reset(B.rows(), 1);
             compare(leftJoinCol, rightJoinCol, circuitOut, intersectionFlags);
@@ -389,11 +609,11 @@ namespace osuCrypto
             throw std::runtime_error("");
         }
 
-        setTimePoint("intersect_compare");
+        setTimePoint("union_compare");
 
         aby3::Sh3::PackedBin plainFlags(B.rows(), 1);
         mEnc.revealAll(mRt.noDependencies(), intersectionFlags, plainFlags).get();
-        setTimePoint("intersect_done");
+        setTimePoint("union_done");
         BitIterator iter((u8*)plainFlags.mData.data(), 0);
 
 
@@ -427,7 +647,15 @@ namespace osuCrypto
         }
 
         return C;
+#endif
     }
+
+
+
+
+
+
+
 
 
 
@@ -479,7 +707,7 @@ namespace osuCrypto
         }
 
         Matrix<u8> share0(cuckoo.mBins.size(), totalBytes);
-        //Matrix<u8> share2(cuckoo.mBins.size(), (A.mKeys.bitCount() + 7) / 8);
+        //Matrix<u8> share2(cuckoo.mBins.size(), (leftTable.mKeys.bitCount() + 7) / 8);
 
         std::vector<u32> perm(cuckoo.mBins.size(), -1);
 
@@ -515,7 +743,7 @@ namespace osuCrypto
 
 
         //{
-        //    Matrix<u8> share1(cuckoo.mBins.size(), (A.mKeys.bitCount() + 7) / 8);
+        //    Matrix<u8> share1(cuckoo.mBins.size(), (leftTable.mKeys.bitCount() + 7) / 8);
         //    mComm.mNext.recv(share1.data(), share1.size());
 
         //    std::vector<u8> temp(share0.cols());
@@ -580,7 +808,7 @@ namespace osuCrypto
         OblvPermutation oblvPerm;
         oblvPerm.send(mComm.mNext, mComm.mPrev, std::move(share1), (std::to_string(mIdx)) + "_cuckoo_hash_send");
 
-        //mEnc.reveal(mRt.mComm, 0, A.mKeys);
+        //mEnc.reveal(mRt.mComm, 0, leftTable.mKeys);
     }
 
     Matrix<u8> ComPsiServer::cuckooHashRecv(span<SharedTable::ColRef> selects)
@@ -621,7 +849,7 @@ namespace osuCrypto
 
 
 
-        //mEnc.reveal(mRt.mComm, 0, A.mKeys);
+        //mEnc.reveal(mRt.mComm, 0, leftTable.mKeys);
 
         //if (ComPsiServer_debug)
         //    mComm.mPrev.asyncSendCopy(share1.data(), share1.size());
@@ -736,14 +964,14 @@ namespace osuCrypto
         auto size = inShares[0].rows();
         
         //auto bitCount = std::accumulate(outColumns.begin(), outColumns.end(), leftJoinCol.mCol.getBitCount(), [](auto iter) { return iter->->mCol.getBitCount();  });
-        auto bitCount = leftJoinCol.mCol.getBitCount();
+        auto byteCount = leftJoinCol.mCol.getByteCount();
         for (auto& c : outColumns)
-            bitCount += c.mCol.getBitCount();
+            byteCount += c.mCol.getByteCount();
 
         std::array<aby3::Sh3::sPackedBin, 3> A;
-        A[0].reset(size, bitCount);
-        A[1].reset(size, bitCount);
-        A[2].reset(size, bitCount);
+        A[0].reset(size, byteCount * 8);
+        A[1].reset(size, byteCount * 8);
+        A[2].reset(size, byteCount * 8);
 
         auto t0 = mEnc.localPackedBinary(mRt.noDependencies(), inShares[0], A[0], true);
         auto t1 = mEnc.localPackedBinary(mRt.noDependencies(), inShares[1], A[1], true);
@@ -936,14 +1164,14 @@ namespace osuCrypto
     {
         auto size = rightJoinCol.mTable.rows();
 
-        auto bitCount = leftJoinCol.mCol.getBitCount();
+        auto byteCount = leftJoinCol.mCol.getByteCount();
         for (auto& c : outColumns)
-            bitCount += c.mCol.getBitCount();
+            byteCount += c.mCol.getByteCount();
 
         aby3::Sh3::sPackedBin
-            A0(size, bitCount),
-            A1(size, bitCount),
-            A2(size, bitCount);
+            A0(size, byteCount * 8),
+            A1(size, byteCount * 8),
+            A2(size, byteCount * 8);
 
         auto t0 = mEnc.remotePackedBinary(mRt.noDependencies(), A0);
         auto t1 = mEnc.remotePackedBinary(mRt.noDependencies(), A1);

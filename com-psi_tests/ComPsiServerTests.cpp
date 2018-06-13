@@ -2,7 +2,7 @@
 #include "com-psi/ComPsiServer.h"
 #include <cryptoTools/Network/IOService.h>
 #include "ComPsiServerTests.h"
-#include <unordered_set>
+#include <unordered_map>
 #include <iomanip>
 using namespace oc;
 
@@ -160,9 +160,10 @@ void ComPsi_cuckooHash_test()
     {
         //a.mColumns[0].mData(i, 0) = i;
         //a.mColumns[1].mData(i, 0) = i;
-
-        prng.get((u8*)a.mColumns[0].mData.row(i).data(), keyBitCount / 8);
-        prng.get((u8*)a.mColumns[1].mData.row(i).data(), 8);
+        u8* d0 = (u8*)a.mColumns[0].mData.row(i).data();
+        u8* d1 = (u8*)a.mColumns[1].mData.row(i).data();
+        prng.get(d0, keyBitCount / 8);
+        prng.get(d1, 8);
         prng.get((u8*)hashs.row(i).data(), keyBitCount / 8);
     }
 
@@ -443,20 +444,28 @@ void ComPsi_Intersect_test()
     srvs[2].init(2, s21, s20);
 
 
-    u32 rows = 1 << 14;
+    u32 rows = 1 << 12;
 
     PRNG prng(ZeroBlock);
 
     auto keyBitCount = srvs[0].mKeyBitCount;
-    Table a(rows, { ColumnInfo{ "key", TypeID::IntID, keyBitCount } })
-        , b(rows, {
+    Table a(rows, {
         ColumnInfo{ "key", TypeID::IntID, keyBitCount },
-        ColumnInfo{ "data", TypeID::IntID, 64}
+        ColumnInfo{ "data3", TypeID::IntID, 32 }
+        }),
+        b(rows, {
+        ColumnInfo{ "key", TypeID::IntID, keyBitCount },
+        ColumnInfo{ "data", TypeID::IntID, 64 },
+        ColumnInfo{ "data2", TypeID::IntID, 128 }
     });
+
+    prng.get(a.mColumns[1].mData.data(), a.mColumns[1].mData.size());
+    prng.get(b.mColumns[1].mData.data(), b.mColumns[1].mData.size());
+    prng.get(b.mColumns[2].mData.data(), b.mColumns[2].mData.size());
 
     auto intersectionSize = (rows + 1) / 2;
 
-    std::unordered_set<i64> map;
+    std::unordered_map<i64, i64> map;
     map.reserve(intersectionSize);
 
     for (u64 i = 0; i < rows; ++i)
@@ -468,13 +477,12 @@ void ComPsi_Intersect_test()
             b.mColumns[0].mData(i, j) = i + 1 + (rows * out);
         }
 
-        b.mColumns[1].mData(i, 0) = 2 * i;
-
+        a.mColumns[1].mData(i) = prng.get<u32>();
         //std::cout << "a[" << i << "] = " << a.mColumns[0](i, 0) << std::endl;
         //std::cout << "b[" << i << "] = " << b.mColumns[0](i, 0) << std::endl;
 
         if (!out)
-            map.emplace(a.mColumns[0].mData(i, 0));
+            map.emplace(a.mColumns[0].mData(i, 0), i);
     }
 
 
@@ -487,73 +495,86 @@ void ComPsi_Intersect_test()
 
         auto C = srvs[i].join(
             /* where  */ A["key"],/* = */ B["key"],
-            /* select */ { A["key"], B["data"] });
+            /* select */ { A["key"], B["data"], B["data2"], A["data3"] });
 
-        aby3::Sh3::i64Matrix c(C.mColumns[0].rows(), C.mColumns[0].i64Cols());
-        aby3::Sh3::i64Matrix c2(C.mColumns[0].rows(), C.mColumns[1].i64Cols());
-        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[0], c);
-        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[1], c2);
+        aby3::Sh3::i64Matrix keys(C.mColumns[0].rows(), C.mColumns[0].i64Cols());
+        aby3::Sh3::i64Matrix data(C.mColumns[1].rows(), C.mColumns[1].i64Cols());
+        aby3::Sh3::i64Matrix data2(C.mColumns[2].rows(), C.mColumns[2].i64Cols());
+        aby3::Sh3::i64Matrix data3(C.mColumns[3].rows(), C.mColumns[3].i64Cols());
+        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[0], keys);
+        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[1], data);
+        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[2], data2);
+        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[3], data3);
 
-        if (c.rows() != intersectionSize)
+        if (keys.rows() != intersectionSize)
         {
             failed = true;
-            std::cout << "bad size, exp: " << intersectionSize << ", act: " << c.rows() << std::endl;
+            std::cout << "bad size, exp: " << intersectionSize << ", act: " << keys.rows() << std::endl;
         }
 
 
-        for (u64 i = 0; i < c.rows(); ++i)
+        for (u64 i = 0; i < keys.rows(); ++i)
         {
-            auto iter = map.find(c(i, 0));
+            auto iter = map.find(keys(i, 0));
             if (iter == map.end())
             {
                 failed = true;
-                std::cout << "bad key in intersection: " << c(i, 0) << " @ " << i << std::endl;
+                std::cout << "bad key in intersection: " << keys(i, 0) << " @ " << i << std::endl;
             }
             else
             {
-                if (c2(i, 0) != 2 * i)
+                auto idx = iter->second;
+                if (data(i, 0) != b.mColumns[1].mData(idx,0))
                 {
                     failed = true;
-                    std::cout << "bad label in intersection: " << c2(i, 0) << " @ " << i << std::endl;
+                    std::cout << "bad data in intersection: " << data(i, 0) << " @ " << i << std::endl;
                 }
+
+                if (data2(i, 0) != b.mColumns[2].mData(idx, 0) ||
+                    data2(i, 1) != b.mColumns[2].mData(idx, 1))
+                {
+                    failed = true;
+                    std::cout << "bad data2 in intersection: " << data2(i, 0) << " " << data2(i, 1) << " @ " << i << std::endl;
+                }
+
+                if (data3(i, 0) != a.mColumns[1].mData(idx, 0))
+                {
+                    failed = true;
+                    std::cout << "bad data3 in intersection: " << std::hex<<data3(i, 0) <<" vs "<< std::hex << a.mColumns[1].mData(idx, 0) << " @ " << std::dec << i << std::endl;
+                }
+
 
                 map.erase(iter);
             }
 
-            //std::cout << "c[" << i << "] = " << c(i, 0) << std::endl;
+            //std::cout << "keys[" << i << "] = " << keys(i, 0) << std::endl;
         }
 
         for (auto& v : map)
         {
-            std::cout << "missing idx " << v << std::endl;
+            std::cout << "missing idx " << v.second << std::endl;
+            failed = true;
         }
     });
 
-    auto t1 = std::thread([&]() {
-        setThreadName("t1");
-        auto i = 1;
+    auto r = [&](int i) {
+        setThreadName("t" + ToString(i));
         auto A = srvs[i].remoteInput(0);
         auto B = srvs[i].remoteInput(0);
 
-        auto C = srvs[i].join(A["key"], B["key"], { A["key"], B["data"] });
-        aby3::Sh3::i64Matrix c(C.mColumns[0].rows(), C.mColumns[0].i64Cols());
-        aby3::Sh3::i64Matrix c2(C.mColumns[0].rows(), C.mColumns[1].i64Cols());
-        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[0], c);
-        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[1], c2);
-    });
-    auto t2 = std::thread([&]() {
-        setThreadName("t2");
-        auto i = 2;
-        auto A = srvs[i].remoteInput(0);
-        auto B = srvs[i].remoteInput(0);
+        auto C = srvs[i].join(A["key"], B["key"], { A["key"], B["data"], B["data2"], A["data3"] });
+        aby3::Sh3::i64Matrix keys(C.mColumns[0].rows(), C.mColumns[0].i64Cols());
+        aby3::Sh3::i64Matrix data(C.mColumns[1].rows(), C.mColumns[1].i64Cols());
+        aby3::Sh3::i64Matrix data2(C.mColumns[2].rows(), C.mColumns[2].i64Cols());
+        aby3::Sh3::i64Matrix data3(C.mColumns[3].rows(), C.mColumns[3].i64Cols());
+        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[0], keys);
+        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[1], data);
+        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[2], data2);
+        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[3], data3);
+    };
 
-        auto C = srvs[i].join(A["key"], B["key"], { A["key"], B["data"] });
-        aby3::Sh3::i64Matrix c(C.mColumns[0].rows(), C.mColumns[0].i64Cols());
-        aby3::Sh3::i64Matrix c2(C.mColumns[0].rows(), C.mColumns[1].i64Cols());
-        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[0], c);
-        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[1], c2);
-    });
-
+    auto t1 = std::thread(r, 1);
+    auto t2 = std::thread(r, 2);
 
 
     t0.join();

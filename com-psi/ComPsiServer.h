@@ -44,6 +44,16 @@ namespace osuCrypto
             std::vector<SharedTable::ColRef> selects
         );
 
+        // take all of the left table and any rows from the right table
+        // where the rightJoinCol key is not in the left table. The returned
+        // table will have the columns specified by leftSelects from the left table
+        // and the rightSelects columns in the right table. Not that the data types
+        // of leftSelects and rightSelects must match.
+        SharedTable leftUnion(
+            SharedTable::ColRef leftJoinCol,
+            SharedTable::ColRef rightJoinCol,
+            std::vector<SharedTable::ColRef> leftSelects,
+            std::vector<SharedTable::ColRef> rightSelects);
 
 
         Matrix<u8> cuckooHashRecv(span<SharedTable::ColRef> selects);
