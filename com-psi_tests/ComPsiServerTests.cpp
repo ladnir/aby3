@@ -322,7 +322,6 @@ void ComPsi_compare_test()
             for (auto& c : outCols)
                 selectBytes += (c.mCol.getBitCount() + 7) / 8;
 
-            std::array<MatrixView<u8>, 3> selects;
             std::array<Matrix<u8>, 3> selects2;
 
             selects2[0].resize(rows, selectBytes);
@@ -354,12 +353,8 @@ void ComPsi_compare_test()
                 }
             }
 
-            selects[0] = selects2[0];
-            selects[1] = selects2[1];
-            selects[2] = selects2[2];
 
-
-            srvs[i].compare(leftJoin, rightJoin, selects, outCols, intersectionFlags);
+            srvs[i].compare(leftJoin, rightJoin, selects2, outCols, intersectionFlags);
             srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), intersectionFlags, plainFlags).get();
             BitIterator iter((u8*)plainFlags.mData.data(), 0);
 
@@ -459,9 +454,10 @@ void ComPsi_Intersect_test()
         ColumnInfo{ "data2", TypeID::IntID, 128 }
     });
 
-    prng.get(a.mColumns[1].mData.data(), a.mColumns[1].mData.size());
-    prng.get(b.mColumns[1].mData.data(), b.mColumns[1].mData.size());
-    prng.get(b.mColumns[2].mData.data(), b.mColumns[2].mData.size());
+    i64* bb1 = b.mColumns[1].mData.data();
+    i64* bb2 = b.mColumns[2].mData.data();
+    prng.get(bb1, b.mColumns[1].mData.size());
+    prng.get(bb2, b.mColumns[2].mData.size());
 
     auto intersectionSize = (rows + 1) / 2;
 

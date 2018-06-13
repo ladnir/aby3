@@ -117,7 +117,7 @@ namespace osuCrypto
     }
 
 
-    void ComPsiServer::p0CheckSelect(MatrixView<u8> cuckooTable, std::array<MatrixView<u8>, 3> a2)
+    void ComPsiServer::p0CheckSelect(MatrixView<u8> cuckooTable, span<Matrix<u8>> a2)
     {
         mComm.mNext.send(cuckooTable.data(), cuckooTable.size());
         mComm.mNext.send(a2[0].data(), a2[0].size());
@@ -135,7 +135,7 @@ namespace osuCrypto
         return ss.str();
     }
 
-    void ComPsiServer::p1CheckSelect(Matrix<u8> cuckooTable, std::array<MatrixView<u8>, 3> a2, aby3::Sh3::i64Matrix& keys)
+    void ComPsiServer::p1CheckSelect(Matrix<u8> cuckooTable, span<Matrix<u8>> a2, aby3::Sh3::i64Matrix& keys)
     {
 
         Matrix<u8> c2(cuckooTable.rows(), cuckooTable.cols());
@@ -330,14 +330,14 @@ namespace osuCrypto
             setTimePoint("intersect_cuckoo_hash");
 
 
-            Matrix<u8> a2(rightTable.rows() * 3, cuckooTable.cols());
-            std::array<MatrixView<u8>, 3> circuitInputShare{
-                MatrixView<u8>(a2.data() + 0 * rightTable.rows() * cuckooTable.cols(), rightTable.rows(), cuckooTable.cols()),
-                MatrixView<u8>(a2.data() + 1 * rightTable.rows() * cuckooTable.cols(), rightTable.rows(), cuckooTable.cols()),
-                MatrixView<u8>(a2.data() + 2 * rightTable.rows() * cuckooTable.cols(), rightTable.rows(), cuckooTable.cols()),
-            };
+            //Matrix<u8> a2(rightTable.rows() * 3, cuckooTable.cols());
+            //span<Matrix<u8>> circuitInputShare{
+            //    MatrixView<u8>(a2.data() + 0 * rightTable.rows() * cuckooTable.cols(), rightTable.rows(), cuckooTable.cols()),
+            //    MatrixView<u8>(a2.data() + 1 * rightTable.rows() * cuckooTable.cols(), rightTable.rows(), cuckooTable.cols()),
+            //    MatrixView<u8>(a2.data() + 2 * rightTable.rows() * cuckooTable.cols(), rightTable.rows(), cuckooTable.cols()),
+            //};
 
-            selectCuckooPos(cuckooTable, circuitInputShare);
+            auto circuitInputShare = selectCuckooPos(cuckooTable, rightTable.rows());
             setTimePoint("intersect_select_cuckoo");
 
 
@@ -364,14 +364,14 @@ namespace osuCrypto
             setTimePoint("intersect_cuckoo_hash");
 
 
-            Matrix<u8> a2(rightTable.rows() * 3, cuckooTable.cols());
-            std::array<MatrixView<u8>, 3> circuitInputShare{
-                MatrixView<u8>(a2.data() + 0 * rightTable.rows() * cuckooTable.cols(), rightTable.rows(), cuckooTable.cols()),
-                MatrixView<u8>(a2.data() + 1 * rightTable.rows() * cuckooTable.cols(), rightTable.rows(), cuckooTable.cols()),
-                MatrixView<u8>(a2.data() + 2 * rightTable.rows() * cuckooTable.cols(), rightTable.rows(), cuckooTable.cols()),
-            };
+            //Matrix<u8> a2(rightTable.rows() * 3, cuckooTable.cols());
+            //span<Matrix<u8>> circuitInputShare{
+            //    MatrixView<u8>(a2.data() + 0 * rightTable.rows() * cuckooTable.cols(), rightTable.rows(), cuckooTable.cols()),
+            //    MatrixView<u8>(a2.data() + 1 * rightTable.rows() * cuckooTable.cols(), rightTable.rows(), cuckooTable.cols()),
+            //    MatrixView<u8>(a2.data() + 2 * rightTable.rows() * cuckooTable.cols(), rightTable.rows(), cuckooTable.cols()),
+            //};
 
-            selectCuckooPos(cuckooTable, circuitInputShare, keys);
+            auto circuitInputShare = selectCuckooPos(cuckooTable, rightTable.rows(), keys);
 
             setTimePoint("intersect_select_cuckoo");
 
@@ -539,7 +539,7 @@ namespace osuCrypto
 
 
             Matrix<u8> a2(B.rows() * 3, cuckooTable.cols());
-            std::array<MatrixView<u8>, 3> A2{
+            span<Matrix<u8>> A2{
                 MatrixView<u8>(a2.data() + 0 * B.rows() * cuckooTable.cols(), B.rows(), cuckooTable.cols()),
                 MatrixView<u8>(a2.data() + 1 * B.rows() * cuckooTable.cols(), B.rows(), cuckooTable.cols()),
                 MatrixView<u8>(a2.data() + 2 * B.rows() * cuckooTable.cols(), B.rows(), cuckooTable.cols()),
@@ -573,7 +573,7 @@ namespace osuCrypto
 
 
             Matrix<u8> a2(B.rows() * 3, cuckooTable.cols());
-            std::array<MatrixView<u8>, 3> A2{
+            span<Matrix<u8>> A2{
                 MatrixView<u8>(a2.data() + 0 * B.rows() * cuckooTable.cols(), B.rows(), cuckooTable.cols()),
                 MatrixView<u8>(a2.data() + 1 * B.rows() * cuckooTable.cols(), B.rows(), cuckooTable.cols()),
                 MatrixView<u8>(a2.data() + 2 * B.rows() * cuckooTable.cols(), B.rows(), cuckooTable.cols()),
@@ -859,22 +859,25 @@ namespace osuCrypto
         return std::move(share1);
     }
 
-    void ComPsiServer::selectCuckooPos(MatrixView<u8> cuckooHashTable, std::array<MatrixView<u8>, 3> dest)
+    std::array<Matrix<u8>, 3> ComPsiServer::selectCuckooPos(MatrixView<u8> cuckooHashTable, u64 rows)
     {
         if (mIdx != 0)
             throw std::runtime_error("");
 
-        if (dest[0].cols() != cuckooHashTable.cols())
-            throw std::runtime_error("");
 
-        auto size = dest[0].rows();
+        auto cols = cuckooHashTable.cols();
+        std::array<Matrix<u8>, 3> dest;
+        dest[0].resize(rows, cols, oc::AllocType::Uninitialized);
+        dest[1].resize(rows, cols, oc::AllocType::Uninitialized);
+        dest[2].resize(rows, cols, oc::AllocType::Uninitialized);
 
         OblvSwitchNet snet(std::to_string(mIdx));
         for (u64 h = 0; h < 3; ++h)
         {
-
             snet.sendRecv(mComm.mNext, mComm.mPrev, cuckooHashTable, dest[h]);
         }
+
+        return std::move(dest);
     }
 
     void ComPsiServer::selectCuckooPos(u32 destRows, u32 srcRows, u32 bytes)
@@ -886,9 +889,9 @@ namespace osuCrypto
         }
     }
 
-    void ComPsiServer::selectCuckooPos(
+    std::array<Matrix<u8>,3> ComPsiServer::selectCuckooPos(
         MatrixView<u8> cuckooHashTable,
-        std::array<MatrixView<u8>, 3> dest,
+        u64 rows,
         aby3::Sh3::i64Matrix & keys)
     {
         if (mIdx != 1)
@@ -899,11 +902,17 @@ namespace osuCrypto
 
         span<block> view((block*)keys.data(), keys.rows());
 
-        if (dest[0].cols() != cuckooHashTable.cols())
-            throw std::runtime_error("");
+        auto cols = cuckooHashTable.cols();
 
-        if (dest[0].rows() != keys.rows())
-            throw std::runtime_error("");
+        std::array<Matrix<u8>, 3> dest;
+        dest[0].resize(rows, cols, oc::AllocType::Uninitialized);
+        dest[1].resize(rows, cols, oc::AllocType::Uninitialized);
+        dest[2].resize(rows, cols, oc::AllocType::Uninitialized);
+        //if (dest[0].cols() != cuckooHashTable.cols())
+        //    throw std::runtime_error("");
+
+        //if (dest[0].rows() != keys.rows())
+        //    throw std::runtime_error("");
 
         OblvSwitchNet snet(std::to_string(mIdx));
 
@@ -952,12 +961,14 @@ namespace osuCrypto
             snet.program(mComm.mNext, mComm.mPrev, progs[h], mPrng, dest[h], OutputType::Additive);
         }
 
+
+        return std::move(dest);
     }
 
     void ComPsiServer::compare(
         SharedTable::ColRef leftJoinCol,
         SharedTable::ColRef rightJoinCol,
-        std::array<MatrixView<u8>, 3> inShares, 
+        span<Matrix<u8>> inShares, 
         span<SharedTable::ColRef> outColumns, 
         aby3::Sh3::sPackedBin& outFlags)
     {

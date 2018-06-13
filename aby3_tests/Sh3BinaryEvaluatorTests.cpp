@@ -131,11 +131,16 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
     debugComm[2] = { comms[2].mPrev.getSession().addChannel(), comms[2].mNext.getSession().addChannel() };
 
     cir->levelByAndDepth();
-    u64 width = 1 << 12;
+    u64 width = 1 << 8;
     bool failed = false;
     //bool manual = false;
 
     enum Mode { Manual, Auto, Replicated };
+
+
+    auto aSize = cir->mInputs[0].size();
+    auto bSize = cir->mInputs[1].size();
+    auto cSize = cir->mOutputs[0].size();
 
     auto t0 = std::thread([&]() {
         auto i = 0;
@@ -152,8 +157,8 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
 
         Sh3Runtime rt(i, comms[i]);
 
-        Sh3::sbMatrix A(width, 64), B(width, 64), C(width, cir->mOutputs[0].size());
-        Sh3::sbMatrix Ar(1, 64);
+        Sh3::sbMatrix A(width, aSize), B(width, bSize), C(width, cSize);
+        Sh3::sbMatrix Ar(1, aSize);
 
         Sh3Encryptor enc;
         enc.init(i, toBlock(i), toBlock(i + 1));
@@ -220,7 +225,7 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
 
         Sh3Runtime rt(i, comms[i]);
 
-        Sh3::sbMatrix A(width, 64), B(width, 64), C(width, cir->mOutputs[0].size()), Ar(1, 64);
+        Sh3::sbMatrix A(width, aSize), B(width, bSize), C(width, cSize), Ar(1, aSize);
 
         Sh3Encryptor enc;
         enc.init(i, toBlock(i), toBlock((i + 1) % 3));
@@ -285,15 +290,15 @@ void Sh3_BinaryEngine_and_test()
 {
 
     BetaLibrary lib;
-    u64 size = 64, width = 1;
-
+    u64 size = 8;
+    u64 mask = ~((~0ull) << size);
     // and
     {
         auto cir = lib.int_int_bitwiseAnd(size, size, size);
         cir->levelByAndDepth();
 
-        Sh3_BinaryEngine_test(cir, [](i64 a, i64 b) {return a & b; }, true);
-        Sh3_BinaryEngine_test(cir, [](i64 a, i64 b) {return a & b; }, false);
+        Sh3_BinaryEngine_test(cir, [](i64 a, i64 b) {return a & b; }, true, mask);
+        Sh3_BinaryEngine_test(cir, [](i64 a, i64 b) {return a & b; }, false, mask);
     }
 
     // na_and
@@ -322,7 +327,7 @@ void Sh3_BinaryEngine_and_test()
 
         Sh3_BinaryEngine_test(cd, [](i64 a, i64 b) {
             return ~a & b;
-        }, false);
+        }, false, mask);
 
     }
 
@@ -333,11 +338,12 @@ void Sh3_BinaryEngine_add_test()
 {
 
     BetaLibrary lib;
-    u64 size = 64, width = 1;
+    u64 size = 8;
+    u64 mask = ~((~0ull) << size); 
     auto cir = lib.int_int_add(size, size, size, BetaLibrary::Optimized::Depth);
 
-    Sh3_BinaryEngine_test(cir, [](i64 a, i64 b) {return a + b; }, true);
-    Sh3_BinaryEngine_test(cir, [](i64 a, i64 b) {return a + b; }, false);
+    Sh3_BinaryEngine_test(cir, [mask](i64 a, i64 b) {return (a + b) & mask; }, true, mask);
+    Sh3_BinaryEngine_test(cir, [mask](i64 a, i64 b) {return (a + b) & mask; }, false, mask);
 
 }
 
@@ -345,9 +351,10 @@ void Sh3_BinaryEngine_add_test()
 void Sh3_BinaryEngine_add_msb_test()
 {
     BetaLibrary lib;
-    u64 size = 64, width = 1;
+    u64 size =8;
+    u64 mask = ~((~0ull) << size);
     auto cir = lib.int_int_add_msb(size);
 
-    Sh3_BinaryEngine_test(cir, [size](i64 a, i64 b) {return ((a + b) >> (size - 1)) & 1; }, true);
-    Sh3_BinaryEngine_test(cir, [size](i64 a, i64 b) {return ((a + b) >> (size - 1)) & 1; }, false);
+    Sh3_BinaryEngine_test(cir, [size](i64 a, i64 b) {return ((a + b) >> (size - 1)) & 1; }, true, mask);
+    Sh3_BinaryEngine_test(cir, [size](i64 a, i64 b) {return ((a + b) >> (size - 1)) & 1; }, false, mask);
 }

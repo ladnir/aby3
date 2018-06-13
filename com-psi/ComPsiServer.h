@@ -61,15 +61,15 @@ namespace osuCrypto
         Matrix<u8> cuckooHash(span<SharedTable::ColRef> selects, aby3::Sh3::i64Matrix& keys);
 
 
-        void selectCuckooPos(MatrixView<u8> cuckooHashTable, std::array<MatrixView<u8>, 3> dest);
+        std::array<Matrix<u8>, 3> selectCuckooPos(MatrixView<u8> cuckooHashTable, u64 destRows);
+        std::array<Matrix<u8>, 3> selectCuckooPos(MatrixView<u8> cuckooHashTable, u64 destRows, aby3::Sh3::i64Matrix& keys);
         void selectCuckooPos(u32 destRows, u32 srcRows, u32 bytes);
-        void selectCuckooPos(MatrixView<u8> cuckooHashTable, std::array<MatrixView<u8>, 3> dest, aby3::Sh3::i64Matrix& keys);
 
 
         void compare(
             SharedTable::ColRef leftJoinCol,
             SharedTable::ColRef rightJoinCol,
-            std::array<MatrixView<u8>,3> leftInData, 
+            span<Matrix<u8>> leftInData, 
             span<SharedTable::ColRef> outcolumns, 
             aby3::Sh3::sPackedBin& outFlags);
 
@@ -92,8 +92,8 @@ namespace osuCrypto
 
 
 
-        void p0CheckSelect(MatrixView<u8> cuckoo, std::array<MatrixView<u8>, 3> a2);
-        void p1CheckSelect(Matrix<u8> cuckoo, std::array<MatrixView<u8>, 3> a2, aby3::Sh3::i64Matrix& keys);
+        void p0CheckSelect(MatrixView<u8> cuckoo, span<Matrix<u8>> a2);
+        void p1CheckSelect(Matrix<u8> cuckoo, span<Matrix<u8>> a2, aby3::Sh3::i64Matrix& keys);
     };
 
 }
