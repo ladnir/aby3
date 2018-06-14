@@ -603,3 +603,190 @@ void ComPsi_Intersect_test(u32 rows, u32 rows2)
     //srvs[0].intersect(A, B);
 }
 
+
+
+void ComPsi_leftUnion_test()
+{
+
+    IOService ios;
+    Session s01(ios, "127.0.0.1", SessionMode::Server, "01");
+    Session s10(ios, "127.0.0.1", SessionMode::Client, "01");
+    Session s02(ios, "127.0.0.1", SessionMode::Server, "02");
+    Session s20(ios, "127.0.0.1", SessionMode::Client, "02");
+    Session s12(ios, "127.0.0.1", SessionMode::Server, "12");
+    Session s21(ios, "127.0.0.1", SessionMode::Client, "12");
+
+
+    ComPsiServer srvs[3];
+    srvs[0].init(0, s02, s01);
+    srvs[1].init(1, s10, s12);
+    srvs[2].init(2, s21, s20);
+
+    auto left = 1 << 4;
+    auto mid = 1 << 5;
+    auto right = 1 << 7;
+
+    PRNG prng(ZeroBlock);
+
+    auto keyBitCount = srvs[0].mKeyBitCount;
+    Table 
+        a(left + mid, {
+            ColumnInfo{ "key", TypeID::IntID, keyBitCount }
+            ,ColumnInfo{ "data", TypeID::IntID, 64 }
+            }),
+        b(right + mid, {
+            ColumnInfo{ "key", TypeID::IntID, keyBitCount }
+            ,ColumnInfo{ "data", TypeID::IntID, 64 }
+            //,ColumnInfo{ "data2", TypeID::IntID, 128 }
+            });
+
+
+    std::unordered_map<i64, i64> map;
+    map.reserve(mid);
+    auto total = left + mid + right;
+
+    auto th0 = right + mid;
+    // initialize a
+    for (u64 i = 0; i < total; ++i)
+    {
+
+        auto v = i + 1;
+        if (i < th0)
+        {
+            for (u64 j = 0; j < a.mColumns[0].mData.cols(); ++j)
+            {
+                b.mColumns[0].mData(i, j) = v;
+                b.mColumns[1].mData(i, 0) = v * 2;
+            }
+        }
+
+        if (i >= right)
+        {
+            for (u64 j = 0; j < b.mColumns[0].mData.cols(); ++j)
+            {
+                a.mColumns[0].mData(i - right, j) = v;
+                a.mColumns[1].mData(i - right, 0) = v * 3;
+            }
+        }
+
+        map.emplace(v, i);
+    }
+
+    //// initialize b
+    //for (u64 i = 0; i < rows2; ++i)
+    //{
+    //    auto out = (i >= intersectionSize);
+    //    for (u64 j = 0; j < b.mColumns[0].mData.cols(); ++j)
+    //        b.mColumns[0].mData(i, j) = i + 1 + (rows * out);
+    //}
+    //i64* bb1 = b.mColumns[1].mData.data();
+    //i64* bb2 = b.mColumns[2].mData.data();
+    //prng.get(bb1, b.mColumns[1].mData.size());
+    //prng.get(bb2, b.mColumns[2].mData.size());
+
+    bool failed = false;
+    auto t0 = std::thread([&]() {
+        setThreadName("t0");
+        auto i = 0;
+        auto A = srvs[i].localInput(a);
+        auto B = srvs[i].localInput(b);
+
+        auto C = srvs[i].rightUnion(
+            /* where  */ A["key"],/* = */ B["key"],
+            /* select */ { A["key"], A["data"] },
+            /* and    */ { B["key"], B["data"] });
+
+        aby3::Sh3::i64Matrix keys(C.mColumns[0].rows(), C.mColumns[0].i64Cols());
+        aby3::Sh3::i64Matrix data(C.mColumns[1].rows(), C.mColumns[1].i64Cols());
+        //aby3::Sh3::i64Matrix data2(C.mColumns[2].rows(), C.mColumns[2].i64Cols());
+        //aby3::Sh3::i64Matrix data3(C.mColumns[3].rows(), C.mColumns[3].i64Cols());
+        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[0], keys);
+        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[1], data);
+        //srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[2], data2);
+        //srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[3], data3);
+
+        if (keys.rows() != total)
+        {
+            failed = true;
+            std::cout << "bad size, exp: " << total << ", act: " << keys.rows() << std::endl;
+        }
+
+        //for (u64 i = 0; i < keys.rows(); ++i)
+        //    std::cout << "u[" << i << "] = " << keys(i, 0) << std::endl;
+
+        for (u64 i = 0; i < keys.rows(); ++i)
+        {
+            auto iter = map.find(keys(i, 0));
+            if (iter == map.end())
+            {
+                failed = true;
+                std::cout << "bad key in union: " << keys(i, 0) << " @ " << i << std::endl;
+            }
+            else
+            {
+    
+                auto idx = iter->second;
+                auto exp = idx < th0 ?  b.mColumns[1].mData(idx, 0) : a.mColumns[1].mData(idx - right, 0);
+
+                if (data(i, 0) != exp)
+                {
+                    failed = true;
+                    std::cout << "bad data in union: " << data(i, 0) <<" != " << exp << " @ " << i << std::endl;
+                }
+                map.erase(iter);
+
+            //    if (data2(i, 0) != b.mColumns[2].mData(idx, 0) ||
+            //        data2(i, 1) != b.mColumns[2].mData(idx, 1))
+            //    {
+            //        failed = true;
+            //        std::cout << "bad data2 in intersection: " << data2(i, 0) << " " << data2(i, 1) << " @ " << i << std::endl;
+            //    }
+
+            //    if (data3(i, 0) != a.mColumns[1].mData(idx, 0))
+            //    {
+            //        failed = true;
+            //        std::cout << "bad data3 in intersection: " << std::hex << data3(i, 0) << " vs " << std::hex << a.mColumns[1].mData(idx, 0) << " @ " << std::dec << i << std::endl;
+            //    }
+
+            }
+
+            //std::cout << "keys[" << i << "] = " << keys(i, 0) << std::endl;
+        }
+
+        for (auto& v : map)
+        {
+            std::cout << "missing idx " << v.second << std::endl;
+            failed = true;
+        }
+    });
+
+    auto r = [&](int i) {
+        setThreadName("t" + ToString(i));
+        auto A = srvs[i].remoteInput(0);
+        auto B = srvs[i].remoteInput(0);
+
+        auto C = srvs[i].rightUnion(A["key"], B["key"], { A["key"], A["data"] }, { B["key"], B["data"] });
+        aby3::Sh3::i64Matrix keys(C.mColumns[0].rows(), C.mColumns[0].i64Cols());
+        aby3::Sh3::i64Matrix data(C.mColumns[1].rows(), C.mColumns[1].i64Cols());
+        //aby3::Sh3::i64Matrix data2(C.mColumns[2].rows(), C.mColumns[2].i64Cols());
+        //aby3::Sh3::i64Matrix data3(C.mColumns[3].rows(), C.mColumns[3].i64Cols());
+        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[0], keys);
+        srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[1], data);
+        //srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[2], data2);
+        //srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[3], data3);
+    };
+
+    auto t1 = std::thread(r, 1);
+    auto t2 = std::thread(r, 2);
+
+
+    t0.join();
+    t1.join();
+    t2.join();
+
+    if (failed)
+        throw std::runtime_error("");
+
+    //srvs[0].intersect(A, B);
+}
+

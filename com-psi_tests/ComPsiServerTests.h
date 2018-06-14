@@ -7,3 +7,5 @@ void ComPsi_compare_test();
 void ComPsi_Intersect_test(); 
 void ComPsi_Intersect_sl_test();
 void ComPsi_Intersect_ls_test();
+
+void ComPsi_leftUnion_test();

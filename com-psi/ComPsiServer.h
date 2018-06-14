@@ -49,19 +49,27 @@ namespace osuCrypto
         // table will have the columns specified by leftSelects from the left table
         // and the rightSelects columns in the right table. Not that the data types
         // of leftSelects and rightSelects must match.
-        SharedTable leftUnion(
+        SharedTable rightUnion(
             SharedTable::ColRef leftJoinCol,
             SharedTable::ColRef rightJoinCol,
             std::vector<SharedTable::ColRef> leftSelects,
             std::vector<SharedTable::ColRef> rightSelects);
+
+        void constructOutTable(
+            std::vector<SharedTable::ColRef> &circuitInputCols,
+            std::vector<SharedTable::ColRef> &circuitOutCols,
+            SharedTable &C,
+            const SharedTable::ColRef &rightJoinCol,
+            const SharedTable::ColRef &leftJoinCol,
+            const span<SharedTable::ColRef> select,
+            const size_t numRows);
 
 
         std::array<Matrix<u8>, 3> mapRightTableToLeft(
             aby3::Sh3::i64Matrix& keys,
             span<SharedTable::ColRef> circuitInputCols,
             SharedTable& leftTable,
-            SharedTable& rightTable,
-            u64 selectByteCount);
+            SharedTable& rightTable);
 
         Matrix<u8> cuckooHashRecv(span<SharedTable::ColRef> selects);
         void cuckooHashSend(span<SharedTable::ColRef> selects, CuckooParam& cuckooParams);
@@ -80,19 +88,19 @@ namespace osuCrypto
             span<Matrix<u8>> leftInData, 
             span<SharedTable::ColRef> outcolumns);
 
-        //void compare(
-        //    SharedTable::ColRef leftJoinCol,
-        //    SharedTable::ColRef rightJoinCol,
-        //    span<SharedTable::ColRef> outColumns,
-        //    aby3::Sh3::sPackedBin& outGlafs);
+        aby3::Sh3::sPackedBin unionCompare(
+            SharedTable::ColRef leftJoinCol,
+            SharedTable::ColRef rightJoinCol,
+            span<Matrix<u8>> leftInData);
 
         aby3::Sh3::i64Matrix computeKeys(span<SharedTable::ColRef> tables, span<u64> reveals);
 
 
-        BetaCircuit getBasicCompare(
+        BetaCircuit getBasicCompareCircuit(
             SharedTable::ColRef leftJoinCol,
             span<SharedTable::ColRef> cols);
-        //LowMC2<> mLowMC;
+
+
         BetaCircuit mLowMCCir;
 
         CuckooIndex<CuckooTypes::NotThreadSafe> mCuckoo;

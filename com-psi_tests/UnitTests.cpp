@@ -18,5 +18,5 @@ oc::TestCollection ComPsi_tests([](oc::TestCollection& tc) {
     tc.add("ComPsi_Intersect_test        ", ComPsi_Intersect_test);
     tc.add("ComPsi_Intersect_sl_test     ", ComPsi_Intersect_sl_test);
     tc.add("ComPsi_Intersect_ls_test     ", ComPsi_Intersect_ls_test);
-
+    tc.add("ComPsi_leftUnion_test        ", ComPsi_leftUnion_test);
 });
