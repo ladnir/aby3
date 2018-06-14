@@ -56,28 +56,35 @@ namespace osuCrypto
             std::vector<SharedTable::ColRef> rightSelects);
 
 
+        std::array<Matrix<u8>, 3> mapRightTableToLeft(
+            aby3::Sh3::i64Matrix& keys,
+            span<SharedTable::ColRef> circuitInputCols,
+            SharedTable& leftTable,
+            SharedTable& rightTable,
+            u64 selectByteCount);
+
         Matrix<u8> cuckooHashRecv(span<SharedTable::ColRef> selects);
         void cuckooHashSend(span<SharedTable::ColRef> selects, CuckooParam& cuckooParams);
-        Matrix<u8> cuckooHash(span<SharedTable::ColRef> selects, aby3::Sh3::i64Matrix& keys);
+        Matrix<u8> cuckooHash(span<SharedTable::ColRef> selects, CuckooParam& params, aby3::Sh3::i64Matrix& keys);
 
 
         std::array<Matrix<u8>, 3> selectCuckooPos(MatrixView<u8> cuckooHashTable, u64 destRows);
-        std::array<Matrix<u8>, 3> selectCuckooPos(MatrixView<u8> cuckooHashTable, u64 destRows, aby3::Sh3::i64Matrix& keys);
+        std::array<Matrix<u8>, 3> selectCuckooPos(MatrixView<u8> cuckooHashTable, u64 destRows,
+            CuckooParam& cuckooParams, aby3::Sh3::i64Matrix& keys);
         void selectCuckooPos(u32 destRows, u32 srcRows, u32 bytes);
 
 
-        void compare(
+        aby3::Sh3::sPackedBin compare(
             SharedTable::ColRef leftJoinCol,
             SharedTable::ColRef rightJoinCol,
             span<Matrix<u8>> leftInData, 
-            span<SharedTable::ColRef> outcolumns, 
-            aby3::Sh3::sPackedBin& outFlags);
+            span<SharedTable::ColRef> outcolumns);
 
-        void compare(
-            SharedTable::ColRef leftJoinCol,
-            SharedTable::ColRef rightJoinCol,
-            span<SharedTable::ColRef> outColumns,
-            aby3::Sh3::sPackedBin& outGlafs);
+        //void compare(
+        //    SharedTable::ColRef leftJoinCol,
+        //    SharedTable::ColRef rightJoinCol,
+        //    span<SharedTable::ColRef> outColumns,
+        //    aby3::Sh3::sPackedBin& outGlafs);
 
         aby3::Sh3::i64Matrix computeKeys(span<SharedTable::ColRef> tables, span<u64> reveals);
 

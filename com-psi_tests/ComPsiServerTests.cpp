@@ -155,6 +155,7 @@ void ComPsi_cuckooHash_test()
         ColumnInfo{ "key", TypeID::IntID, keyBitCount } ,
         ColumnInfo{ "data", TypeID::IntID, 64 }
         });
+    auto cuckooParams = CuckooIndex<>::selectParams(rows, ComPsiServer_ssp, 0, 3);
 
     for (u64 i = 0; i < rows; ++i)
     {
@@ -176,7 +177,7 @@ void ComPsi_cuckooHash_test()
         auto A = srvs[i].localInput(a);
         std::vector<SharedTable::ColRef> select{ A["key"], A["data"] };
 
-        m1 = srvs[i].cuckooHash(select, hashs);
+        m1 = srvs[i].cuckooHash(select, cuckooParams, hashs);
     });
 
 
@@ -193,7 +194,6 @@ void ComPsi_cuckooHash_test()
         setThreadName("t_" + ToString(i));
         auto A = srvs[i].remoteInput(0);
         std::vector<SharedTable::ColRef> select{ A["key"] , A["data"] };
-        auto cuckooParams = CuckooIndex<>::selectParams(rows, ComPsiServer_ssp, 0, 3);
         srvs[i].cuckooHashSend(select, cuckooParams);
     });
 
@@ -308,7 +308,6 @@ void ComPsi_compare_test()
         C.mColumns[1].mShares[1].setZero();
 
         aby3::Sh3::PackedBin plainFlags(B.rows(), 1);
-        aby3::Sh3::sPackedBin intersectionFlags(B.rows(), 1);
 
         if (i < 2)
         {
@@ -354,7 +353,7 @@ void ComPsi_compare_test()
             }
 
 
-            srvs[i].compare(leftJoin, rightJoin, selects2, outCols, intersectionFlags);
+            auto intersectionFlags = srvs[i].compare(leftJoin, rightJoin, selects2, outCols);
             srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), intersectionFlags, plainFlags).get();
             BitIterator iter((u8*)plainFlags.mData.data(), 0);
 
@@ -399,7 +398,7 @@ void ComPsi_compare_test()
             auto leftJoin = B["key"];
             auto rightJoin = B["key"];
 
-            srvs[i].compare(leftJoin, rightJoin, outCols, intersectionFlags);
+            auto intersectionFlags = srvs[i].compare(leftJoin, rightJoin, {}, outCols);
             srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), intersectionFlags, plainFlags).get();
 
             aby3::Sh3::i64Matrix c(C.rows(), C.mColumns[0].i64Cols()), c1(C.rows(), 1);
@@ -420,8 +419,26 @@ void ComPsi_compare_test()
     if (failed)
         throw RTE_LOC;
 }
+void ComPsi_Intersect_test(u32 rows, u32 rows2);
 
 void ComPsi_Intersect_test()
+{
+    ComPsi_Intersect_test(1 << 12, 1 << 12);
+}
+
+
+void ComPsi_Intersect_sl_test()
+{
+    ComPsi_Intersect_test(1 << 5, 1 << 12);
+}
+
+void ComPsi_Intersect_ls_test()
+{
+    ComPsi_Intersect_test(1 << 12, 1 << 5);
+}
+
+
+void ComPsi_Intersect_test(u32 rows, u32 rows2)
 {
 
     IOService ios;
@@ -439,7 +456,6 @@ void ComPsi_Intersect_test()
     srvs[2].init(2, s21, s20);
 
 
-    u32 rows = 1 << 12;
 
     PRNG prng(ZeroBlock);
 
@@ -448,39 +464,43 @@ void ComPsi_Intersect_test()
         ColumnInfo{ "key", TypeID::IntID, keyBitCount },
         ColumnInfo{ "data3", TypeID::IntID, 32 }
         }),
-        b(rows, {
+        b(rows2, {
         ColumnInfo{ "key", TypeID::IntID, keyBitCount },
         ColumnInfo{ "data", TypeID::IntID, 64 },
         ColumnInfo{ "data2", TypeID::IntID, 128 }
     });
 
-    i64* bb1 = b.mColumns[1].mData.data();
-    i64* bb2 = b.mColumns[2].mData.data();
-    prng.get(bb1, b.mColumns[1].mData.size());
-    prng.get(bb2, b.mColumns[2].mData.size());
 
-    auto intersectionSize = (rows + 1) / 2;
+    auto intersectionSize = (std::min(rows, rows2) + 1) / 2;
 
     std::unordered_map<i64, i64> map;
     map.reserve(intersectionSize);
 
+
+    // initialize a
     for (u64 i = 0; i < rows; ++i)
     {
-        auto out = (i >= intersectionSize);
         for (u64 j = 0; j < a.mColumns[0].mData.cols(); ++j)
-        {
             a.mColumns[0].mData(i, j) = i + 1;
-            b.mColumns[0].mData(i, j) = i + 1 + (rows * out);
-        }
 
         a.mColumns[1].mData(i) = prng.get<u32>();
-        //std::cout << "a[" << i << "] = " << a.mColumns[0](i, 0) << std::endl;
-        //std::cout << "b[" << i << "] = " << b.mColumns[0](i, 0) << std::endl;
 
+        auto out = (i >= intersectionSize);
         if (!out)
             map.emplace(a.mColumns[0].mData(i, 0), i);
     }
 
+    // initialize b
+    for (u64 i = 0; i < rows2; ++i)
+    {
+        auto out = (i >= intersectionSize);
+        for (u64 j = 0; j < b.mColumns[0].mData.cols(); ++j)
+            b.mColumns[0].mData(i, j) = i + 1 + (rows * out);
+    }
+    i64* bb1 = b.mColumns[1].mData.data();
+    i64* bb2 = b.mColumns[2].mData.data();
+    prng.get(bb1, b.mColumns[1].mData.size());
+    prng.get(bb2, b.mColumns[2].mData.size());
 
     bool failed = false;
     auto t0 = std::thread([&]() {

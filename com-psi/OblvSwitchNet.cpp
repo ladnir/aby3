@@ -16,6 +16,9 @@ namespace osuCrypto
         if (s != ss.str())
             throw RTE_LOC;
 
+        TODO("make sure this resize is a no-op by reserving enough before...");
+        if (src.rows() < dest.rows())
+            src.resize(dest.rows(), src.cols());
 
         sendSelect(programChl, helpChl, std::move(src));
         helpDuplicate(programChl, dest.rows(), dest.cols());
@@ -158,12 +161,9 @@ namespace osuCrypto
 
 
 
-
-        std::vector<u32> perm1(prog.mSrcSize, -1);
+        auto size = std::max<u64>(prog.mSrcDests.size(), prog.mSrcSize);
+        std::vector<u32> perm1(size, -1);
         auto switchIdx = 0;
-        auto permIdx = 0;
-        auto destIdx = prog.mSrcDests.size();
-        auto next = dest.rows();
 
         while (switchIdx < prog.mSrcDests.size())
         {

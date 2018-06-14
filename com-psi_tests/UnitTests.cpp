@@ -16,5 +16,7 @@ oc::TestCollection ComPsi_tests([](oc::TestCollection& tc) {
     tc.add("ComPsi_cuckooHash_test       ", ComPsi_cuckooHash_test);
     tc.add("ComPsi_compare_test          ", ComPsi_compare_test);
     tc.add("ComPsi_Intersect_test        ", ComPsi_Intersect_test);
+    tc.add("ComPsi_Intersect_sl_test     ", ComPsi_Intersect_sl_test);
+    tc.add("ComPsi_Intersect_ls_test     ", ComPsi_Intersect_ls_test);
 
 });
