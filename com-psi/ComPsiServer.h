@@ -41,7 +41,27 @@ namespace osuCrypto
         SharedTable join(
             SharedTable::ColRef leftJoinCol,
             SharedTable::ColRef rightJoinCol,
-            std::vector<SharedTable::ColRef> selects
+            std::vector<SharedTable::ColRef> selects)
+        {
+            return joinImpl(leftJoinCol, rightJoinCol, selects, "");
+        }
+
+
+        SharedTable leftJoin(
+            SharedTable::ColRef leftJoinCol,
+            SharedTable::ColRef rightJoinCol,
+            std::vector<SharedTable::ColRef> selects,
+            std::string leftJoinColName)
+        {
+            return joinImpl(leftJoinCol, rightJoinCol, selects, leftJoinColName);
+        }
+            
+
+        SharedTable joinImpl(
+            SharedTable::ColRef leftJoinCol,
+            SharedTable::ColRef rightJoinCol,
+            std::vector<SharedTable::ColRef> selects,
+            std::string leftJoinColName
         );
 
         // take all of the left table and any rows from the right table
@@ -62,7 +82,8 @@ namespace osuCrypto
             const SharedTable::ColRef &rightJoinCol,
             const SharedTable::ColRef &leftJoinCol,
             const span<SharedTable::ColRef> select,
-            const size_t numRows);
+            const size_t numRows,
+            const bool leftJoin);
 
 
         std::array<Matrix<u8>, 3> mapRightTableToLeft(
@@ -103,7 +124,6 @@ namespace osuCrypto
 
         BetaCircuit mLowMCCir;
 
-        CuckooIndex<CuckooTypes::NotThreadSafe> mCuckoo;
 
 
 

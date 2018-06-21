@@ -19,10 +19,14 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="eric.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="..\..\libOTe\cryptoTools\cryptoTools\gsl\GSL.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="eric.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

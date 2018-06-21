@@ -10,6 +10,7 @@
 #include <cryptoTools/Network/IOService.h>
 #include <atomic>
 #include "com-psi/ComPsiServer.h"
+#include "eric.h"
 
 using namespace oc;
 std::vector<std::string> unitTestTag{"u", "unitTest"};
@@ -173,10 +174,24 @@ int main(int argc, char** argv)
                 tests.runAll(loop);
         }
     }
+    if (cmd.isSet("eric"))
+    {
+        auto nn = cmd.getMany<int>("nn");
+        if (nn.size() == 0)
+            nn.push_back(1 << 16);
+
+        for (auto n : nn)
+        {
+            eric(n);
+        }
+    }
+
 
     if (cmd.isSet("intersect"))
     {
         auto nn = cmd.getMany<int>("nn");
+        if (nn.size() == 0)
+            nn.push_back(1 << 16);
 
         for (auto n : nn)
         {

@@ -2,6 +2,7 @@
 #include "OblvPermutation.h"
 #include <iomanip>
 #include "OblvSwitchNet.h"
+#include "aby3/Engines/sh3/Sh3Converter.h"
 
 namespace osuCrypto
 {
@@ -240,16 +241,17 @@ namespace osuCrypto
     }
 
 
-    SharedTable ComPsiServer::join(
+    SharedTable ComPsiServer::joinImpl(
         SharedTable::ColRef leftJoinCol,
         SharedTable::ColRef rightJoinCol,
-        std::vector<SharedTable::ColRef> selects)
+        std::vector<SharedTable::ColRef> selects,
+        std::string leftJoinFlagName)
     {
 
         setTimePoint("intersect_start");
         auto& leftTable = leftJoinCol.mTable;
         auto& rightTable = rightJoinCol.mTable;
-
+        auto hideIntersection = leftJoinFlagName.size();
 
         // all of the columns out of the right table that need to be selected.
         SharedTable C;
@@ -258,7 +260,7 @@ namespace osuCrypto
             // outputs
             circuitInputCols, circuitOutCols, C,
             // inputs 
-            rightJoinCol, leftJoinCol, selects , leftJoinCol.mCol.rows());
+            rightJoinCol, leftJoinCol, selects, leftJoinCol.mCol.rows(), hideIntersection);
 
 
         std::vector<SharedTable::ColRef> srcColumns; srcColumns.reserve(selects.size());
@@ -306,42 +308,59 @@ namespace osuCrypto
 
         setTimePoint("intersect_compare");
 
-        aby3::Sh3::PackedBin plainFlags(leftTable.rows(), 1);
-        mEnc.revealAll(mRt.noDependencies(), intersectionFlags, plainFlags).get();
-        setTimePoint("intersect_done");
-        BitIterator iter((u8*)plainFlags.mData.data(), 0);
-
-        std::vector<u64> sizes(srcColumns.size());
-        for (u64 i = 0; i < sizes.size(); ++i)
-            sizes[i] = srcColumns[i].mCol.getByteCount();
-
-        auto size = 0;
-        for (u64 i = 0; i < leftTable.rows(); ++i)
+        if (leftJoinFlagName.size())
         {
+            aby3::Sh3Converter convt;
+            convt.toBinaryMatrix(intersectionFlags, C.mColumns.back());
+            C.mColumns.back().mName = leftJoinFlagName;
 
-            //std::cout << mIdx << " " << i << " " << *iter << std::endl;;
-            if (*iter)
+            for (u64 j = 0; j < srcColumns.size(); ++j)
             {
-                for (u64 j = 0; j < srcColumns.size(); ++j)
+                if (&srcColumns[j].mCol != &C.mColumns[j])
                 {
-                    auto s0 = &srcColumns[j].mCol.mShares[0](i, 0);
-                    auto s1 = &srcColumns[j].mCol.mShares[1](i, 0);
-                    auto d0 = &C.mColumns[j].mShares[0](size, 0);
-                    auto d1 = &C.mColumns[j].mShares[1](size, 0);
+                    C.mColumns[j].mShares = srcColumns[j].mCol.mShares;
+                }
+            }
+        }
+        else
+        {
+            aby3::Sh3::PackedBin plainFlags(leftTable.rows(), 1);
+            mEnc.revealAll(mRt.noDependencies(), intersectionFlags, plainFlags).get();
+            setTimePoint("intersect_done");
+            BitIterator iter((u8*)plainFlags.mData.data(), 0);
 
-                    memmove(d0, s0, sizes[j]);
-                    memmove(d1, s1, sizes[j]);
+            std::vector<u64> sizes(srcColumns.size());
+            for (u64 i = 0; i < sizes.size(); ++i)
+                sizes[i] = srcColumns[i].mCol.getByteCount();
+
+            auto size = 0;
+            for (u64 i = 0; i < leftTable.rows(); ++i)
+            {
+
+                //std::cout << mIdx << " " << i << " " << *iter << std::endl;;
+                if (*iter)
+                {
+                    for (u64 j = 0; j < srcColumns.size(); ++j)
+                    {
+                        auto s0 = &srcColumns[j].mCol.mShares[0](i, 0);
+                        auto s1 = &srcColumns[j].mCol.mShares[1](i, 0);
+                        auto d0 = &C.mColumns[j].mShares[0](size, 0);
+                        auto d1 = &C.mColumns[j].mShares[1](size, 0);
+
+                        memmove(d0, s0, sizes[j]);
+                        memmove(d1, s1, sizes[j]);
+                    }
+
+                    ++size;
                 }
 
-                ++size;
+                ++iter;
             }
 
-            ++iter;
-        }
-
-        for (u64 j = 0; j < C.mColumns.size(); ++j)
-        {
-            C.mColumns[j].resize(size, C.mColumns[j].getBitCount());
+            for (u64 j = 0; j < C.mColumns.size(); ++j)
+            {
+                C.mColumns[j].resize(size, C.mColumns[j].getBitCount());
+            }
         }
 
         return C;
@@ -376,7 +395,7 @@ namespace osuCrypto
         // all of the columns out of the right table that need to be selected.
         std::vector<SharedTable::ColRef> circuitInputCols, circuitOutCols;
         SharedTable C;
-        constructOutTable(circuitInputCols, circuitOutCols, C, rightJoinCol, leftJoinCol, leftSelects, maxRows);
+        constructOutTable(circuitInputCols, circuitOutCols, C, rightJoinCol, leftJoinCol, leftSelects, maxRows, false);
 
         std::array<SharedTable::ColRef, 2> AB{ leftJoinCol,rightJoinCol };
         std::array<u64, 2> reveals{ 1,0 };
@@ -408,7 +427,7 @@ namespace osuCrypto
 
         for (u64 j = 0; j < numCols; ++j)
         {
-            for (auto b : {0, 1})
+            for (auto b : { 0, 1 })
                 memcpy(
                     C.mColumns[j].mShares[b].data(),
                     rightSelects[j].mCol.mShares[b].data(),
@@ -525,19 +544,24 @@ namespace osuCrypto
 
     void ComPsiServer::constructOutTable(
         std::vector<SharedTable::ColRef> &circuitInputCols,
-        std::vector<SharedTable::ColRef> &circuitOutCols, 
-        SharedTable &C, 
-        const SharedTable::ColRef &rightJoinCol, 
+        std::vector<SharedTable::ColRef> &circuitOutCols,
+        SharedTable &C,
+        const SharedTable::ColRef &rightJoinCol,
         const SharedTable::ColRef &leftJoinCol,
         const span<SharedTable::ColRef> select,
-        const size_t numRows) 
+        const size_t numRows,
+        const bool leftJoin)
     {
         auto& rightTable = rightJoinCol.mTable;
         auto numCols = select.size();
         circuitInputCols.reserve(rightTable.mColumns.size());
         circuitInputCols.push_back(rightJoinCol);
 
-        C.mColumns.resize(numCols);
+        C.mColumns.resize(numCols + leftJoin);
+
+        if (leftJoin)
+            C.mColumns.back().mType = std::make_shared<IntType>(1);
+
         circuitOutCols.reserve(circuitInputCols.size() - 1);
         for (u64 j = 0; j < numCols; ++j)
         {
@@ -570,6 +594,7 @@ namespace osuCrypto
         if (mIdx != 0)
             throw std::runtime_error(LOCATION);
 
+        CuckooIndex<CuckooTypes::NotThreadSafe> mCuckoo;
         auto& cuckoo = mCuckoo;
         cuckoo.init(params);
 
@@ -959,7 +984,7 @@ namespace osuCrypto
                 mComm.mNext.recv(aa[1].data(), aa[1].size());
                 mComm.mNext.recv(aa[2].data(), aa[2].size());
             }
-            else if(mIdx == 1)
+            else if (mIdx == 1)
             {
                 mComm.mPrev.asyncSend(inShares[0].data(), inShares[0].size());
                 mComm.mPrev.asyncSend(inShares[1].data(), inShares[1].size());
@@ -1092,8 +1117,8 @@ namespace osuCrypto
     }
 
     aby3::Sh3::sPackedBin ComPsiServer::unionCompare(
-        SharedTable::ColRef leftJoinCol, 
-        SharedTable::ColRef rightJoinCol, 
+        SharedTable::ColRef leftJoinCol,
+        SharedTable::ColRef rightJoinCol,
         span<Matrix<u8>> inShares)
     {
 
@@ -1246,14 +1271,18 @@ namespace osuCrypto
         BetaCircuit r;
 
         u64 compareBitCount = leftJoinCol.mCol.getBitCount();
-        u64 totalBitCount = compareBitCount;
+        u64 totalByteCount = leftJoinCol.mCol.getByteCount();;
         for (auto& c : cols)
-            totalBitCount += c.mCol.getBitCount();
+            totalByteCount += c.mCol.getByteCount();
 
         u64 selectStart = compareBitCount;
-        u64 selectEnd = totalBitCount;
 
-        BetaBundle a0(totalBitCount), a1(totalBitCount), a2(totalBitCount), b(compareBitCount);
+        BetaBundle 
+            a0(totalByteCount * 8), 
+            a1(totalByteCount * 8), 
+            a2(totalByteCount * 8), 
+            b(compareBitCount);
+
         BetaBundle out(1), c0(1), c1(1), c2(1);
         r.addInputBundle(b);
         r.addInputBundle(a0);
@@ -1318,6 +1347,9 @@ namespace osuCrypto
         // XORing the results to get the select strings.
         for (auto& out : selectOut)
         {
+
+            selectStart = roundUpTo(selectStart, 8);
+
             for (u64 i = 0; i < out.size(); ++i)
             {
                 // set the input string to zero if tis not a match
