@@ -451,9 +451,9 @@ namespace osuCrypto
 
 	void BetaLibrary::int_piecewise_build_do(
 		BetaCircuit & cd,
-		span<BetaBundle> aa,
-		BetaBundle & b,
-		span<BetaBundle> cc)
+		span<const BetaBundle> aa,
+		const BetaBundle & b,
+		span<const BetaBundle> cc)
 	{
 
 		std::vector<BetaBundle>
@@ -711,10 +711,10 @@ namespace osuCrypto
 
 	void BetaLibrary::int_int_add_build_so(
 		BetaCircuit& cd,
-		BetaBundle & a1,
-		BetaBundle & a2,
-		BetaBundle & sum,
-		BetaBundle & temps)
+		const BetaBundle & a1,
+		const BetaBundle & a2,
+		const BetaBundle & sum,
+		const BetaBundle & temps)
 	{
 
 		if (temps.mWires.size() < 3)
@@ -723,9 +723,9 @@ namespace osuCrypto
 		if (sum.mWires.size() > std::max<u64>(a1.mWires.size(), a2.mWires.size()) + 1)
 			throw std::runtime_error(LOCATION);
 
-		BetaWire& carry = temps.mWires[0];
-		BetaWire& aXorC = temps.mWires[1];
-		BetaWire& temp = temps.mWires[2];
+        const BetaWire& carry = temps.mWires[0];
+        const BetaWire& aXorC = temps.mWires[1];
+        const BetaWire& temp = temps.mWires[2];
 
 		if (!areDistint(a2, sum) || !areDistint(a1, sum))
 			throw std::runtime_error("must be distinct" LOCATION);
@@ -786,10 +786,10 @@ namespace osuCrypto
 
 	void BetaLibrary::int_int_add_build_do(
 		BetaCircuit & cd,
-		BetaBundle & a1,
-		BetaBundle & a2,
-		BetaBundle & sum,
-		BetaBundle & temps)
+		const BetaBundle & a1,
+		const BetaBundle & a2,
+		const BetaBundle & sum,
+		const BetaBundle & temps)
 	{
 		u64 a1Size = a1.mWires.size();
 		u64 a2Size = a2.mWires.size();
@@ -929,10 +929,10 @@ namespace osuCrypto
 
 	void BetaLibrary::int_int_add_msb_build_do(
 		BetaCircuit & cd,
-		BetaBundle & a1,
-		BetaBundle & a2,
-		BetaBundle & msb,
-		BetaBundle & temps)
+		const BetaBundle & a1,
+		const BetaBundle & a2,
+		const BetaBundle & msb,
+		const BetaBundle & temps)
 	{
 		u64 a1Size = a1.mWires.size();
 		u64 a2Size = a2.mWires.size();
@@ -1065,10 +1065,10 @@ namespace osuCrypto
 
 	void BetaLibrary::uint_uint_add_build(
 		BetaCircuit & cd,
-		BetaBundle & a1,
-		BetaBundle & a2,
-		BetaBundle & sum,
-		BetaBundle & temps)
+		const BetaBundle & a1,
+		const BetaBundle & a2,
+		const BetaBundle & sum,
+		const BetaBundle & temps)
 	{
 		if (sum.mWires.size() > std::max<u64>(a1.mWires.size(), a2.mWires.size()) + 1)
 			throw std::runtime_error(LOCATION);
@@ -1087,10 +1087,10 @@ namespace osuCrypto
 
 	void BetaLibrary::int_int_subtract_build(
 		BetaCircuit & cd,
-		BetaBundle & a1,
-		BetaBundle & a2,
-		BetaBundle & diff,
-		BetaBundle & temps)
+		const BetaBundle & a1,
+		const BetaBundle & a2,
+		const BetaBundle & diff,
+		const BetaBundle & temps)
 	{
 		if (diff.mWires.size() > std::max<u64>(a1.mWires.size(), a2.mWires.size()) + 1)
 			throw std::runtime_error(LOCATION);
@@ -1106,7 +1106,7 @@ namespace osuCrypto
 		BetaWire borrow = temps.mWires[0];
 		BetaWire aXorBorrow = temps.mWires[1];
 		BetaWire temp = temps.mWires[2];
-		std::vector<BetaWire>& d = diff.mWires;
+        const std::vector<BetaWire>& d = diff.mWires;
 
 		// we are computing a1 - a2 = diff
 		// diff is computed as a1[i] ^ a2[i] ^ borrow[i-1]
@@ -1160,10 +1160,10 @@ namespace osuCrypto
 
 	void BetaLibrary::uint_uint_subtract_build(
 		BetaCircuit & cd,
-		BetaBundle & a1,
-		BetaBundle & a2,
-		BetaBundle & diff,
-		BetaBundle & temps)
+		const BetaBundle & a1,
+		const BetaBundle & a2,
+		const BetaBundle & diff,
+		const BetaBundle & temps)
 	{
 
 		if (diff.mWires.size() > std::max<u64>(a1.mWires.size(), a2.mWires.size()) + 1)
@@ -1183,9 +1183,9 @@ namespace osuCrypto
 
 	void BetaLibrary::int_int_mult_build(
 		BetaCircuit & cd,
-		BetaBundle & a,
-		BetaBundle & b,
-		BetaBundle & c,
+		const BetaBundle & a,
+		const BetaBundle & b,
+		const BetaBundle & c,
 		Optimized op)
 	{
 
@@ -1374,11 +1374,11 @@ namespace osuCrypto
 	}
 	void BetaLibrary::int_int_div_rem_build(
 		BetaCircuit & cd,
-		BetaBundle & signedA1,
-		BetaBundle & signedA2,
-		BetaBundle & quotient,
-		BetaBundle & rem
-		//,BetaBundle & divByZero,
+		const BetaBundle & signedA1,
+		const BetaBundle & signedA2,
+		const BetaBundle & quotient,
+		const BetaBundle & rem
+		//,const BetaBundle & divByZero,
 		//bool checkDivByZero
 	)
 	{
@@ -1446,10 +1446,10 @@ namespace osuCrypto
 
 	void BetaLibrary::uint_uint_div_rem_build(
 		BetaCircuit & cd,
-		BetaBundle & a1,
-		BetaBundle & a2,
-		BetaBundle & quotient,
-		BetaBundle & rem)
+		const BetaBundle & a1,
+		const BetaBundle & a2,
+		const BetaBundle & quotient,
+		const BetaBundle & rem)
 	{
 		BetaBundle
 			doSubtract(1),
@@ -1556,9 +1556,9 @@ namespace osuCrypto
 
 	void BetaLibrary::int_int_lt_build(
 		BetaCircuit & cd,
-		BetaBundle & a1,
-		BetaBundle & a2,
-		BetaBundle & out)
+		const BetaBundle & a1,
+		const BetaBundle & a2,
+		const BetaBundle & out)
 	{
 
 		TODO("optimize this, we dont need the full subtraction result, only the sign");
@@ -1578,9 +1578,9 @@ namespace osuCrypto
 
 	void BetaLibrary::int_int_gteq_build(
 		BetaCircuit & cd,
-		BetaBundle & a1,
-		BetaBundle & a2,
-		BetaBundle & out)
+		const BetaBundle & a1,
+		const BetaBundle & a2,
+		const BetaBundle & out)
 	{
 		int_int_lt_build(cd, a1, a2, out);
 
@@ -1591,9 +1591,9 @@ namespace osuCrypto
 
 	void BetaLibrary::uint_uint_lt_build(
 		BetaCircuit & cd,
-		BetaBundle & a1,
-		BetaBundle & a2,
-		BetaBundle & out)
+		const BetaBundle & a1,
+		const BetaBundle & a2,
+		const BetaBundle & out)
 	{
 
 		TODO("optimize this, we dont need the full subtraction result, only the sign");
@@ -1613,9 +1613,9 @@ namespace osuCrypto
 
 	void BetaLibrary::uint_uint_gteq_build(
 		BetaCircuit & cd,
-		BetaBundle & a1,
-		BetaBundle & a2,
-		BetaBundle & out)
+		const BetaBundle & a1,
+		const BetaBundle & a2,
+		const BetaBundle & out)
 	{
 		uint_uint_lt_build(cd, a1, a2, out);
 
@@ -1626,9 +1626,9 @@ namespace osuCrypto
 
 	void BetaLibrary::int_removeSign_build(
 		BetaCircuit & cd,
-		BetaBundle & a1,
-		BetaBundle & ret,
-		BetaBundle & temp)
+		const BetaBundle & a1,
+		const BetaBundle & ret,
+		const BetaBundle & temp)
 	{
 
 		BetaBundle sign(1);
@@ -1642,10 +1642,10 @@ namespace osuCrypto
 
 	void BetaLibrary::int_addSign_build(
 		BetaCircuit & cd,
-		BetaBundle & a1,
-		BetaBundle & sign,
-		BetaBundle & ret,
-		BetaBundle & temp)
+		const BetaBundle & a1,
+		const BetaBundle & sign,
+		const BetaBundle & ret,
+		const BetaBundle & temp)
 	{
 		//auto ret = -a1;
 		//cd.addPrint("\nadd sign ");
@@ -1670,8 +1670,8 @@ namespace osuCrypto
 
 	void BetaLibrary::int_bitInvert_build(
 		BetaCircuit & cd,
-		BetaBundle & a1,
-		BetaBundle & out)
+		const BetaBundle & a1,
+		const BetaBundle & out)
 	{
 		cd.addCopy(a1, out);
 
@@ -1683,9 +1683,9 @@ namespace osuCrypto
 
 	void BetaLibrary::int_negate_build(
 		BetaCircuit & cd,
-		BetaBundle & a1,
-		BetaBundle & out,
-		BetaBundle & temp)
+		const BetaBundle & a1,
+		const BetaBundle & out,
+		const BetaBundle & temp)
 	{
 		//if(areDistint(a1, out) == false)
 		//    throw std::runtime_error(LOCATION);
@@ -1714,9 +1714,9 @@ namespace osuCrypto
 
 	void BetaLibrary::int_int_bitwiseAnd_build(
 		BetaCircuit & cd,
-		BetaBundle & a1,
-		BetaBundle & a2,
-		BetaBundle & out)
+		const BetaBundle & a1,
+		const BetaBundle & a2,
+		const BetaBundle & out)
 	{
 		if (a1.mWires.size() != a2.mWires.size())throw std::runtime_error(LOCATION);
 		if (out.mWires.size() > a1.mWires.size())throw std::runtime_error(LOCATION);
@@ -1732,7 +1732,7 @@ namespace osuCrypto
 
 	}
 
-	void BetaLibrary::int_int_bitwiseOr_build(BetaCircuit & cd, BetaBundle & a1, BetaBundle & a2, BetaBundle & out)
+	void BetaLibrary::int_int_bitwiseOr_build(BetaCircuit & cd, const BetaBundle & a1, const BetaBundle & a2, const BetaBundle & out)
 	{
 		if (a1.mWires.size() != a2.mWires.size())throw std::runtime_error(LOCATION);
 		if (out.mWires.size() > a1.mWires.size())throw std::runtime_error(LOCATION);
@@ -1747,7 +1747,7 @@ namespace osuCrypto
 		}
 	}
 
-	void BetaLibrary::int_int_bitwiseXor_build(BetaCircuit & cd, BetaBundle & a1, BetaBundle & a2, BetaBundle & out)
+	void BetaLibrary::int_int_bitwiseXor_build(BetaCircuit & cd, const BetaBundle & a1, const BetaBundle & a2, const BetaBundle & out)
 	{
 		if (a1.mWires.size() != a2.mWires.size())throw std::runtime_error(LOCATION);
 		if (out.mWires.size() > a1.mWires.size())throw std::runtime_error(LOCATION);
@@ -1765,11 +1765,11 @@ namespace osuCrypto
 
 	void BetaLibrary::int_int_multiplex_build(
 		BetaCircuit & cd,
-		BetaBundle & ifTrue,
-		BetaBundle & ifFalse,
-		BetaBundle & choice,
-		BetaBundle & out,
-		BetaBundle & temp)
+		const BetaBundle & ifTrue,
+		const BetaBundle & ifFalse,
+		const BetaBundle & choice,
+		const BetaBundle & out,
+		const BetaBundle & temp)
 	{
 		// multiplex them together as (ifFalse ^ ifTrue) & s ^ ifFalse
 		for (u64 i = 0; i < out.mWires.size(); ++i)
@@ -1788,7 +1788,7 @@ namespace osuCrypto
 			cd.addGate(ifFalse.mWires[i], temp.mWires[0], GateType::Xor, out.mWires[i]);
 		}
 	}
-	bool BetaLibrary::areDistint(BetaBundle & a1, BetaBundle & a2)
+	bool BetaLibrary::areDistint(const BetaBundle & a1, const BetaBundle & a2)
 	{
 		for (u64 i = 0; i < a1.mWires.size(); ++i)
 		{

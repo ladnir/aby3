@@ -43,7 +43,13 @@ namespace osuCrypto
             SharedTable::ColRef rightJoinCol,
             std::vector<SharedTable::ColRef> selects)
         {
-            return joinImpl(leftJoinCol, rightJoinCol, selects, "");
+            SelectQuery query;
+            query.joinOn(leftJoinCol, rightJoinCol);
+
+            for (auto& s : selects)
+                query.addOutput(s.mCol.mName, query.addInput(s));
+            
+            return joinImpl(query);
         }
 
 
@@ -53,15 +59,21 @@ namespace osuCrypto
             std::vector<SharedTable::ColRef> selects,
             std::string leftJoinColName)
         {
-            return joinImpl(leftJoinCol, rightJoinCol, selects, leftJoinColName);
+
+            SelectQuery query;
+            query.joinOn(leftJoinCol, rightJoinCol);
+
+            for (auto& s : selects)
+                query.addOutput(s.mCol.mName, query.addInput(s));
+
+            query.noReveal(leftJoinColName);
+
+            return joinImpl(query);
         }
             
 
         SharedTable joinImpl(
-            SharedTable::ColRef leftJoinCol,
-            SharedTable::ColRef rightJoinCol,
-            std::vector<SharedTable::ColRef> selects,
-            std::string leftJoinColName
+            const SelectQuery& select
         );
 
         // take all of the left table and any rows from the right table
@@ -76,25 +88,23 @@ namespace osuCrypto
             std::vector<SharedTable::ColRef> rightSelects);
 
         void constructOutTable(
-            std::vector<SharedTable::ColRef> &circuitInputCols,
-            std::vector<SharedTable::ColRef> &circuitOutCols,
+            std::vector<SharedColumn*> &circuitInputLeftCols,
+            std::vector<SharedColumn*> &circuitInputRightCols,
+            std::vector<SharedColumn*> &circuitOutCols,
+            std::vector<std::array<SharedColumn*, 2>>& leftPassthroughCols,
             SharedTable &C,
-            const SharedTable::ColRef &rightJoinCol,
-            const SharedTable::ColRef &leftJoinCol,
-            const span<SharedTable::ColRef> select,
-            const size_t numRows,
-            const bool leftJoin);
+            const SelectQuery& query);
 
 
         std::array<Matrix<u8>, 3> mapRightTableToLeft(
             aby3::Sh3::i64Matrix& keys,
-            span<SharedTable::ColRef> circuitInputCols,
+            span<SharedColumn*> circuitInputCols,
             SharedTable& leftTable,
             SharedTable& rightTable);
 
-        Matrix<u8> cuckooHashRecv(span<SharedTable::ColRef> selects);
-        void cuckooHashSend(span<SharedTable::ColRef> selects, CuckooParam& cuckooParams);
-        Matrix<u8> cuckooHash(span<SharedTable::ColRef> selects, CuckooParam& params, aby3::Sh3::i64Matrix& keys);
+        Matrix<u8> cuckooHashRecv(span<SharedColumn*> selects);
+        void cuckooHashSend(span<SharedColumn*> selects, CuckooParam& cuckooParams);
+        Matrix<u8> cuckooHash(span<SharedColumn*> selects, CuckooParam& params, aby3::Sh3::i64Matrix& keys);
 
 
         std::array<Matrix<u8>, 3> selectCuckooPos(MatrixView<u8> cuckooHashTable, u64 destRows);
@@ -104,10 +114,11 @@ namespace osuCrypto
 
 
         aby3::Sh3::sPackedBin compare(
-            SharedTable::ColRef leftJoinCol,
-            SharedTable::ColRef rightJoinCol,
-            span<Matrix<u8>> leftInData, 
-            span<SharedTable::ColRef> outcolumns);
+            span<SharedColumn*> leftCircuitInput,
+            span<SharedColumn*> rightCircuitInput,
+            span<SharedColumn*> circuitOutput,
+            const SelectQuery& query,
+            span<Matrix<u8>> leftInData);
 
         aby3::Sh3::sPackedBin unionCompare(
             SharedTable::ColRef leftJoinCol,
@@ -117,10 +128,15 @@ namespace osuCrypto
         aby3::Sh3::i64Matrix computeKeys(span<SharedTable::ColRef> tables, span<u64> reveals);
 
 
+        BetaCircuit getQueryCircuit(
+            span<SharedColumn*> leftCircuitInput,
+            span<SharedColumn*> rightCircuitInput,
+            span<SharedColumn*> circuitOutput,
+            const SelectQuery& query);
+
         BetaCircuit getBasicCompareCircuit(
             SharedTable::ColRef leftJoinCol,
             span<SharedTable::ColRef> cols);
-
 
         BetaCircuit mLowMCCir;
 

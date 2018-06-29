@@ -235,7 +235,7 @@ namespace osuCrypto
         mWireFlags[dest] = mWireFlags[src];
     }
 
-    void BetaCircuit::addCopy(BetaBundle & src, BetaBundle & dest)
+    void BetaCircuit::addCopy(const BetaBundle & src, const  BetaBundle & dest)
     {
         auto d = dest.mWires.begin();
         auto dd = dest.mWires.end();

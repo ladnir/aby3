@@ -175,7 +175,7 @@ void ComPsi_cuckooHash_test()
 
         setThreadName("t_" + ToString(i));
         auto A = srvs[i].localInput(a);
-        std::vector<SharedTable::ColRef> select{ A["key"], A["data"] };
+        std::vector<SharedColumn*> select{ &A["key"].mCol, &A["data"].mCol };
 
         m1 = srvs[i].cuckooHash(select, cuckooParams, hashs);
     });
@@ -185,7 +185,7 @@ void ComPsi_cuckooHash_test()
         auto i = 1;
         setThreadName("t_" + ToString(i));
         auto A = srvs[i].remoteInput(0);
-        std::vector<SharedTable::ColRef> select{ A["key"] , A["data"] };
+        std::vector<SharedColumn*> select{ &A["key"].mCol, &A["data"].mCol };
         m2 = srvs[i].cuckooHashRecv(select);
     });
 
@@ -193,7 +193,7 @@ void ComPsi_cuckooHash_test()
         auto i = 2;
         setThreadName("t_" + ToString(i));
         auto A = srvs[i].remoteInput(0);
-        std::vector<SharedTable::ColRef> select{ A["key"] , A["data"] };
+        std::vector<SharedColumn*> select{ &A["key"].mCol, &A["data"].mCol };
         srvs[i].cuckooHashSend(select, cuckooParams);
     });
 
@@ -259,11 +259,12 @@ void ComPsi_compare_test()
     // 80 bits;
     auto keyBitCount = srvs[0].mKeyBitCount;
     u32 rows =  1 << 12;
-    //Table b;
+
     //b.mColumns[0].resize(rows, (srvs[0].mKeyBitCount + 63) / 64);
     Table b(rows, {
         ColumnInfo{ "key", TypeID::IntID, keyBitCount }
         ,ColumnInfo{ "data", TypeID::IntID, 64 }
+        ,ColumnInfo{ "data2", TypeID::IntID, 64 }
         });
 
 
@@ -291,35 +292,54 @@ void ComPsi_compare_test()
         else
             B = srvs[i].remoteInput(0);
 
-        C.mColumns.resize(2);
+        C.mColumns.resize(3);
         C.mColumns[0].mShares   = B.mColumns[0].mShares;
         C.mColumns[0].mName     = B.mColumns[0].mName;
         C.mColumns[0].mType     = B.mColumns[0].mType;
         C.mColumns[0].mBitCount = B.mColumns[0].mBitCount;
-
+        
         C.mColumns[1].mShares   = B.mColumns[1].mShares;
         C.mColumns[1].mName     = B.mColumns[1].mName;
         C.mColumns[1].mType     = B.mColumns[1].mType;
         C.mColumns[1].mBitCount = B.mColumns[1].mBitCount;
 
+        C.mColumns[2].mShares   = B.mColumns[1].mShares;
+        C.mColumns[2].mName     = "add";
+        C.mColumns[2].mType     = B.mColumns[1].mType;
+        C.mColumns[2].mBitCount = B.mColumns[1].mBitCount;
+
         C.mColumns[0].mShares[0].setZero();
         C.mColumns[0].mShares[1].setZero();
         C.mColumns[1].mShares[0].setZero();
         C.mColumns[1].mShares[1].setZero();
+        C.mColumns[2].mShares[0].setZero();
+        C.mColumns[2].mShares[1].setZero();
 
         aby3::Sh3::PackedBin plainFlags(B.rows(), 1);
 
         if (i < 2)
         {
-
-            std::vector<SharedTable::ColRef> outCols{ C["key"], C["data"] }; //};
-
-            auto leftJoin = B["key"];
+            auto A = B;
+            auto leftJoin = A["key"];
             auto rightJoin = B["key"];
+            std::vector<SharedColumn*> outCols{ &C["data"].mCol, &C["add"].mCol },
+                leftCircuitInputs{&leftJoin.mCol},
+                rightCircuitInputs{&rightJoin.mCol, &B["data"].mCol, &B["data2"].mCol };
 
-            auto selectBytes = (leftJoin.mCol.getBitCount() + 7) / 8;
-            for (auto& c : outCols)
-                selectBytes += (c.mCol.getBitCount() + 7) / 8;
+            SelectQuery query;
+            auto key = query.joinOn(leftJoin, rightJoin);
+            query.addOutput("key", key);
+
+            auto dd = query.addInput(B["data"]);
+            auto ff = query.addInput(B["data2"]);
+            query.addOutput("data", dd);
+            query.addOutput("add", dd + ff);
+
+
+
+            auto selectBytes = 0;
+            for (auto& c : rightCircuitInputs)
+                selectBytes += (c->getBitCount() + 7) / 8;
 
             std::array<Matrix<u8>, 3> selects2;
 
@@ -340,27 +360,29 @@ void ComPsi_compare_test()
                         auto src = b.mColumns[0].mData.row(j).data();
                         auto size = (b.mColumns[0].getBitCount() + 7) / 8;
 
-                        if (selectBytes != 2 * size + ((C["data"].mCol.getBitCount() + 7) / 8))
+                        if (selectBytes != size + 2 * C["data"].mCol.getByteCount())
                             throw RTE_LOC;
 
+                        //memcpy(dest, src, size);
+                        //dest += size;
                         memcpy(dest, src, size);
                         dest += size;
-                        memcpy(dest, src, size);
-                        dest += size;
-                        *(u64*)dest = j;
+                        ((u64*)dest)[0] = j;
+                        ((u64*)dest)[1] = j;
                     }
                 }
             }
 
 
-            auto intersectionFlags = srvs[i].compare(leftJoin, rightJoin, selects2, outCols);
+            auto intersectionFlags = srvs[i].compare(leftCircuitInputs,rightCircuitInputs, outCols, query, selects2);
             srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), intersectionFlags, plainFlags).get();
             BitIterator iter((u8*)plainFlags.mData.data(), 0);
 
             auto stride = C.mColumns[0].i64Cols();
-            aby3::Sh3::i64Matrix c0(C.rows(), stride), c1(C.rows(), 1);
+            aby3::Sh3::i64Matrix c0(C.rows(), stride), c1(C.rows(), 1), c2(C.rows(), 1);
             srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), C.mColumns[0], c0).get();
             srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), C.mColumns[1], c1).get();
+            srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), C.mColumns[2], c2).get();
 
             //ostreamLock o(std::cout);
             for (u64 j = 0; j < rows; ++j)
@@ -377,14 +399,17 @@ void ComPsi_compare_test()
                 }
                 else
                 {
-                    for (u64 k = 0; k < stride; ++k)
-                    {
-                        if (c0(j, k) != *iter * b.mColumns[0].mData(j, k))
-                            failed = true;
-                    }
+                    //for (u64 k = 0; k < stride; ++k)
+                    //{
+                    //    if (c0(j, k) != *iter * b.mColumns[0].mData(j, k))
+                    //        failed = true;
+                    //}
 
 
                     if (c1(j, 0) != *iter * j)
+                        failed = true;
+
+                    if (c2(j, 0) != *iter * j * 2)
                         failed = true;
                 }
 
@@ -393,17 +418,32 @@ void ComPsi_compare_test()
         }
         else
         {
-            std::vector<SharedTable::ColRef> outCols{ C["key"], C["data"] };
-
-            auto leftJoin = B["key"];
+            auto A = B;
+            auto leftJoin = A["key"];
             auto rightJoin = B["key"];
+            std::vector<SharedColumn*> outCols{ &C["data"].mCol, &C["add"].mCol },
+                leftCircuitInputs{ &leftJoin.mCol },
+                rightCircuitInputs{ &rightJoin.mCol, &B["data"].mCol , &B["data2"].mCol };
 
-            auto intersectionFlags = srvs[i].compare(leftJoin, rightJoin, {}, outCols);
+            SelectQuery query;
+            auto key = query.joinOn(leftJoin, rightJoin);
+            query.addOutput("key", key);
+
+            auto dd = query.addInput(B["data"]);
+            auto ff = query.addInput(B["data2"]);
+            query.addOutput("data", dd);
+            query.addOutput("add", dd + ff);
+
+
+
+
+            auto intersectionFlags = srvs[i].compare(leftCircuitInputs, rightCircuitInputs, outCols, query, {});
             srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), intersectionFlags, plainFlags).get();
 
             aby3::Sh3::i64Matrix c(C.rows(), C.mColumns[0].i64Cols()), c1(C.rows(), 1);
             srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), C.mColumns[0], c).get();
             srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), C.mColumns[1], c1).get();
+            srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), C.mColumns[2], c1).get();
 
         }
     };

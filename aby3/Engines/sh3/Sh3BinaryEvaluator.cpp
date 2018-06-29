@@ -1241,8 +1241,8 @@ namespace aby3
 
                 //if (src + simdWidth > md + ms)
                 //    throw std::runtime_error(LOCATION);
-                //if (dest + simdWidth > out..data() + outMem.size())
-                //    throw std::runtime_error(LOCATION);
+                if (dest + out.simdWidth() > out.mShares[j].data() + out.mShares[j].size())
+                    throw RTE_LOC;
 
 
                 memcpy(dest, src, size);

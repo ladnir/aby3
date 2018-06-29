@@ -96,7 +96,7 @@ namespace osuCrypto
 		void addInvert(BetaWire wire);
 		void addInvert(BetaWire src, BetaWire dest);
         void addCopy(BetaWire src, BetaWire dest);
-        void addCopy(BetaBundle& src, BetaBundle& dest);
+        void addCopy(const BetaBundle& src, const  BetaBundle& dest);
 
         bool isConst(BetaWire wire);
         bool isInvert(BetaWire wire);

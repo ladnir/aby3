@@ -4,13 +4,15 @@
 #include "aby3/Engines/sh3/Sh3BinaryEvaluator.h"
 #include "aby3/Engines/sh3/Sh3Encryptor.h"
 #include "aby3/Engines/sh3/Sh3Evaluator.h"
+#include "aby3/Circuit/BetaLibrary.h"
+#include <boost/optional.hpp>
 
 namespace osuCrypto
 {
     enum class TypeID
     {
         IntID = 0,
-        StringID = 1        
+        StringID = 1
     };
 
     struct DataType
@@ -39,7 +41,7 @@ namespace osuCrypto
 
     };
 
-    class ColumnBase 
+    class ColumnBase
     {
     public:
 
@@ -60,14 +62,14 @@ namespace osuCrypto
             else
                 throw RTE_LOC;
         }
-        u64 getByteCount() const { return (getBitCount() + 7 ) / 8; }
+        u64 getByteCount() const { return (getBitCount() + 7) / 8; }
         u64 getBitCount() const { return mType->getBitCount(); }
         TypeID getTypeID() const { return mType->getTypeID(); }
     };
 
     class Column : public ColumnBase
     {
-    public: 
+    public:
 
         Column() = delete;
         Column(const Column&) = default;
@@ -166,4 +168,145 @@ namespace osuCrypto
         u64 rows();
     };
 
+    namespace selectDetails
+    {
+
+        enum SelectOp
+        {
+            BitwiseOr,
+            BitwiseAnd,
+            Multiply,
+            Add,
+            LessThan,
+            Inverse
+        };
+        struct Gate
+        {
+            SelectOp op;
+            int mIn1, mIn2, mOut;
+        };
+        struct Input;
+        struct Output;
+
+
+        struct Mem
+        {
+            std::shared_ptr<const DataType> mType;
+            Gate* mGate = nullptr;
+            //Input* mInputPtr = nullptr;
+            //Output* mOutputPtr = nullptr;
+            int mInputIdx = -1;
+            int mOutputIdx = -1;
+            int mIdx = -1;
+            bool mUsed = false;
+
+            bool isInput() const { return mInputIdx != -1; }
+            bool isOutput() const { return mOutputIdx != -1; }
+        };
+
+        struct Input
+        {
+            Input(int memIdx, SharedTable::ColRef& c, int p)
+                : mMemIdx(memIdx)
+                , mCol(c)
+                , mPosition(p)
+            {}
+
+            int mMemIdx;
+            SharedTable::ColRef mCol;
+            int mPosition;
+        };
+
+        struct Output
+        {
+
+            Output(int memIdx, std::string& c, int p)
+                : mMemIdx(memIdx)
+                , mName(c)
+                , mPosition(p)
+            {}
+            int mMemIdx;
+            std::string mName;
+            int mPosition;
+        };
+
+    }
+
+    class SelectQuery;
+    class SelectBundle
+    {
+    public:
+        SelectQuery & mSelect;
+        int mMemIdx;
+
+        SelectBundle(SelectQuery& cir, int memIdx)
+            : mSelect(cir)
+            , mMemIdx(memIdx)
+        {}
+
+        SelectBundle operator!() const;
+        SelectBundle operator|(const SelectBundle& r) const;
+        SelectBundle operator&(const SelectBundle& r) const;
+        SelectBundle operator<(const SelectBundle& r) const;
+        SelectBundle operator*(const SelectBundle& r) const;
+        SelectBundle operator+(const SelectBundle& r) const;
+    };                                                
+
+    class SelectQuery
+    {
+    public:
+
+        std::string mNoRevealName;
+
+        SharedTable * mLeftTable = nullptr;
+        SharedTable * mRightTable = nullptr;
+        SharedColumn * mLeftCol = nullptr;
+        SharedColumn * mRightCol = nullptr;
+
+        std::vector<selectDetails::Mem> mMem;
+        std::vector<selectDetails::Input> mInputs;
+        std::vector<selectDetails::Output> mOutputs;
+        std::vector<selectDetails::Gate> mGates;
+
+        std::vector<selectDetails::Input*> 
+            mLeftInputs, 
+            mRightInputs;
+
+        //SelectQuery(std::vector<SharedTable::ColRef> passThrough)
+        //{
+        //    for (auto& p : passThrough)
+        //        addOutput(p.mCol.mName, addInput(p));
+        //}
+
+        SelectQuery() = default;
+
+        
+
+        SelectBundle addInput(SharedTable::ColRef column);
+
+        SelectBundle joinOn(SharedTable::ColRef left, SharedTable::ColRef right);
+
+        int addOp(selectDetails::SelectOp op, int wire1, int wire2);
+
+        int addOp(selectDetails::SelectOp op, int wire1);
+
+        void addOutput(std::string name, const SelectBundle& column);
+
+        void apply(BetaCircuit& cir, span<BetaBundle> inputs, span<BetaBundle> outputs) const;
+
+        void noReveal(std::string columnName)
+        {
+            mNoRevealName = std::move(columnName);
+        }
+
+        bool isNoReveal() const
+        {
+            return mNoRevealName.size();
+        }
+
+
+        bool isLeftPassthrough(selectDetails::Output output)const;
+        bool isRightPassthrough(selectDetails::Output output)const;
+        bool isCircuitInput(selectDetails::Input input)const;
+    };
 }

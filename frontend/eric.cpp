@@ -7,6 +7,8 @@
 using namespace osuCrypto;
 
 
+
+
 void eric(int n)
 {
 
@@ -100,8 +102,27 @@ void eric(int n)
         auto state1 = srv.leftJoin(dmv1["DL"], voter1["DL"], select1, "registed");
         auto state2 = srv.leftJoin(dmv2["DL"], voter2["DL"], select2, "registed");
 
-        auto intersection = srv.join(state1["SSN"], state2["SSN"], { state1["NA"], state1["registed"], state2["registed"] });
 
+        SelectQuery select;
+        auto SSN = select.joinOn(state1["SSN"], state2["SSN"]);
+        auto date1 = select.addInput(state1["AD"]);
+        auto date2 = select.addInput(state2["AD"]);
+        auto reg1 = select.addInput(state1["registed"]);
+        auto reg2 = select.addInput(state2["registed"]);
+
+        auto older1 = date1 < date2;
+        auto older2 = !older1;
+        auto doubleReg = reg1 & reg2;
+        auto reveal1 = doubleReg | (older1 & reg1);
+        auto reveal2 = doubleReg | (older2 & reg2);
+
+        select.addOutput("NA1", select.addInput(state1["NA"]) * reveal1);
+        select.addOutput("NA1", select.addInput(state2["NA"]) * reveal2);
+
+        auto intersection = srv.joinImpl(select);
+
+
+        
     };
 
 
