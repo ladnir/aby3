@@ -1,0 +1,157 @@
+\usepackage{amsmath,amsfonts,amssymb,tikz,multirow,stmaryrd,xspace}
+\usepackage[hyphens]{url}
+\usepackage{varwidth}
+\usepackage{amsthm}
+\usepackage{caption}
+
+\usepackage{pgfplots}
+\pgfplotsset{compat=newest}
+
+%this should save a minimum amount of space and in theory look nicer
+\usepackage{ellipsis, ragged2e, marginnote}
+\usepackage[tracking=true]{microtype}
+\DeclareMicrotypeSet*[tracking]{my}{ font = */*/*/sc/* }
+\SetTracking{encoding = *, shape = sc}{45}
+
+\usepackage[]{hyperref}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=darkred,
+    citecolor=darkgreen,
+    urlcolor=darkblue
+}
+
+\newcommand{\false}{\ensuremath{\textsc{false}}\xspace}
+\newcommand{\true}{\ensuremath{\textsc{true}}\xspace}
+
+\newcommand{\naive}{na\"{\i}ve\xspace}
+\newcommand{\Naive}{Na\"{\i}ve\xspace}
+
+\newcommand{\F}{\ensuremath{\mathbb{F}}\xspace}
+\newcommand{\C}{\ensuremath{\mathcal{C}}\xspace}
+\newcommand{\M}{\ensuremath{\mathcal{M}}\xspace}
+\renewcommand{\O}{\ensuremath{\mathcal{O}}\xspace}
+\renewcommand{\P}{\ensuremath{\mathcal{P}}\xspace}
+\newcommand{\A}{\ensuremath{\mathcal{A}}\xspace}
+\newcommand{\R}{\ensuremath{\mathcal{R}}\xspace}
+
+\newcommand{\myvec}[1]{\boldsymbol{#1}}
+
+\newcommand{\algorithm}[1]{\ensuremath{\text{\sf #1}}\xspace}
+
+\newcommand{\DPFgen}{\algorithm{DPF.Gen}}
+\newcommand{\DPFexpand}{\algorithm{DPF.Expand}}
+
+\newcommand{\serv}[1]{server~\##1}
+\newcommand{\Serv}[1]{Server~\##1}
+\def\SSS{\ensuremath{\mathcal{S}}\xspace}
+\def\RR{\ensuremath{\mathcal{R}}\xspace}
+\newcommand{\Fpsi}[1]{\ensuremath{{\mathcal{F}^{#1}_{\textsf{psi}}}}\xspace}
+%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\etal}{{\sl et~al.}\xspace}
+\newcommand{\eg}{{\sl e.g.}\xspace}
+\newcommand{\ie}{{\sl i.e.}\xspace}
+\newcommand{\apriori}{{\sl a~priori\/}\xspace}
+
+%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\rgets}{\overset{\$}\gets}
+
+\newcommand{\command}[1]{\ensuremath{\text{\sc #1}}\xspace}
+
+%%%%%%%%%%%%%%%%%%%%
+\newcommand{\subname}[1]{\ensuremath{\textsc{#1}}\xspace}
+\newcommand{\mycmd}[1]{\textsc{#1}}
+
+\newcommand{\codebox}[1]{%
+    \begin{varwidth}{\linewidth}%
+    \upshape%   no slant in definition/theorem statement!
+    \begin{tabbing}%
+        \quad\=\quad\=\quad\=\quad\=\kill
+        #1
+    \end{tabbing}%
+    \end{varwidth}%
+}
+
+\newcommand{\fcodebox}[1]{%
+    \framebox{\codebox{#1}}%
+}
+
+\newcommand{\comment}[1]{
+    \sl\small\color{black!50} \mbox{ // #1 }
+}
+
+
+%%%%%%%%%%%%%%%%%%%%
+
+
+    \newtheorem{theorem}{Theorem}
+    \newtheorem{definition}[theorem]{Definition}
+    \newtheorem{claim}[theorem]{Claim}
+    \newtheorem{lemma}[theorem]{Lemma}
+    \newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corol}[theorem]{Corollary}
+\newtheorem{assumption}[theorem]{Assumption}
+\newtheorem{obs}[theorem]{Observation}
+\newtheorem{conj}[theorem]{Conjecture}
+
+\newenvironment{proofof}[1]{\begin{proof}[Proof of #1.]}{\end{proof}}
+\newenvironment{proofsketch}{\begin{proof}[Proof Sketch]}{\end{proof}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\namedref}[2]{\hyperref[#2]{#1~\ref*{#2}}}
+%% if you don't like it, use this instead:
+%\newcommand{\namedref}[2]{#1~\ref{#2}}
+\newcommand{\chapterref}[1]{\namedref{Chap.}{#1}}
+\newcommand{\sectionref}[1]{\namedref{Sect.}{#1}}
+\newcommand{\theoremref}[1]{\namedref{Theorem}{#1}}
+\newcommand{\propositionref}[1]{\namedref{Proposition}{#1}}
+\newcommand{\definitionref}[1]{\namedref{Definition}{#1}}
+\newcommand{\corollaryref}[1]{\namedref{Corollary}{#1}}
+\newcommand{\obsref}[1]{\namedref{Observation}{#1}}
+\newcommand{\lemmaref}[1]{\namedref{Lemma}{#1}}
+\newcommand{\claimref}[1]{\namedref{Claim}{#1}}
+\newcommand{\figureref}[1]{\namedref{Fig.}{#1}}
+\newcommand{\tableref}[1]{\namedref{Tab.}{#1}}
+\newcommand{\subfigureref}[2]{\hyperref[#1]{Figure~\ref*{#1}#2}}
+\newcommand{\equationref}[1]{\namedref{Equation}{#1}}
+\newcommand{\appendixref}[1]{\namedref{Appendix}{#1}}
+
+\definecolor{darkred}{rgb}{0.5, 0, 0}
+\definecolor{darkgreen}{rgb}{0, 0.5, 0}
+\definecolor{darkblue}{rgb}{0, 0, 0.5}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\todo}[1]{%
+%    \mbox{}% prevent marginpar from being on previous paragraph
+%    \marginpar{%
+%        \colorbox{red!80!black}{\textcolor{white}{to-do}}%
+%        \vspace*{-22pt}% hack!
+%    }%
+%    \textcolor{red}{#1}%
+}
+
+\newcommand{\myparagraph}[1]{\smallskip\noindent{\bf #1:}}
+\newcommand{\DB}{\ensuremath{DB}\xspace}
+\newcommand{\encode}[1]{\ensuremath{\llbracket #1 \rrbracket}}
+\newcommand{\strLen}{e}
+\newcommand{\f}[1]{\ensuremath{\mathcal{F}_{\textsc{#1}}}}
+
+\newcommand{\numbins}{\ensuremath{\beta}\xspace}
+\newcommand{\cuckoobins}{\ensuremath{m}\xspace}
+\newcommand{\binsize}{\ensuremath{\mu}\xspace}
+\newcommand{\symsec}{\ensuremath{\kappa}\xspace}
+\newcommand{\statsec}{\ensuremath{\lambda}\xspace}
+\newcommand{\clientsetsize}{\ensuremath{n}\xspace}
+\newcommand{\serversetsize}{\ensuremath{N}\xspace}
+\newcommand{\elsize}{\ensuremath{\rho}\xspace}
+\newcommand{\binScale}{\ensuremath{c}\xspace}
+\newcommand{\pirblocksize}{\ensuremath{b}\xspace}
+\newcommand{\cuckooexpansion}{\ensuremath{e}\xspace}
+\newcommand{\cuckootable}{\ensuremath{CT}\xspace}

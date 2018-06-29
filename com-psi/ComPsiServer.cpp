@@ -390,94 +390,120 @@ namespace osuCrypto
         std::vector<SharedTable::ColRef> rightSelects)
     {
         setTimePoint("union_start");
-        throw RTE_LOC;
+        //throw RTE_LOC;
 
-        //auto numCols = leftSelects.size();
+        auto numCols = leftSelects.size();
 
-        //if (leftSelects.size() != rightSelects.size())
-        //    throw RTE_LOC;
+        if (leftSelects.size() != rightSelects.size())
+            throw RTE_LOC;
 
-        //for (u64 i = 0; i < numCols; ++i)
-        //{
-        //    if (leftSelects[i].mCol.getTypeID() != rightSelects[i].mCol.getTypeID() ||
-        //        leftSelects[i].mCol.getBitCount() != rightSelects[i].mCol.getBitCount())
-        //        throw RTE_LOC;
-        //}
+        for (u64 i = 0; i < numCols; ++i)
+        {
+            if (leftSelects[i].mCol.getTypeID() != rightSelects[i].mCol.getTypeID() ||
+                leftSelects[i].mCol.getBitCount() != rightSelects[i].mCol.getBitCount())
+                throw RTE_LOC;
+        }
 
-        //auto& leftTable = leftJoinCol.mTable;
-        //auto& rightTable = rightJoinCol.mTable;
-        //auto maxRows = leftTable.rows() + rightTable.rows();
+        auto& leftTable = leftJoinCol.mTable;
+        auto& rightTable = rightJoinCol.mTable;
+        auto maxRows = leftTable.rows() + rightTable.rows();
 
-        //// all of the columns out of the right table that need to be selected.
+        SelectQuery query;
+        auto jc = query.joinOn(leftJoinCol, rightJoinCol);
+        for (auto& c : leftSelects)
+        {
+            if (&leftJoinCol.mCol == &c.mCol)
+                query.addOutput(c.mCol.mName, jc);
+            else
+                query.addOutput(c.mCol.mName, query.addInput(c));
+        }
+
+        query.isUnion(true);
+
+        // all of the columns out of the right table that need to be selected.
         //std::vector<SharedTable::ColRef> circuitInputCols, circuitOutCols;
         //SharedTable C;
+        // all of the columns out of the right table that need to be selected.
+        SharedTable C;
+        std::vector<SharedColumn*> leftCircuitInput, rightCircuitInput, circuitOutput;
+        std::vector<std::array<SharedColumn*, 2>> leftPassthroughCols;
+
+        constructOutTable(
+            // outputs
+            leftCircuitInput,
+            rightCircuitInput,
+            circuitOutput,
+            leftPassthroughCols,
+            C,
+            // inputs 
+            query);
 
         //constructOutTable(circuitInputCols, circuitOutCols, C, rightJoinCol, leftJoinCol, leftSelects, maxRows, false);
 
-        //std::array<SharedTable::ColRef, 2> AB{ leftJoinCol,rightJoinCol };
-        //std::array<u64, 2> reveals{ 1,0 };
-        //aby3::Sh3::i64Matrix keys = computeKeys(AB, reveals);
-        //setTimePoint("union_compute_keys");
+        std::array<SharedTable::ColRef, 2> AB{ leftJoinCol,rightJoinCol };
+        std::array<u64, 2> reveals{ 1,0 };
+        aby3::Sh3::i64Matrix keys = computeKeys(AB, reveals);
+        setTimePoint("union_compute_keys");
 
-        //// construct a cuckoo table for the right table, then use the keys from left table to select out of the cuckoo table to 
-        //// get three shares of the cuckoo table entries, one for each cuckoo hash function. 
-        //std::array<Matrix<u8>, 3> circuitInputShare =
-        //    mapRightTableToLeft(keys, circuitInputCols, leftTable, rightTable);
+        // construct a cuckoo table for the right table, then use the keys from left table to select out of the cuckoo table to 
+        // get three shares of the cuckoo table entries, one for each cuckoo hash function. 
+        std::array<Matrix<u8>, 3> circuitInputShare =
+            mapRightTableToLeft(keys, rightCircuitInput, leftTable, rightTable);
 
-        //// now perform the comparison between the entry from the left table with the three possible matched 
-        //// which were selected out of the cuckoo table.
-        //aby3::Sh3::sPackedBin intersectionFlags =
-        //    unionCompare(leftJoinCol, rightJoinCol, circuitInputShare);
+        // now perform the comparison between the entry from the left table with the three possible matched 
+        // which were selected out of the cuckoo table.
+        aby3::Sh3::sPackedBin intersectionFlags =
+            unionCompare(leftJoinCol, rightJoinCol, circuitInputShare);
 
-        //setTimePoint("union_compare");
+        setTimePoint("union_compare");
 
-        //aby3::Sh3::PackedBin plainFlags(leftTable.rows(), 1);
-        //mEnc.revealAll(mRt.noDependencies(), intersectionFlags, plainFlags).get();
-        //setTimePoint("union_done");
-        //BitIterator iter((u8*)plainFlags.mData.data(), 0);
+        aby3::Sh3::PackedBin plainFlags(leftTable.rows(), 1);
+        mEnc.revealAll(mRt.noDependencies(), intersectionFlags, plainFlags).get();
+        setTimePoint("union_done");
+        BitIterator iter((u8*)plainFlags.mData.data(), 0);
 
-        //std::vector<u64> sizes(numCols);
-        //for (u64 i = 0; i < sizes.size(); ++i)
-        //    sizes[i] = leftSelects[i].mCol.getByteCount();
+        std::vector<u64> sizes(numCols);
+        for (u64 i = 0; i < sizes.size(); ++i)
+            sizes[i] = leftSelects[i].mCol.getByteCount();
 
-        //auto size = rightSelects[0].mCol.rows();
+        auto size = rightSelects[0].mCol.rows();
 
-        //for (u64 j = 0; j < numCols; ++j)
-        //{
-        //    for (auto b : { 0, 1 })
-        //        memcpy(
-        //            C.mColumns[j].mShares[b].data(),
-        //            rightSelects[j].mCol.mShares[b].data(),
-        //            rightSelects[j].mCol.mShares[b].size() * sizeof(i64));
-        //}
+        for (u64 j = 0; j < numCols; ++j)
+        {
+            for (auto b : { 0, 1 })
+                memcpy(
+                    C.mColumns[j].mShares[b].data(),
+                    rightSelects[j].mCol.mShares[b].data(),
+                    rightSelects[j].mCol.mShares[b].size() * sizeof(i64));
+        }
 
-        //for (u64 i = 0; i < leftTable.rows(); ++i)
-        //{
-        //    if (*iter == 0)
-        //    {
-        //        for (u64 j = 0; j < numCols; ++j)
-        //        {
-        //            auto s0 = &leftSelects[j].mCol.mShares[0](i, 0);
-        //            auto s1 = &leftSelects[j].mCol.mShares[1](i, 0);
-        //            auto d0 = &C.mColumns[j].mShares[0](size, 0);
-        //            auto d1 = &C.mColumns[j].mShares[1](size, 0);
+        for (u64 i = 0; i < leftTable.rows(); ++i)
+        {
+            if (*iter == 0)
+            {
+                for (u64 j = 0; j < numCols; ++j)
+                {
+                    auto s0 = &leftSelects[j].mCol.mShares[0](i, 0);
+                    auto s1 = &leftSelects[j].mCol.mShares[1](i, 0);
+                    auto d0 = &C.mColumns[j].mShares[0](size, 0);
+                    auto d1 = &C.mColumns[j].mShares[1](size, 0);
 
-        //            memmove(d0, s0, sizes[j]);
-        //            memmove(d1, s1, sizes[j]);
-        //        }
+                    memmove(d0, s0, sizes[j]);
+                    memmove(d1, s1, sizes[j]);
+                }
 
-        //        ++size;
-        //    }
+                ++size;
+            }
 
-        //    ++iter;
-        //}
+            ++iter;
+        }
 
-        //for (u64 j = 0; j < C.mColumns.size(); ++j)
-        //{
-        //    C.mColumns[j].resize(size, C.mColumns[j].getBitCount());
-        //}
+        for (u64 j = 0; j < C.mColumns.size(); ++j)
+        {
+            C.mColumns[j].resize(size, C.mColumns[j].getBitCount());
+        }
 
-        //return C;
+        return C;
     }
 
 
@@ -569,7 +595,7 @@ namespace osuCrypto
     {
         auto& rightTable = *query.mRightTable;
         auto& leftTable = *query.mLeftTable;
-        auto numRows = query.mLeftTable->rows();
+        auto numRows = query.mLeftTable->rows() + query.mRightTable->rows() * query.isUnion();
 
         rightCircuitInput.reserve(rightTable.mColumns.size());
         leftCircuitInput.reserve(leftTable.mColumns.size());

@@ -3,6 +3,7 @@
 #include <cryptoTools/Network/IOService.h>
 #include <unordered_map>
 #include <iomanip>
+#include <cryptoTools/Common/Timer.h>
 
 using namespace osuCrypto;
 
@@ -97,6 +98,10 @@ void eric(int n)
             dmv1 = srv.remoteInput(0);
             dmv2 = srv.remoteInput(0);
         }
+
+        Timer t;
+        t.setTimePoint("start");
+
         auto select1 = std::vector<SharedTable::ColRef>{ dmv1["NA"], dmv1["SSN"], dmv1["AD"] };
         auto select2 = std::vector<SharedTable::ColRef>{ dmv2["NA"], dmv2["SSN"], dmv2["AD"] };
         auto state1 = srv.leftJoin(dmv1["DL"], voter1["DL"], select1, "registed");
@@ -117,12 +122,13 @@ void eric(int n)
         auto reveal2 = doubleReg | (older2 & reg2);
 
         select.addOutput("NA1", select.addInput(state1["NA"]) * reveal1);
-        select.addOutput("NA1", select.addInput(state2["NA"]) * reveal2);
+        select.addOutput("NA2", select.addInput(state2["NA"]) * reveal2);
 
         auto intersection = srv.joinImpl(select);
+        t.setTimePoint("end");
 
-
-        
+        if(i ==0)
+            std::cout << "n = " << n << "\n" << t << std::endl;
     };
 
 

@@ -257,6 +257,7 @@ namespace osuCrypto
     public:
 
         std::string mNoRevealName;
+        bool mIsUnion = false;
 
         SharedTable * mLeftTable = nullptr;
         SharedTable * mRightTable = nullptr;
@@ -304,6 +305,8 @@ namespace osuCrypto
             return mNoRevealName.size();
         }
 
+        void isUnion(bool b) { mIsUnion = b; }
+        bool isUnion() const { return mIsUnion; }
 
         bool isLeftPassthrough(selectDetails::Output output)const;
         bool isRightPassthrough(selectDetails::Output output)const;

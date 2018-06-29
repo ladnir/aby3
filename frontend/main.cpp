@@ -178,11 +178,11 @@ int main(int argc, char** argv)
     {
         auto nn = cmd.getMany<int>("nn");
         if (nn.size() == 0)
-            nn.push_back(1 << 16);
+            nn.push_back(16);
 
         for (auto n : nn)
         {
-            eric(n);
+            eric( 1 << n);
         }
     }
 
