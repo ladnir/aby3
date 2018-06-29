@@ -100,7 +100,7 @@ namespace osuCrypto
             throw std::runtime_error("call joinOn(...) first");
 
         if (op != selectDetails::Inverse ||
-            mMem.size() >= wire1)
+            mMem.size() <= wire1)
             throw RTE_LOC;
 
         mMem[wire1].mUsed = true;

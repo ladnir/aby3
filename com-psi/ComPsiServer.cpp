@@ -574,12 +574,16 @@ namespace osuCrypto
         rightCircuitInput.reserve(rightTable.mColumns.size());
         leftCircuitInput.reserve(leftTable.mColumns.size());
 
-        C.mColumns.resize(query.mOutputs.size());
+        C.mColumns.resize(query.mOutputs.size() + query.isNoReveal());
 
         if (query.isNoReveal())
         {
+
             C.mColumns.back().mType = std::make_shared<IntType>(1);
             C.mColumns.back().mName = query.mNoRevealName;
+            C.mColumns.back().resize(numRows, C.mColumns.back().mType->getBitCount());
+            C.mColumns.back().mShares[0].setZero();
+            C.mColumns.back().mShares[1].setZero();
         }
 
         for (u64 j = 0; j < query.mOutputs.size(); ++j)
@@ -992,11 +996,11 @@ namespace osuCrypto
             eval.setInput(i, *leftCircuitInput[i]);
 
         t0.get();
-        eval.setInput(1, A[0]);
+        eval.setInput(i++, A[0]);
         t1.get();
-        eval.setInput(2, A[1]);
+        eval.setInput(i++, A[1]);
         t2.get();
-        eval.setInput(3, A[2]);
+        eval.setInput(i++, A[2]);
 
         std::vector<std::vector<aby3::Sh3BinaryEvaluator::DEBUG_Triple>>plainWires;
         eval.distributeInputs();

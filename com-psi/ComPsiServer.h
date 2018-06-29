@@ -70,10 +70,19 @@ namespace osuCrypto
         {
 
             SelectQuery query;
-            query.joinOn(leftJoinCol, rightJoinCol);
+            auto jc = query.joinOn(leftJoinCol, rightJoinCol);
 
             for (auto& s : selects)
-                query.addOutput(s.mCol.mName, query.addInput(s));
+            {
+                if (&s.mCol == &leftJoinCol.mCol || &s.mCol == &rightJoinCol.mCol)
+                {
+                    query.addOutput(s.mCol.mName, jc);
+                }
+                else
+                {
+                    query.addOutput(s.mCol.mName, query.addInput(s));
+                }
+            }
 
             query.noReveal(leftJoinColName);
 
