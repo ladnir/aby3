@@ -1,0 +1,28 @@
+\section{Related Work}
+
+\begin{itemize}
+	\item MikePaymanBrent's 2pc paper.
+
+% Private and Oblivious Set and Multiset Operations
+%     https://eprint.iacr.org/2011/464.pdf
+\item With respect to functionality the most related work is that of Blanton and Aguiar\cite{BA11} which describes a relatively complete set of protocols for performing intersections, unions, set difference, etc. and the corresponding SQL-like operations. Moreover, these operation are composable in that the inputs and outputs are secret shared between the parties. At the core of their technique is use of a generic MPC protocol and an oblivious sorting algorithm to merges the two sets followed by a linear pass over the sorted data where a relation is performed on adjacent items. This technique has the advantage of being very general and flexible. However, the proposed sorting algorithm has complexity $O(n \log^2 n)$ and is not constant round\footnote{It is not constant round when the underlying MPC protocol is not constant round.}. As a result, the implementation from 2011 performed poorly by current standards, intersecting $2^{10}$ items in 12 seconds. The modern protocol \cite{kkrt} which is \emph{not composable} can perform intersections of $2^{20}$ items in 4 seconds. While this difference of three orders of magnitude would narrow if reimplemented using modern techniques, the gap would likely remain large.
+
+% Private Set Intersection:Are Garbled Circuits Better than Custom Protocols? 
+%     https://ssltest.cs.umd.edu/~jkatz/papers/psi.pdf
+\item  Huang, Evans and Katz\cite{HEK12} also described a set intersection protocol based on sorting. Unlike \cite{BA11}, this work considers the two party setting where each party holds a set in the clear. This requirement prevents the protocol from being composable but allows the complexity to be reduced to $O(n\log n)$. The key idea is that each party locally sorts their set followed by merging the sets within MPC. The protocol can then perform a single pass over the sorted data to construct the intersection. 
+
+% (KS06) Privacy-Preserving Set Operations
+%     https://www.cs.cmu.edu/~leak/papers/set-tech-full.pdf
+% (MF06) Efficient Polynomial Operations in the Shared-Coefficients Setting 
+%     https://pdfs.semanticscholar.org/80ca/9f56cffce534e047d049884736ff16204958.pdf
+\item Another line of work was begun by Kissner and Song\cite{KS06} and improved on by \cite{MF06}. Their approach is based on the observation that set intersection and multi-set union have correspondence to operation on polynomials. A set $S$ can be encoded as the polynomial $\hat S(x)= \prod_{s\in S}(x-s)\in \mathbb{F}[x]$. That is, the polynomial $\hat S(x)$ has a root for all $s\in S$. Given two such polynomials, $\hat S(x), \hat T(x)$, the polynomial encoding the intersection is $\hat S(x)+\hat T(x)$ with overwhelming probability given a sufficiently large field $\mathbb{F}$. Multi-set union can similarly be performed by multiplying the two polynomials together. Unlike with normal union, if an item $y$ is contained in $S$ and $T$ then $\hat S(x)\hat T(x)$ will contain two roots at $y$ which is often not the desired functionality. This general idea can be transformed into a secure multi-party protocol using oblivious polynomial evaluation\cite{???} along with randomizing the result polynomial. The original computational overhead was $O(n^2)$ which can be reduced to the cost of polynomial interpolation $O(n\log n)$ using techniques from \cite{MF06}. The communication complexity is linear. In addition, this scheme assumes an ideal functionality to generate a shared Paillier key pair. We are unaware of any efficient protocol to realize this functionality except for \cite{RSA:HMRT12} in the two party setting.
+
+This general approach is also composable. However, due to randomization that is performed the degree of the polynomial after each operation doubles. This limits the practical ability of the protocol to compose more than a few operations. Moreover, it is not clear how this protocol can be extended to support SQL-like queries where elements are key-value tuples.
+
+% C. Hazay and K. Nissim. Efficient set operations in the presence of malicious adversaries. In PKC, 2010.
+%   http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.454.1521&rep=rep1&type=pdf
+\item Hazay and Nissim introduce a pair of protocols computing set intersection and union which are also based on oblivious polynomial evaluation where the roots of the polynomial encode a set. However, these protocols are restricted to the two party case and is not composable. The non-composability comes from that fact that only party constructs a polynomial $\hat S(x)$ encoding their set $S$ while the other party obliviously evaluates it on each element in their set. The result of these evaluations are compared with zero\footnote{The real protocol is slightly more complicated than this.}. These protocols have linear overhead and can achieve security in the malicious setting.
+
+\item (PSU) Keith Frikken 2007. Privacy-preserving set union. 
+
+\end{itemize}
