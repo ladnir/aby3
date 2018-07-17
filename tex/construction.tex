@@ -1,3 +1,81 @@
 \section{Our Construction}
 
+
+
 \subsection{Overview}
+
+Our core protocol is a technique for obliviously mapping together records that have equal keys. In particular, for each secret shared row $\share{X[i]}$ our protocol obliviously maps the row $\share{Y[j]}$ to the $i$ position of a new table $\share{Y'}$ if the \emph{joined on} columns compare for equality. In the event that no such $Y[j]$ exists then an arbitrary $j$ is used instead. Once the mapping is performed the output table can be constructed by an MPC protocol\cite{aby3} that compares the $i$th row of $\share X$ and $\share{Y'}$. 
+
+Without loss of generality let us assume that the columns $X_0$ and $Y_0$ are being joined on. Our protocol begins by generating a \emph{randomized encoding} for all of the secret shared elements $\share x\in \share{X_0}, \share y\in \share{Y_0}$. The ideal functionality for this encoding is to take secret shares from the parties, apply a PRF $F_k$ to the reconstructed value using a internally sampled key $k$, and return the resulting value to one of the three parties. For $\share x\in \share{X_0}$, party 0 will learn $F_k(x)$ while party 1 will learn $F_k(y)$ for $\share y\in \share{Y_0}$.
+
+Party 1 proceeds by constructing a \emph{secret shared} cuckoo hash table $\share{\hat Y}$ for the rows of $\share{Y}$ where the hash function values employed are defined as $h_i(y) = H( i || F_k(y))$. That is, party 1 knows the hash function values but the contents of the hash table remains secret shared between the parties. To prevent the other parties from learning information about the randomized encodings $F_k(y)$, party 1 must obliviously permute their shares to the desired position of the cuckoo hash table. We achieve this using a three party oblivious permutation protocol which further randomizes the secret shares.
+
+It is now the case that $\share{\hat Y}$ is a valid cuckoo hash table of $\share Y$ which is in a secret shared format. Party 0 who knows the randomized encodings $F_k(x)$ for all $\share x\in \share{X_0}$ now must query $\share{\hat Y}$ at the slots indexed by $h_i(x)= H( i || F_k(x))$ and compare this with the corresponding row of $\share X$. In particular, assuming we use two hash function, then party 0 constructs an \emph{oblivious switching network} that maps the shares $\share{\hat Y_{h_0(x)}}$ and $\share{\hat Y_{h_1(x)}}$ to $\share x$.
+
+Once the shares  $\share{\hat Y_{h_0(x)}}, \share{\hat Y_{h_1(x)}}$ and $\share x$ are aligned, the parties employ an MPC protocol to compare the joined on columns to compute a secret shared bit denoting whether $x$ matches with one of the rows. When computing an inner join query, only rows $X[i]$ where the comparison bit is set to one are considered valid while the other rows are set to \texttt{NULL}. Note that when columns of $Y$ are selected the corresponding values are obtained from $\share{\hat Y_{h_i(x)}}$ for the $i$ that the comparison succeeded on. Left joins work in a similar way except that all rows of $X$ are included while the comparison bit is used to select the columns of $Y$ or set the fields to \texttt{NULL}. Finally, unions can be computed by including all of $Y$ in the output and all of the rows of $X$ where the comparison bit is set to zero.
+
+\subsection{Randomized Encodings}
+
+Randomized encodings will allow the parties to coordinator their secret shares without revealing the underlying values. Crucially, randomized encodings are homomorphic to the encoded value with respect to equality. The ideal functionality of the encoding process is given in \figureref{fig:randomized-encode-ideal}. It considers two commands which allow the parties to initialize the internally stored key $k$ and later generate encoding under that key. In particular, the parties are allowed to send secret shares of a value $x$  to the ideal functionality and destinate which party should learn the encoding. This functionality has several interesting properties. First of all is that all encoding that have not been observed are uniformly distributed in that parties view. Secondly, learning an encoding $F_k(x)$ does not reveal any information about $x$ beyond being about to compare it for equality with other encodings. 
+
+\begin{figure}[ht]
+	\framebox{\begin{minipage}{0.95\linewidth}
+			Parameters: $N$ parties denoted as party 0 through party N-1. The input domain $\{0,1\}^\sigma$ and output domain $\{0,1\}^\ell$ for a pseudorandom function $F$.
+			
+			\begin{enumerate}
+				\item[] [Key Gen] Upon receiving command $(\textsc{KeyGen})$ from all parties, sample a uniformly random key $k$ from the key space of $F$ and store it internally.
+				
+				\item[] [Encode] Upon receiving command $(\textsc{Encode}, \share x, i)$ from all parties, if $k$ is uninitialized compute $F_k(x)$ and send it to party $i$. 
+			\end{enumerate}
+	\end{minipage}}
+	\caption{The Randomized Encoding ideal functionality \f{encode}}
+	\label{fig:randomized-encode-ideal}	
+\end{figure}
+
+
+\paragraph{LowMC Encodings.}
+We consider two protocol for realizing \f{encode}. The first is optimized with respect to computational overhead and is based the LowMC circuit\cite{lowmc} which computes a block cipher. With this approach we use the framework of \cite{aby3, highthroughput} to evaluate the a circuit implementing this PRF and reveal the output to the designated party. When coupled with these honest majority MPC protocols, this approach results in extremely high throughput. For instance, our implementation can compute one million encodings in a few seconds.
+
+LowMC is a family of MPC optimized block ciphers based on a binary substitution-permutation network. The cipher is parameterized by a block size $n$, keys size $\kappa$, s-boxes per layer $m$ and the desired data complexity $d$. Given the desired security level, e.g. 128 bits, the required number of rounds $r$ can then be computed as a function of these parameters. The structure of the cipher is specifically optimized to reduced the number of s-boxes (\textsc{and} gate) and the number of rounds. Generally speaking, in each round the cipher adds part of the key to the current state, multiplies it with a public binary matrix and then applies 3 bit s-boxes in parallel to a subset of the state. With respect to performance metrics, the most costly operation is the application of the s-boxes and the number of rounds required. 
+
+An important observation of our protocol is that the adversary only sees a bounded amount of block cipher output. In particular, the number of blocks observed $d$ is exactly the size of the table which is being encoded. For our implementation we set $d=2^{30}$ and optimize the remaining parameters. Our second observation is that our protocol uses the cipher as a PRF and does not require a excessive number of output bits. The desired property of the encodings is that the probability of spurious collisions between encodings is bounded by the statistical security parameter $\lambda$. Given table sizes of $|X|$ and $|Y|$, this probability is bounded by $n-\log |X|-\log |Y|\geq \lambda$. Considering the standard of setting $\lambda=40$, we observe that $n=80$ gives a sufficient margin for realistic table sizes. The remaining parameter $m$ was optimized empirically and set to be $m=14$ which resulting in $r=13$. This results in the evaluation of the LowMC requiring 13 rounds of communication and a total of 546 \textsc{and} gates (bits of communication).
+
+
+
+\paragraph{Diffie-Hellman Encodings.} Our second approach uses a Diffie-Hellman styled assumption to construct a PRF on shared input. In particular, for the share $\share x$ the protocol computes $F_k(x) = g^{xk}$. This approach has the advantage of not computing a PRF circuit within MPC which can be costly in some settings.
+
+
+\todo{talk about how to convert the shares.  We have binary shares and we need mod $p$ shares... }
+
+
+\paragraph{Encodings Long Elements.}
+\todo{If the element is too large to be encoded above, we can choose a random binary matrix and (locally) multiply the shares with it. We then encode. Given that this matrix is chosen after the shares, everything should be good.}
+
+
+\subsection{Oblivious Permutation}
+
+Our next building block is a three party honest majority oblivious permutation protocol. The ideal functionality of the protocol is given in \figureref{fig:perm-ideal}. Party 0 privately inputs the desired permutation while party 1 provides the vector of elements that will be permuted. Party 0 and 2 will received the will receive secret shares of the permuted elements.
+
+
+\begin{figure}[ht]
+	\framebox{\begin{minipage}{0.95\linewidth}
+			Parameters: $3$ parties denoted as party 0, party 1 and party 2. 
+			
+			\begin{enumerate}
+				\item[] [Permute] Upon receiving command $(\textsc{Permute}, \pi)$ from party 0 and $(\textsc{permute}, V)$ from party 1 where $\pi$ is a permutation of $n$ elements and $V\in \{0,1\}^{n\times \sigma}$ is a vector of $n$ elements, the functionality chooses a 2-out-of-2 secret sharing of $\pi(V)$ denoted as $\share{\pi(V)}$ and sends the first share to part 0 and the second share to party 2.
+			\end{enumerate}
+	\end{minipage}}
+	\caption{The Oblivious Permutation ideal functionality \f{perm}}
+	\label{fig:perm-ideal}	
+\end{figure}
+
+This protocol begins by having party 0 generate a two random permutation $\pi_0,\pi_1$ subject to $\pi_1 \circ \pi_0 = \pi$. Party 0 sends $\pi_0$ and a random vector $V_0$ of $n$ elements to party 1 who send $V_1 := \pi_0(V) \oplus V_0$ to party 2. In addition, party 0 sends $\pi_1$ to party 2. The final shares of $\pi(V)$ is defined as party 0 holding $\pi_1(V_0)$ and party 2 holding $\pi_1(V_1)$.
+
+The simulatability of this protocol is straight forward. The view of party 1 contains a uniformly distributed permutation $\pi_0$ and a uniformly distributed vector $V_0$. Similarly, the view of party 2 contains $\pi_1$ which is uniformly distributed without $\pi_0$ and the vector $V_1$ is uniformly distributed given that it is masked by $V_0$. One important observation of this simulation is that $\pi_0,V_0$ can be generated locally by parties 0 and 1 using a common source of randomness, e.g. a seeded PRG. This reduces the rounds to 1 and the communication complexity to $n\log_2 n + n\sigma$ bits. 
+
+Up to this point we have assumed the vector being permuted is the private input of party 1. However, our join protocols requires permutations of secret shares. In particular, parties 0 and 1 both hold secret shares of a table that need to be permuted. This is achieved by using the oblivious permutation protocol to permute the shares of party 1. Party 0 who knows the permutation $\pi$ can then locally permute their local share of the table and combine this with the output of the oblivious permutation protocol.
+
+
+\subsection{Oblivious Switching Network}
+
+

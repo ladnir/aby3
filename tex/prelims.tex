@@ -1,0 +1,22 @@
+\section{Preliminaries}
+
+
+\subsection{Security Model}
+
+Our protocols are presented in the semi-honest three party setting with an honest majority. That is, our protocols are computationally secure conditioned on the adversary corrupting at most one of the three parties. Later on we will also consider a setting with five parties that can tolerate the adversary corrupting any two of them. However, we will explicitly state when this alternative model is being considered.
+
+Throughout the exposition we will assume these three ``server" parties provide the sets which are computed on. However, in the general case the sets being computed on can be privately input by an arbitrary party which does not participates in the computation. In particular, these ``client" parties will secret share there set between the server parties and reconstruct the output shares that are indented for them. This setting is often referred to as the client server model\cite{aby3, secureML}. 
+
+
+\subsection{Notation}
+
+We will use the notation that $\share{x}$ is an additive secret sharing of the value $x$.
+
+
+\subsection{MPC Protocol}
+
+State that we use the ABY 3 framework. 
+
+\subsection{Cuckoo Hash Tables}
+
+The core data structure that our protocols employ is a cuckoo hash table. This data structure is parameterized by a capacity $n$, two (or more) hash functions $h_0, h_1$ and a vector $T$ which has $m=O(n)$ slots, $T_0, ..., T_m$. For any $x$ that has been added to the hash table, there is an invariant that $x$ will be located at $T_{h_0(x)}$ or $T_{h_1(x)}$. Testing if an $x$ is in the hash table therefore only requires inspecting these two locations. $x$ is added to the hash table by inserting $x$ into slot $T_{h_i(x)}$ where $i\in \{0,1\}$ is picked at random. If there is an existing item at this slot, the old item $y$ is removed and reinserted at its other hash function location. Given a hash table with $m=1.5n$ slots and three hash functions, then $n$ items can be inserted with overwhelming probability\cite{DRRT18}. 
