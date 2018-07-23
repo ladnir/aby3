@@ -51,90 +51,181 @@ An important observation of our protocol is that the adversary only sees a bound
 \paragraph{Encodings Long Elements.}
 \todo{If the element is too large to be encoded above, we can choose a random binary matrix and (locally) multiply the shares with it. We then encode. Given that this matrix is chosen after the shares, everything should be good.}
 
+\subsection{Oblivious Switching Network}
 
-\subsection{Oblivious Permutation}
+A switching network was introduced by Mohassel and Sadeghian\cite{MS13} as a circuit which can obliviously transform a vector $A=\{A_1,...,A_n\}$ such that the output is $A'=\{A_{\pi(1)}, ..., A_{\pi(m)}\}$ for an arbitrary function $\pi : [m]\rightarrow[n]$. The protocol of \cite{MS13} was designed in the two party setting where the first party inputs $A$ while the second party inputs a description of $\pi$. More recently Carmer et al. \cite{CMRS18} generalized the construction and demonstrated how this technique can be utilized for private set intersection. In both cases these switching networks require  $O(n\log n)$ cryptographic operations. Building on this general paradigm, we introduce a new oblivious switching network protocol tailored for the honest majority setting which significantly improves the efficiency. In particular, our protocol has linear overhead and does not require the use of oblivious transfer. 
 
-Our next building block is a (injective) oblivious permutation protocol. The ideal functionality of the protocol is given in \figureref{fig:perm-ideal}. This functionality will enable party 0 to obliviously reorder a vector on $n$ secret shares $\share{V_0},...,\share{V_n}$ by a permutation $\pi$ such that the output shares are $\share{V_{\pi(1)}},...,\share{V_{\pi(m)}}$. Note that the $m$ output shares can not contain duplicates of the input shares. We begin with a simplified functionality where only party 1 provides a vector $V$ as private input which will be generalized to when $V$ is secret shared.
+The ideal functionality of our protocol is given in \figureref{fig:perm-ideal}. This functionality considers three parties, a \emph{programer}, a \emph{sender} and a \emph{receiver}. The programmer has a description of an arbitrary function  $\pi:[m]\rightarrow[n]$ while the sender a vector $A$ containing $n$ elements each consisting of $\sigma$ bits. At the completion of the protocol, the programmer and the receiver should hold a 2-out-of-2 secret sharing of $A'=\{A_{\pi(1)}, ..., A_{\pi(m)}\}$.
 
+
+The protocols described below assume the vector being transformed is the private input of the sender. However, our larger join protocols require the transformations to be applied to secret shared vectors. In particular, parties 0 and 1 both hold secret shares of $A$. This is achieved by using the oblivious switching protocol to transform the shares of the sender. The programmer who knows the program $\pi$ can then locally permute their local share and combine this with the output of the oblivious switching protocol.
 
 \begin{figure}[ht]
 	\framebox{\begin{minipage}{0.95\linewidth}
-			Parameters: $3$ parties denoted as party 0, party 1 and party 2. Elements are strings in $\{0,1\}^\sigma$. An input vector size of $n$ and output size of $m$.
+			Parameters: $3$ parties denoted as the \emph{programmer}, \emph{sender} and \emph{receiver}. Elements are strings in $\{0,1\}^\sigma$. An input vector size of $n$ and output size of $m$.
 			
 			\begin{enumerate}
-				\item[] [Permute] Upon receiving command $(\textsc{Permute}, \pi)$ from party 0 and $(\textsc{permute}, V)$ from party 1, the functionality performs:
+				\item[] [Switch] Upon the command $(\textsc{switch}, \pi)$ from the \emph{programmer} and $(\textsc{switch}, A)$ from the \emph{sender}, the functionality performs:
 				\begin{enumerate}
-					\item Interpret $\pi: [m]\rightarrow [n]$ as an injective function and $V\in \{0,1\}^{n\times \sigma}$ as a vector of $n$ elements. 
-					\item Uniformly sample two $m$ elements vector $S, T\gets \{0,1\}^{m\times \sigma}$ such that for all $i\in [m], V_{\pi(i)} = T_i \oplus S_i$.
-					\item Send $S$ to party 0 and $T$ to party 2.
+					\item Interpret $\pi: [m]\rightarrow [n]$ as a function and $A\in \{0,1\}^{n\times \sigma}$ as a vector of $n$ elements. 
+					\item Uniformly sample two $m$ elements vector $B^0, B^1\gets \{0,1\}^{m\times \sigma}$ such that for all $i\in [m], A_{\pi(i)} = B^0_i \oplus B^1_i$.
+					\item Send $B^0$ to the \emph{programmer} and $B^1$ to the \emph{receiver}.
 				\end{enumerate}
 			\end{enumerate}
 	\end{minipage}}
-	\caption{The Oblivious Permutation ideal functionality \f{perm}}
+	\caption{The Oblivious Switching Network ideal functionality \f{switch}}
 	\label{fig:perm-ideal}	
 \end{figure}
 
-This protocol begins by having party 0 generate a two random permutation $\pi_0,\pi_1$ where $\pi_1 \circ \pi_0 = \pi$ and $\pi_0$ is bijective and $\pi_1$ is injective. Party 0 sends $\pi_0$ and a random vector $S$ of $n$ elements to party 1 who send $T := \{V_{\pi(1)} \oplus S_0, ...,V_{\pi(n)} \oplus S_n \}$ to party 2. Party 0 sends $\pi_1$ to party 2. The final shares of the permuted $V$ are defined as party 0 holding $\{S_{\pi_1(1)}, ..., S_{\pi_1(m)}\}$ and party 2 holding $\{T_{\pi_1(1)}, ..., T_{\pi_1(m)}\}$.
 
-The simulatability of this protocol is straight forward. The view of party 1 contains a uniformly distributed permutation of $n$ elements $\pi_0$ and a uniformly distributed vector $S$. Similarly, the view of party 2 contains $\pi_1: [m]\rightarrow [n]$ which is uniformly distributed (when $\pi_0$ is unobserved) and the vector $T$ is uniformly distributed given that it is masked by $S$. One important observation of this simulation is that $\pi_0,S$ can be generated locally by parties 0 and 1 using a common source of randomness, e.g. a seeded PRG. This reduces the rounds to 1 and linear communication complexity. 
+\paragraph{Permutation Network}
 
-Up to this point we have assumed the vector being permuted is the private input of party 1. However, our join protocols requires permutations of secret shares. In particular, parties 0 and 1 both hold secret shares of $V$. This is achieved by using the oblivious permutation protocol to permute the shares of party 1. Party 0 who knows the permutation $\pi$ can then locally permute their local share of the table and combine this with the output of the oblivious permutation protocol.
+We begin with a restricted class of switching networks where the programming function $\pi$ is injective. These types of programs do not allow a single input element $A_i$ to be mapped to more than one location in the output vector. 
 
+Our protocol begins by having the programmer sampling a two random functions $\pi_0,\pi_1$ such that $\pi_1 \circ \pi_0 = \pi$, $\pi_0$ is bijective and $\pi_1$ is injective. The programmer sends $\pi_0$ and a random vector $S$ of $n$ elements to the sender who send $T := \{V_{\pi(1)} \oplus S_0, ...,V_{\pi(n)} \oplus S_n \}$ to the receiver. The programmer sends $\pi_1$ to the receiver. The final shares of the permuted $V$ are defined as the programmer holding $\{S_{\pi_1(1)}, ..., S_{\pi_1(m)}\}$ and the receiver holding $\{T_{\pi_1(1)}, ..., T_{\pi_1(m)}\}$.
 
+The simulatability of this protocol is straight forward. The view of the sender contains a uniformly distributed permutation of $n$ elements $\pi_0$ and a uniformly distributed vector $S$. Similarly, the view of the receiver contains $\pi_1: [m]\rightarrow [n]$ which is uniformly distributed (when $\pi_0$ is unobserved) and the vector $T$ is uniformly distributed given that it is masked by $S$. One important observation of this simulation is that $\pi_0,S$ can be generated locally by parties 0 and 1 using a common source of randomness, e.g. a seeded PRG. This reduces the rounds to 1 and linear communication complexity. 
+s
+\paragraph{Universal Switching Network}
 
-\subsection{Oblivious Switching Network}
-
-A switching network\cite{MS13} can be viewed as a generalization of a permutation where any input element to be mapped to zero or more output positions. In particular, we do not require the \emph{program} $\pi$ to be injunctive. Mohassel and Sadeghian \cite{MS13} were the first to consider such a functionality and design a two party protocol for it with $O(n\log n)$ complexity. More recently Carmer et al. \cite{CMRS18} generalized the construction and demonstrated how this technique can be utilized for private set intersection. Building on this general paradigm, we introduce a new oblivious switching network protocol tailored for the honest majority setting which significantly improves the efficiency. In particular, our protocol has linear overhead and does not require the use of oblivious transfer.
-
-A oblivious switching network with the program $\pi : [m]\rightarrow [n]$ can be constructed in three phases\cite{MS13, CMRS18}. In particular, the input vector $V$ will have three transformation applied $V\overset{\pi_1}{\rightarrow}V^1\overset{\pi_2}{\rightarrow}V^2\overset{\pi_3}{\rightarrow}\pi(V)$.
+A universal switching network with an \emph{arbitrary} program $\pi : [m]\rightarrow [n]$ can be constructed in three phases\cite{MS13, CMRS18}. In particular, the input vector $A$ will have three transformation applied $A\overset{\pi_1}{\rightarrow}B\overset{\pi_2}{\rightarrow}C\overset{\pi_3}{\rightarrow}D=\pi(A)$.
 \begin{enumerate}
-	\item $V\overset{\pi_1}{\rightarrow}V^1$:  The input vector $V$ is permuted by $\pi_1:[m]\rightarrow[n]$ such that if $\pi$ maps an input position $i$ to $k$ outputs positions (i.e. $|\{ j : \pi(j)=i \}| = k$), then there exists a $j$ such that $\pi_1(j)=i$  and $\{\pi_1(j)+ 1,...,\pi_1(j )+k \} \cap image(\pi) = \emptyset$. That is, wherever position $i$ is mapped by $\pi_1$, it should be followed by $k-1$ input positions that do not appear in the final output.
+	\item $B:=\pi_1(A)$:  The input vector $A$ is permuted by the injective function $\pi_1:[m]\rightarrow[n]$ such that if $\pi$ maps an input position $i$ to $k$ outputs positions (i.e. $k=|preimage(\pi,i)|=|\{ j : \pi(j)=i \}|$), then there exists a $j$ such that $\pi_1(j)=i$  and $\{\pi_1(j)+ 1,...,\pi_1(j )+k \} \cap image(\pi) = \emptyset$. That is, wherever position $i$ is mapped by $\pi_1$, it should be followed by $k-1$ input positions that do not appear in the final output. The parties then use a permutation network to compute $B:=\pi_1(A)$.
 	
-	\item $V^1\overset{\pi_2}{\rightarrow}V^2$: The intermediate vector $V^1$ is transformed by a duplication network $\pi_2:[m]\rightarrow[m]$ such that if position $V_i$ is mapped to $k$ positions in $\pi(V)$, then $\{ V^2_{j},...,V^2_{j+k}\} = \{V_i\}$ where $\pi_1(j)=i$. That is, $V^2$ takes $V^1$ and copies $V^1_{j}=V_{\pi_1(j)}=V_i$ into the next $k-1$ positions. 
+	\item $C:=\pi_2(B)$: The intermediate vector $B$ is transformed by a duplication network $\pi_2:[m]\rightarrow[m]$ such that if position $A_i$ is mapped to $k$ positions in $\pi(A)$, then $\{ C_{j},...,C_{j+k}\} = \{A_i\}$ where $\pi_1(j)=i$. That is, $C$ takes $B$ and copies $B_{j}$ into the next $k-1$ positions. 
 	
-	\item $V^2\overset{\pi_3}{\rightarrow}\pi(V)$: The final transformation $\pi_3:[m]\rightarrow[m]$  permutes $V^2$ to have the same ordering as $\pi(V)$. That is, the elements $\{ V^2_{j},...,V^2_{j+k}\}$ which all have the value  $V_i$ are arbitrary mapped to the $k$ positions $\{ j : \pi(j)=i \}$.
+	\item $D:=\pi_3(C)$: The final transformation $\pi_3:[m]\rightarrow[m]$  permutes $C$ to have the same ordering as $\pi(A)$. That is, the elements $\{ C_{j},...,C_{j+k}\}$ which all have the value  $A_i$ are arbitrary mapped to the $k$ positions $\{ j : \pi(j)=i \}$.
 \end{enumerate}
-Observer that steps 1 and 3 can both be implemented using the oblivious permutation. However, note that our oblivious permutation functionality is defined for $m\leq n$ while the switching network has no such restriction. This can be overcome by artificially padding the input vector $V$ with dummy items to be of size $\max(m, n)$. 
+Observer that steps 1 and 3 can both be implemented using the oblivious permutation protocol.% However, note that our oblivious permutation functionality is defined for $m\leq n$ while the switching network has no such restriction. This can be overcome by artificially padding the input vector $V$ with dummy items to be of size $\max(m, n)$. 
 
-What remains is how to efficiently implement the duplication network $\pi_2:[m]\rightarrow[m]$. This transformation can be characterized by a bit vector $b$ of length $m-1$ where the $i$th bit denotes whether the item at position $i$ should have the same value as position $i+1$. This observation gives rise to a natural protocol: for $i\in [m-1]$, if $b_i=1$ then use MPC to copy $V_i$ into $V_{i+1}$. The primary challenge is to achieve this while using a constant number of communication rounds which prevents the use of a generic MPC protocol such as \cite{aby3, highthroughput}.
+What remains is how to efficiently implement the duplication network $\pi_2:[m]\rightarrow[m]$. This transformation can be characterized by a bit vector $b$ of length $m-1$ where the $i$th bit denotes whether the item at position $i$ should have the same value as position $i+1$. This observation gives rise to a natural protocol: for $i\in [m-1]$, if $b_i=1$ then use MPC to copy $B_i$ into $B_{i+1}$. The primary challenge is to achieve this while using a constant number of communication rounds which prevents the use of a generic MPC protocol such as \cite{aby3, highthroughput}.
 
-To obliviously copy $V_i$ into $V_{i+1}$ conditioned on the programming bit $b_i$ we require the resulting value $V_{i+1}'$ be secret shared. In particular, we consider the setting there party 0 knowns the programming bit $b_i$ while $V_i$ and $V_{i+1}$ are private input of party 1. At the end parties 0 and 1 will hold secret share $V_{i+1,0}', V_{i+1,1}'$ of the updated $V_{i+1}':=b_i V_i + (1-b_1)V_{i+1}$. Party 1 begins by sampling three random strings $V_{i+1,1}', w_0,w_1\gets \{0,1\}^\sigma$ and a random bit $\phi\gets \{0,1\}$. They construct two messages $m_0=V_{i+1}\oplus V_{i+1,1}'\oplus w_\phi$ and $m_1= V_i\oplus V_{i+1,1}'\oplus w_{\phi\oplus 1}$. Party 1 sends $w_0,w_1$ to party 2 and sends $m_0,m_1,\phi$ to party 0 who sends $\rho=\phi\oplus b_i$ to party 2. The final share can then be constructed by having party 2 send $w_\rho$ to party 0 who computes $V_{i+1,0}':=m_{b_i}\oplus w_{\rho}$.
+To obliviously select $B_i$ or $B_{i+1}$ conditioned on the programming bit $b_i$ we require the resulting value $C_{i+1}$ be secret shared. In particular, we consider the setting there the programmer knowns the programming bit $b_i$ while $B_i$ and $B_{i+1}$ are private input of the sender. At the end the programmer and sender will hold secret share $C^0_{i+1}, C_{i+1}^1$ of $C_{i+1}:=b_i B_i + (1-b_1)B_{i+1}$. The sender begins by sampling three random strings $C_{i+1}^1, w_0,w_1\gets \{0,1\}^\sigma$ and a random bit $\phi\gets \{0,1\}$. They construct two messages $m_0=B_{i+1}^1\oplus C_{i+1}^1\oplus w_\phi$ and $m_1= B_i\oplus C_{i+1}^1 \oplus w_{\phi\oplus 1}$. The sender sends $w_0,w_1$ to the receiver and sends $m_0,m_1,\phi$ to the programmer who sends $\rho=\phi\oplus b_i$ to the receiver. The final share are constructed by having the receiver send $w_\rho$ to the programmer who computes $C_{i+1}^0:=m_{b_i}\oplus w_{\rho}$.
 
-The simulation of this protocol has two key parts. First, party 0 learns only one of the keys $w_0,w_1$ which determines which of the secret share $(V_{i+1}\oplus V_{i+1,1}',  V_i\oplus V_{i+1,1}')$ they can one-time-pad decrypt. As such, the other share is uniformly distributed in their view. Similarly, the bit $\rho$ that party 0 sends to party 2 is uniformly distributed given that $\phi$ is not contained in the view of party 2 . The remaining messages $w_0,w_1,\phi$ which are uniformly sampled are trivial to simulate. Moreover, sending these messages can be optimized away when a PRG seed is pre-share between the appropriate parties.
+The simulation of this protocol has two key parts. First, party 0 learns only one of the keys $w_0,w_1$ which determines which of the secret share $(B_{i+1}\oplus C_{i+1}^1$ or $  B_i\oplus C_{i+1}^1)$ they can one-time-pad decrypt. As such, the other share is uniformly distributed in their view. Similarly, the bit $\rho$ that the programmer sends to the receiver is uniformly distributed given that $\phi$ is not contained in the view of the receiver . The remaining messages $w_0,w_1,\phi$ which are uniformly sampled are trivial to simulate. Moreover, sending these messages can be optimized away when a PRG seed is pre-share between the appropriate parties.
 
-The protocol just described considers the setting where the messages $V_i,V_{i+1}$ are the private input if party 2. However, we require that at each iteration the messages being selected is either $V_i'$ or $V_{i+1}$ where the former was computed in the previous iteration and is secret shared between parties 0 and 1. Fortunately, a trivial modification yields the desired functionality. Party 1 simply utilizes their share of $V_i'$ instead if $V_i$ while party 0 can now compute $V_{i+1,0}':=m_{b_i}\oplus w_{\rho}\oplus b_iV_{i,0}'$. It is now the case that both thats of $V_i'$ are obliviously multiplied by $b_i$. \figureref{fig:switching-net} provides a formal description of the full switching network protocol.
+The protocol just described considers the setting where the messages $B_i,B_{i+1}$ are the private input of the receiver. However, we require that at each iteration the messages being selected is either $C_i$ or $B_{i+1}$ where the former was computed in the previous iteration and is secret shared between the programmer and sender. Fortunately, a trivial modification yields the desired functionality. The sender simply utilizes their share of $C_i$ instead if $B_i$ while the programmer can now compute $C_{i+1}^0:=m_{b_i}\oplus w_{\rho}\oplus b_iC_{i}^0$. It is now the case that both shares of $C_i$ are obliviously multiplied by $b_i$. \figureref{fig:switching-net} provides a formal description of the full switching network protocol.
 
 \begin{figure}[ht]
-	\framebox{\begin{minipage}{0.95\linewidth}
+	\framebox{\begin{minipage}{0.95\linewidth}\small
 			Parameters: $3$ parties denoted as \emph{programmer}, \emph{sender} and \emph{receiver}. Elements are strings in $\{0,1\}^\sigma$. An input vector size of $n$ and output size of $m$.
 			
 			\begin{enumerate}
-				\item[] [Switch] Upon receiving command $(\textsc{Switch}, \pi)$ from the \emph{programmer} and $(\textsc{Switch}, V)$ from the \emph{sender}, the functionality performs:
+				\item[] [Permute] Upon the command $(\textsc{Permute}, \pi)$ from the \emph{programmer} and $(\textsc{Permute}, A)$ from the \emph{sender}.  $\pi: [m]\rightarrow [n]$ is parsed as a \emph{injective} function and  $A\in \{0,1\}^{n\times \sigma}$ as a vector of $n$ elements. Then:
 				\begin{enumerate}
-					\item Interpret $\pi: [m]\rightarrow [n]$ as a function and $V\in \{0,1\}^{n\times \sigma}$ as a vector of $n$ elements. 
+					\item The \emph{programmer} samples a uniformly random bijective function $\pi_0 : [n]\rightarrow[n]$ and computes the injective function $\pi_1 :[n] \rightarrow[m]$ such that $\pi_1\circ \pi_0 = \pi$.  $\pi_0 $ and a random vector $S\gets \{0,1\}^{n\times \sigma}$ are sent to the \emph{sender}.
+					\item The \emph{sender} computes and sends $B := \{ A_{\pi_0(1)} \oplus S_1, ..., A_{\pi_0(n)} \oplus S_n\}$ to the \emph{receiver}.
+					\item The \emph{programmer} sends $\pi_1$ and a random vector $T\gets\{0,1\}^{m\times\sigma}$ to the \emph{receiver} who outputs $C^0:=\{B_{\pi_1(1)} \oplus T_1,...,B_{\pi_1(m)}\oplus T_m\}$. The \emph{programmer} outputs $C^1:=\{ S_{\pi_1(1)}\oplus T_1,...,S_{\pi_1(m)}\oplus T_m\}$.
+				\end{enumerate}
+				
+				\item[] [Switch] Upon the command $(\textsc{Switch}, \pi)$ from the \emph{programmer} and $(\textsc{Switch}, A)$ from the \emph{sender}. $\pi: [m]\rightarrow [n]$ is parsed as a function and  $A\in \{0,1\}^{n\times \sigma}$ as a vector of $n$ elements. Then:
+				\begin{enumerate}
+					\item If $n<m$, the \emph{sender} redefines $A$ to be $A := A || \{0\}^{(m-n)\times \sigma}$ and all parties redefine $n:=m$.
+					\item The \emph{programmer} samples an injective function $\pi_1:[m]\rightarrow [n]$ such that for $i\in image(\pi)$ and $k=|preimage(\pi, i)|$, there exists a $j$ where $\pi_1(j)=i$ and $\{\pi_1(j+1), ...,\pi_1(j+k) \}\cap image(\pi)=\emptyset$.
 					
-					\item The programmer samples a permutation $\pi_1:[m]\rightarrow [n]$ such that for $i\in image(\pi)$ and $k=|preimage(\pi, i)|$, there exists a $j$ where $\pi_1(j)=i$ and $\{\pi_1(j+1), ...,\pi_1(j+k) \}\cap image(\pi)=\emptyset$.
+					The \emph{programmer}  sends $(\textsc{Permute}, \pi_1)$ to \proto{switch} and the \emph{sender} sends $(\textsc{Permute}, A)$. The \emph{programmer} receives $B^{0}\in \{0,1\}^{m\times \sigma}$ in response and the \emph{receiver} receives $B^{1}\in \{0,1\}^{m\times \sigma}$. 
 					
-					The \emph{programmer}  sends $(\textsc{Permute}, \pi_1)$ to \f{Permute} and the \emph{sender} sends $(\textsc{Permute}, V)$. The \emph{programmer} receives $V^{1,0}\in \{0,1\}^{m\times \sigma}$ in response and the receiver receives $V^{1,1}\in \{0,1\}^{m\times \sigma}$. 
+					\item The \emph{programmer}  computes the vector $b\in\{0,1\}^{m}$ such that for $i\in image(\pi)$ and $k=|preimage(\pi, i)|$, $b_j = 0$ and $b_{j+1}=...=b_{j+k}=1$ where $\pi_1(j)=i$.
 					
-					\item The \emph{programmer}  computes the vector $b\in\{0,1\}^{m}$ such that for $i\in image(\pi)$ and $k=|preimage(\pi, i)|$, $b_j = 0$ and $b_{j+1}=...=b_{j+k}=1$ where $\pi(j)=i$.
-					
-					The \emph{receiver} samples three $m$ element vectors $V^{2,1}, W^0,W^1\gets \{0,1\}^{m\times \sigma}$ and $\phi\gets\{0,1\}^m$. They set $V^{2,1}_1:=V^{1,1}_1$ and computes 
+					The \emph{receiver} samples three $m$ element vectors $C^{1}, W^0,W^1\gets \{0,1\}^{m\times \sigma}$ and $\phi\gets\{0,1\}^m$. They set $C^{1}_1:=B^{1}_1$ and computes 
 					\begin{align*}
-						M^0_i&:= V^{1,1}_{i+1} \oplus V^{2,1}_i \oplus W^{\phi_i}_i\\
-						M^1_i&:= V^{1,1}_{i} \oplus V^{2,1}_i \oplus W^{\phi_i\oplus 1}_i
+						M^0_i&:= B^1_{i}\ \ \, \oplus C^{1}_i \oplus W^{\phi_i}_i\\
+						M^1_i&:= C^1_{i-1} \oplus C^{1}_i \oplus W^{\phi_i\oplus 1}_i
 					\end{align*}
-					for $i\in [m]$. The \emph{receiver} sends $M,\phi$ to the \emph{programmer} and $W$ to the \emph{sender}. The \emph{programmer} sends $\rho:=\phi\oplus b$ to the \emph{sender} who responds with $\{ W^{\rho_i}_i : i\in [m] \}$. The \emph{programmer} defines $V^{2,0}_0:=\{0\}^\sigma$ and computes 
+					for $i\in \{2,...,m\}$. The \emph{receiver} sends $M,\phi$ to the \emph{programmer} and $C^{1},W$ to the \emph{sender}. The \emph{programmer} sends $\rho:=\phi\oplus b$ to the \emph{sender} who responds with $\{ W^{\rho_i}_i : i\in [m] \}$. The \emph{programmer} defines $C^{0}_1:=B^{0}_1$ and computes 
 					$$
-						V^{2,0}_i:= M^{b_i}_i \oplus W^{\rho_i}_i\oplus b_iV^{2,0}_{i-1}
+						C^{0}_i:= M^{b_i}_i \oplus W^{\rho_i}_i\oplus b_iC^{0}_{i-1}
 					$$
+					for $i\in \{2,...,m\}$.
+					\item The \emph{programmer} computes the permutation $\pi_3$ such that for  $i\in image(\pi)$ and $k=|preimage(\pi, i)|$, $\{\pi_3(\ell) : \ell\in preimage(\pi, i)\}=\{j, ..., j +k\}$ where $i=\pi_1(j)$.	The \emph{programmer} sends $(\textsc{Permute}, \pi_3)$ to \proto{switch} and the \emph{sender} sends $(\textsc{Permute}, C^{1})$.  The \emph{programmer} receives $S\in \{0,1\}^{m\times \sigma }$ in response. The \emph{receiver} receives and outputs $D^{1}\in \{0,1\}^{m\times \sigma }$.
 					
-					\item The \emph{programmer} computes the permutation $\pi_3$ such that for  $i\in image(\pi)$ and $k=|preimage(\pi, i)|$, $\{\pi_3(\ell) : \ell\in preimage(\pi, i)\}=\{j, ..., j +k\}$ where $i=\pi_1(j)$.	The \emph{programmer} sends $(\textsc{Permute}, \pi_3)$ to \f{Permute} and the \emph{receiver} sends $(\textsc{Permute}, V^{2,1})$.  The \emph{programmer} receivers $S\in \{m\times \sigma \}$ in response and the \emph{sender} receives $V^{3,1}$.
-					
-					The \emph{programmer} computes $V^{3,0}_i:=S_i\oplus V^{2,0}_{\pi_3(i)}$ for $i\in [m]$.
+					The \emph{programmer} outputs $D^{0}_i:=S_i\oplus C^{0}_{\pi_3(i)}$ for $i\in [m]$.
 				\end{enumerate}
 			\end{enumerate}
 	\end{minipage}}
-	\caption{The Oblivious Switching Network protocol }
+	\caption{The Oblivious Switching Network protocol \proto{switch}. }
 	\label{fig:switching-net}	
 \end{figure}
+
+
+
+
+
+\subsection{Join Protocols}
+
+The full join protocol can be constructed using the presented building blocks. When joining two tables $X,Y$ our protocol can be divided into four phases:
+
+\begin{enumerate}
+	\item Compute randomized encodings of the joined on column(s). 
+	\item Party 1 constructs a cuckoo table for table $Y$ and arranges the secret shares using an oblivious permutation protocol. 
+	\item For each row $x$ in $X$, party 0 uses an oblivious switching network maps the corresponding location $i_1,i_2$ of the cuckoo hash table to a secret shared tuple $(x, y_{i_1}, y_{i_2})$.
+	\item The joined on column(s) of $x$ is then compared to that of $y_{i_1}, y_{i_2}$. If there is a match the output values are constructed. Otherwise the output row is set to \texttt{NULL}.
+\end{enumerate} 
+
+\paragraph{Randomized Encodings}
+We begin by generating randomized encodings of the columns being joined on. For example, 
+$$
+	\texttt{select }* \texttt{ from } X \texttt{ inner join } Y \texttt{ on } X_1 = Y_1 \texttt{ and } X_2 = Y_3
+$$
+In this case there are two joined on columns, $X_1,X_2$ from $X$ and $Y_1,Y_3$ from $Y$. Our protocol requires that the parties generate a randomized encoding for each row of $X$ and $Y$. That is, the parties must send a secret share of $\share{X_1[i] || X_2[i]}$ and $\share{Y_1[i] || Y_3[i]}$ to \f{encode} where $||$ denotes concatenation. 
+
+There are two major challenges to efficiently implement this functionality in a composable setting. First, the encoding functionality takes as input a secret shared value consisting of $\sigma$ bits. Moreover, when implemented using the LowMC block cipher optimal performance is achieved with a block size of $\sigma=80$ bits. However, the number of bits being encoded is dependent on the column sizes and which columns are being joined on. Instead of changing the functionality of the encoding procedure we show that a preprocessing step that reduced the size of the inputs without degrading the security properties of the encodings. 
+
+Specifically, once the tables being joins on have been specified, the parties execute a coin flipping protocol to jointly pick a random string $s\in \{0,1\}^\kappa$. Given $s$ the parties deterministically generate a random matrix $E\gets\{0,1\}^{m\times \sigma}$. The parties can then locally compute $\share{E_x}=\share{X_1[i] || X_2[i]} E$ and $\share{E_y}=\share{Y_1[i] || Y_3[i]} E$ where $m$ denotes the total bit length of the columns being joined on. These secret shares can then be forwarded to the \f{encode}
+
+To preserve correctness and security we require the probability of the following game outputting 1 be negligible in $\lambda$. 
+\begin{quote}
+Have the adversary select a $X\subset \{0,1\}^{m}$ of size $poly(\lambda)$ and then uniformly at random sample $E\gets \{0,1\}^{m\times \sigma}$. If there exists distinct $x_1,x_2\in X$ such that $x_1E = x_2E$, output 1, otherwise 0. 
+\end{quote}
+
+\todo{Show that this holds and that $\sigma=80$ is chill for $\lambda = 40$.}
+
+The second challenge we face has to do with the composibility of our protocols. Namely, after a previous join operation, some (or all) of the rows being joined can be invalid. We require that the randomized encoding does not reveal which rows are invalid. This is achieved by secret sharing a bit for each row which encodes whether or not the row is currently valid. For tables that are input by a party, these bits are publicly set to 1. Given this bit \share{b}, the parties can generate a random $\sigma$ bit share $\share{r}$ for each value $\share{x}$ that is encoded. Before $\share{xE}$ is sent to \f{encode}, the parties compute $\share{x'}:=\share{xE}\oplus \share{\overline{b}}\share{r}$ and send $\share{x'}$ instead. In the event that the current row is valid, this alteration has no effect on the computation due to \share{\overline{b}}\share{r} being a secret sharing of zero. However, when the row was invalid the value of $x'$ is uniformly distributed. Conditioned on $x'$ not colliding with another value being encoded, the resulting encoding is uniformly distributed and unique with overwhelming probability. 
+
+\todo{Pr. of collision.}
+
+Putting everything together, the parties will jointly sample a random binary matrix $E\gets\{0,1\}^{m\times \sigma}$ if $m>\sigma$ and $E=I$ otherwise. For each set of join on columns $\share{Z_{i_1}},...\share{Z_{i_l}}$ that are to be encoded, they parties jointly sample a secret shared value $\share{r}$ where $r\in\{0,1\}^\sigma$ and compute $\share{z'}:=\share{Z_{i_1}||...||Z_{i_l}}E \oplus \share{\overline{b}}\share{r}$. \share{z'} is sent to \f{encode} who returns the encoding for that row to the appropriate party. In particular, party 0 learns the randomized encodings $\mathbb{E}_x$ for the joined on columns of the left table $X$ and party 1 learns the encodings $\mathbb{E}_y$ for the right table $Y$.
+
+\paragraph{Constructing the Cuckoo Table}
+
+The next phase of the protocol is for party 1 to construct a secret shared cuckoo table for $Y$ where each row is inserted based on its encoding $\mathbb{E}_y$. Party 1 locally inserts the encodings into a plain cuckoo hash table $T$ with $m\approx 1.5|\mathbb{E}_y|$ slots using the algorithm specified in \sectionref{sec:prelim}. Party 1 samples an injective function $\pi : m\rightarrow m$ such that for the $i$th $e\in \mathbb{E}_y$ and $T[j]=e$, $\pi(j)=i$. That is, $\pi$ defines the mapping from each rows original position in the table $Y$ to its new position in the cuckoo table $T$.
+
+Recall that parties 0 and 1 respectively hold a 2-out-of-2 secret sharing $Y^0,Y^1$ such that $Y=Y^0\oplus Y^1$. 
+Party 1 sends $(\textsc{Switch}, \pi)$ to \f{switch} and party 0 sends $(\textsc{Swich}, Y^0)$\footnote{Note that $Y^0$ has $n$ rows while $\pi$ is defined with an input vector containing $m\approx 1.5n$ rows. Party 0 will pad $Y^0$ with $m-n$ rows which contain all zeros. These will be mapped to the empty slots of the cuckoo table by the permutation/switching network.}. In response \f{switch} sends $\hat Y^{0,1}$ to party 1  and $\hat Y^{0,0}$ to party 2. Party 1 defines their output of this phase as $\hat Y^0:=\hat Y^{0,1} \oplus \pi(Y^1)$ and party 2 defines their output as $\hat Y^{1} =\hat Y^{0,0}$.
+
+It is now the case that $\hat Y = \hat Y^0\oplus \hat Y^1$ is a valid secret shared cuckoo hash table of the original table $Y$. In particular, for a given row $Y[i]$ with encoding $e=\mathbb{E}_y[i]$, there exists a $j\in \{h_1(e),h_2(e), h_3(e)\}$ such that  $\hat Y[j] = Y[i]$. Here, the $h_i$ functions are hash functions used to construct the cuckoo table $T$. Another important observation is that $\pi$ is a permutation and therefore the more efficient permutation protocol can be used in place of the universal switching protocol.
+
+\paragraph{Selecting from the Cuckoo Table}
+
+The next phase of the protocol is to select the appropriate rows of $\hat Y$ and compare them with each row of $X$. This is achieved with party 0s knowledge of the randomized encodings $\mathbb{E}_x$. Namely, party 0 knows that if the joined on columns of the $i$th row $X[i]$ will match with a row from $Y$, then this row will be at $\hat Y[j]$ for some $j\in \{h_1(e),h_2(e), h_3(e)\}$ where  $e=\mathbb{E}_x[i]$. 
+
+To obliviously compare these rows, party 0 will construct three switching networks with programming $\pi_1,\pi_2,\pi_3 : n\rightarrow m$ such that if $h_l(\mathbb{E}_x[i])=j$ then $\pi_l(i)=j$. Each of these will be used to construct a secret shared table $\share{Y^1},\share{Y^2},\share{Y^3}$ which are the result of applying the switching networks $\pi_1,\pi_2,\pi_3$ to $\share{\hat Y}$. In particular, for the $i$th row $X[i]$ it is now the case that if $X[i]$ has a matching row in $Y$ then it will be contained at  $Y^1[i],Y^2[i]$ or ${Y^3}[i]$. 
+
+One in constructing $\pi_1,\pi_2,\pi_3$ is in the case that there is a collision among $\{h_1(e),h_2(e), h_3(e)\}$ where $e= \mathbb{E}_x[i]$. In this case, party 1 will map two some row in $\hat Y$ to the $i$ row of the tables $\share{Y^1},\share{Y^2},\share{Y^3}$. As such, when we compare $X[i]$ with these rows there will be two (or more) matches and the comparison circuit will not know which to select. We overcome this by padding $\{h_1(e),h_2(e), h_3(e)\}$ to the desired size with arbitrary values from $[m]$. Therefor it is guaranteed that for the $i$th row, the joined on columns of $\{\share{Y^1}[i],\share{Y^2}[i],\share{Y^3}[i]\}$ will  have at most one intersection with $X[i]$.
+
+
+\paragraph{Inner Join}
+
+
+Given the four secret shared tables $\share{X},\share{Y^1},\share{Y^2},\share{Y^3}$ as described above, the parties do a learn pass over the $n$ rows to construct the inner join between $X$ and $Y$. Recall that the inner join consists of all the selected columns from the concatenated rows $X[i],Y[j]$ where  the joined on columns of the rows $X[i]$ and $Y[j]$ are equal. Alternatively, an inner join can be thought of as the intersection between the joined on columns of $X$ and $Y$. 
+
+By construction, if row $X[i]$ has a matching row in $Y$ then this row will occupy at most one of the rows ${Y^1}[i],{Y^2}[i],{Y^3}[i]$. To determine which the parties input the secret shared of these rows to an MPC protocol where the join on columns are compared. In particular, for each $i$ and rows ${Y^1}[i],{Y^2}[i],{Y^3}[i]$ the bits $b_1[i],b_2[i],b_3[i]$ are generated where $b_l[i]=1$ iff the joined on columns of ${Y^1}[i]$ are equal to that of $X[i]$. The MPC circuit then computes $b[i]=b_1[i]\oplus b_2[i]\oplus b_3[i]$ and $Y'[i]=b_1[i]{Y^1}[i]\oplus b_2[i]{Y^2}[i]\oplus b_3[i]{Y^3}[i]$. $b[i]$ encodes whether the $i$th row of the output table is valid. If it is valid, then $Y'[i]$ is the row of $Y$ which matches $X[i]$.
+
+\paragraph{Left Join}
+
+
+\subsection{Union Protocol}
+
+
+\subsection{Non-unique Join on Column}
+
+\subsection{Cardinality Revealing Joins}
+
+\section{Beyond Three Parties}
+
+\section{Voter Registration}
+
+\section{Thread Log Comparison}
+
+
+
