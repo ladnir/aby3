@@ -48,8 +48,7 @@ An important observation of our protocol is that the adversary only sees a bound
 \todo{talk about how to convert the shares.  We have binary shares and we need mod $p$ shares... }
 
 
-\paragraph{Encodings Long Elements.}
-\todo{If the element is too large to be encoded above, we can choose a random binary matrix and (locally) multiply the shares with it. We then encode. Given that this matrix is chosen after the shares, everything should be good.}
+%\paragraph{Encodings Long Elements.}\todo{If the element is too large to be encoded above, we can choose a random binary matrix and (locally) multiply the shares with it. We then encode. Given that this matrix is chosen after the shares, everything should be good.}
 
 \subsection{Oblivious Switching Network}
 
@@ -206,20 +205,39 @@ One in constructing $\pi_1,\pi_2,\pi_3$ is in the case that there is a collision
 
 \paragraph{Inner Join}
 
-
 Given the four secret shared tables $\share{X},\share{Y^1},\share{Y^2},\share{Y^3}$ as described above, the parties do a learn pass over the $n$ rows to construct the inner join between $X$ and $Y$. Recall that the inner join consists of all the selected columns from the concatenated rows $X[i],Y[j]$ where  the joined on columns of the rows $X[i]$ and $Y[j]$ are equal. Alternatively, an inner join can be thought of as the intersection between the joined on columns of $X$ and $Y$. 
 
 By construction, if row $X[i]$ has a matching row in $Y$ then this row will occupy at most one of the rows ${Y^1}[i],{Y^2}[i],{Y^3}[i]$. To determine which the parties input the secret shared of these rows to an MPC protocol where the join on columns are compared. In particular, for each $i$ and rows ${Y^1}[i],{Y^2}[i],{Y^3}[i]$ the bits $b_1[i],b_2[i],b_3[i]$ are generated where $b_l[i]=1$ iff the joined on columns of ${Y^1}[i]$ are equal to that of $X[i]$. The MPC circuit then computes $b[i]=b_1[i]\oplus b_2[i]\oplus b_3[i]$ and $Y'[i]=b_1[i]{Y^1}[i]\oplus b_2[i]{Y^2}[i]\oplus b_3[i]{Y^3}[i]$. $b[i]$ encodes whether the $i$th row of the output table is valid. If it is valid, then $Y'[i]$ is the row of $Y$ which matches $X[i]$.
 
-\paragraph{Left Join}
+The next phase of the join protocol is to compute the \texttt{where} clause of the query and any addition computation which is specified by the \texttt{select} clause. The \texttt{where} clause further filters the output table as a function of $Y'[i]$ and $X[i]$. For example, the query may specify that only rows where $Y_2'[i] + X_3[i] > 22$  are to be select. Regardless of the exact where clause, the MPC protocol will update the valid bit as $b[i] := b[i] \wedge f(Y'[i], X[i])$ where $f: \mathcal{Y}\times \mathcal{X} \rightarrow \{0,1\}$ is the filtering function specified by the \texttt{where} clause.
+
+Finally, the additional computation specified by the \texttt{select} query is performed. Specifically, the columns of the output table can either be directly copied from the input tables $X,Y$ or can be a function of the given row. For example, the query my be of the form 
+$$
+\texttt{select } X_1, Y_2 + X_3 \text{ from } X \texttt{ inner join } Y \texttt{ on } X_1 = Y_1
+$$
+In this case the first column of the output will be $X_1$ while the second column will consist of the second column of $Y$ plus the third column of $X$. In general we can view the \texttt{select} clause as a function which takes the two rows $X[i]$ and $Y'[i]$ and computes a new row with the specified output columns. 
+
+Several optimizations can be applied to this protocol. First, observe that only columns of $Y$ which explicitly appear in the query need to be input to the switching networks. This reduces the amount of data to be sent and improves performance. Secondly, when comparing the joined on columns, instead of computing the equality circuit between all of these columns it suffices to compare the randomized encodings. In the event that the joined on column(s) contain many bits, comparing the encodings can reduce the size of the equality circuit. In addition, observe that including columns from $X$ in the output table is essentially free due to these secret share columns simply being copied from $X$. Leveraging this the queries can be optimized by ensuring that the majority of the output columns are taken from $X$. Moreover, if a joined on column from $Y$ is in the \texttt{select} clause, this output column can be replaced with the matching column in $X$.
+
+Also observe that the computation perform heavily lends itself to SIMD instructions. That is, the same computation is repeatedly applied to each row of the output table. Modern MPC protocol such as the ABY$^3$ framework \cite{aby3,highthroughput} are optimized for this setting and can process billions of binary circuit gates per second\cite{highthroughput}. In addition the ABY$^3$ framework can switch between using binary and arithmetic circuits based on which is most efficient for the given computation. 
+
+\paragraph{Left/Right Join}
+
+A left join query is similar to an inner join except that all of the rows from the left table $X$ are included in the output. In this case all of the output fields which are a function of the right table but do not have a matching row from the right table are initialized as a default value, typically \texttt{NULL}.  This type of join has the property that all of the output rows maintain their valid\footnote{More specifically, the output rows copy the validity bit $b[i]$ from the $X$ table.} and the valid bits $b[i]$ need not be updated. Instead the bits $b[i]$ as computed in the inner join will be used to determine if the fields that are a function of $Y$ need to be initialized to the default value. That is, all rows that are in the inner join are computed as before and the remaining rows from $X$ use the bit $b[i]$ to initialize the missing values to the default. A right join can be implemented by swapping $X$ an $Y$.
+
+\paragraph{Union and Set Minus}
+
+Our framework is also capable of computing the union of two table. Specifically, we define the union operator as taking all of the rows from the left table and all of the rows from the right table which would not be present in the inner join. Note that the union operator assumes that the schemes of the two tables are identical. Somewhat surprisingly the protocol implementing union is conceptually similar to the inner join. The key observation is that the inner join computes a valid bit for each row of $X$ which encodes whether that row is in the intersection. By flipping that bit\footnote{Note that the special case where a row of $X$ is not valid as opposed to being outside the intersection must be handled.}, it now encodes whether that row is in $X\backslash Y$. Given such an operator the union of $X$ and $Y$ can trivially be constructed as $(X\backslash Y) || Y$ where the $||$ operator denotes the row-wise concatenation of $Y$ to the end of $X\backslash Y$.
 
 
-\subsection{Union Protocol}
+\paragraph{Full Join}
+
+A full join can be viewed as a hybrid between an inner join and a union. Specifically, the output table contains the inner of $X$ and $Y$ which is then unioned with $X$ and $Y$ on the right side. Put another way, a full join consists of the inner join where the missing rows from $X,Y$ additionally included. This join is implemented using two other joins. First a left join between $X$ and $Y$ is performed. As a result the rows in the inner join are correctly compute and all records from $X$ are contained in the output table. What remains is to add all of the missing rows from $Y$ which is achieved by taking the union with the output table and $Y$. The overhead of this protocol is effectually twice that of the other protocol.
+
+\subsection{Cardinality Revealing Joins}
 
 
 \subsection{Non-unique Join on Column}
-
-\subsection{Cardinality Revealing Joins}
 
 \section{Beyond Three Parties}
 
