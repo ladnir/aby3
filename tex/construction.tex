@@ -83,7 +83,10 @@ We begin with a restricted class of switching networks where the programming fun
 
 Our protocol begins by having the programmer sampling a two random functions $\pi_0,\pi_1$ such that $\pi_1 \circ \pi_0 = \pi$, $\pi_0$ is bijective and $\pi_1$ is injective. The programmer sends $\pi_0$ and a random vector $S$ of $n$ elements to the sender who send $T := \{V_{\pi(1)} \oplus S_0, ...,V_{\pi(n)} \oplus S_n \}$ to the receiver. The programmer sends $\pi_1$ to the receiver. The final shares of the permuted $V$ are defined as the programmer holding $\{S_{\pi_1(1)}, ..., S_{\pi_1(m)}\}$ and the receiver holding $\{T_{\pi_1(1)}, ..., T_{\pi_1(m)}\}$.
 
-The simulatability of this protocol is straight forward. The view of the sender contains a uniformly distributed permutation of $n$ elements $\pi_0$ and a uniformly distributed vector $S$. Similarly, the view of the receiver contains $\pi_1: [m]\rightarrow [n]$ which is uniformly distributed (when $\pi_0$ is unobserved) and the vector $T$ is uniformly distributed given that it is masked by $S$. One important observation of this simulation is that $\pi_0,S$ can be generated locally by parties 0 and 1 using a common source of randomness, e.g. a seeded PRG. This reduces the rounds to 1 and linear communication complexity. 
+
+
+%LWZ11 = https://eprint.iacr.org/2011/429.pdf
+The simulatability of this protocol is straight forward and follows a similar logic as the oblivious shuffle protocol of Laur et al.\cite{LWZ11}. The view of the sender contains a uniformly distributed permutation of $n$ elements $\pi_0$ and a uniformly distributed vector $S$. Similarly, the view of the receiver contains $\pi_1: [m]\rightarrow [n]$ which is uniformly distributed (when $\pi_0$ is unobserved) and the vector $T$ is uniformly distributed given that it is masked by $S$. One important observation of this simulation is that $\pi_0,S$ can be generated locally by parties 0 and 1 using a common source of randomness, e.g. a seeded PRG. This reduces the rounds to 1 and linear communication complexity. 
 s
 \paragraph{Universal Switching Network}
 
@@ -105,7 +108,7 @@ The simulation of this protocol has two key parts. First, party 0 learns only on
 
 The protocol just described considers the setting where the messages $B_i,B_{i+1}$ are the private input of the receiver. However, we require that at each iteration the messages being selected is either $C_i$ or $B_{i+1}$ where the former was computed in the previous iteration and is secret shared between the programmer and sender. Fortunately, a trivial modification yields the desired functionality. The sender simply utilizes their share of $C_i$ instead if $B_i$ while the programmer can now compute $C_{i+1}^0:=m_{b_i}\oplus w_{\rho}\oplus b_iC_{i}^0$. It is now the case that both shares of $C_i$ are obliviously multiplied by $b_i$. \figureref{fig:switching-net} provides a formal description of the full switching network protocol.
 
-\begin{figure}[ht]
+\begin{figure}[ht!]
 	\framebox{\begin{minipage}{0.95\linewidth}\small
 			Parameters: $3$ parties denoted as \emph{programmer}, \emph{sender} and \emph{receiver}. Elements are strings in $\{0,1\}^\sigma$. An input vector size of $n$ and output size of $m$.
 			
@@ -234,12 +237,34 @@ Our framework is also capable of computing the union of two table. Specifically,
 
 A full join can be viewed as a hybrid between an inner join and a union. Specifically, the output table contains the inner of $X$ and $Y$ which is then unioned with $X$ and $Y$ on the right side. Put another way, a full join consists of the inner join where the missing rows from $X,Y$ additionally included. This join is implemented using two other joins. First a left join between $X$ and $Y$ is performed. As a result the rows in the inner join are correctly compute and all records from $X$ are contained in the output table. What remains is to add all of the missing rows from $Y$ which is achieved by taking the union with the output table and $Y$. The overhead of this protocol is effectually twice that of the other protocol.
 
-\subsection{Cardinality Revealing Joins}
-
+%\subsection{Cardinality Revealing Joins}
+%
+%In some situations it may be possible to allow the cardinality of the join to be revealed to the parties. This is turn can be leveraged in conjunction with the uniqueness property of the joined on columns to improve the efficiency of the protocols.  Consider computing the inner join with an intersection size of $n'$. This immediately implies that the parties know $n-n'$ of the output table are invalid rows. However, which rows these are can convey significant information about the data that is contain. Say table $X$ is joined with $A,B,C,D,...$ and for all of these joins the first row of $X$ is always in the inner join. All of the parties now know that the first row of $X$ is contained in each of these other tables. For example, consider the $X$ being hospital patients, $A$ containing the last admission date and $B$ containing a list of patients with HIV/AIDS. When combined with other information, learning that the first row of $X$ was admitted on some day $A[j]$ and has HIV/AIDS could potentially reveal who this person is. 
+%
+%To prevent the parties correlating information in this way we introduce a new set of join protocols specifically designed for this setting. The core technique is for party 0 and 1 to sample random permutation networks for each table. After all permutations are applied, the row order of both tables are uniformly distributed in the view of the parties. The randomized encoding phase can then be performed where party 0 learns the encodings for $X$ and party 1 learns them for $Y$. Instead of proceeding with the construction of the cuckoo table, the parties can directly exchange the encodings. This immediately reveals which rows are in the intersection and allows the parties to construct the output table from the randomized $X,Y$ tables by directly copying the appropriate secret shares. This technique can be extended to the other types of joins listed above. In all cases the knowledge of the randomized encodings allow the parties to appropriately construct the output table. We note that this approach is similar to \cite{LTW13}
+%
 
 \subsection{Non-unique Join on Column}
 
+
+When the uniqueness of the columns being joined on does not hold the security guarantees begin to erode. Recall that the randomized encodings for $X,Y$ are revealed to party 0,1 respectively and therefore some of these encodings will be duplicates due to the joined on columns not containing unique values. Learning the distribution of these duplicates reveals that the underlaying table has the same distribution. In the event that only one of the tables contains duplicates, the core protocol can naturally be extended to compute the various join operations subject to party 0 learning the duplicate distribution. This is achieved be requiring the left table contain the duplicates rows. After learning the randomized encodings for this table party 0 can program the switching networks appropriately to query the duplicate locations in the cuckoo hash table. 
+
+When both tables contain duplicates we fall back to the less secure protocol architecture of Laur et al.\cite{LTW13}. In particular, this style of protocol  performs an oblivious shuffling of the table rows and then reveals all of the randomized encodings to all of the parties. Given this information the parties can construct the desired join. We suggest that the performance of these two primitive can be improved over \cite{LTW13} by 1) implementing the random shuffle using two random permutation networks from \sectionref{sec:switch} where party 0 and 1 both privately sample one of the permutations. 2) Replace the use of AES with our improved randomized encodings (LowMC and random binary matrix). Given these optimization the overhead of these protocols should be comparable to our standard join techniques. The major shortcoming of this approach is that the duplicate distribution and the size of join is revealed to all of the parties. As discussed in the related work section, this can limit several important application such as threat log comparison. 
+
+\subsection{Revealing Results}
+
+Revealing a table in general requires two operations. First observe that the data in the invalid rows is not cleared out by the join protocols. As such naively reconstructing these rows would lead to significant leakage. Instead the bitwise \textsc{and} between the valid bit and the row is computed. This ensures that all invalid rows have a deterministic value and therefore can be simulated. The second operation is to perform an oblivious shuffle of the rows. This operation randomly reorders all the rows without revealing the ordering to any of the parties. The necessity of this operation stems from the  row ordering (prior to the shuffle) being input dependent. Moreover, this ordering can be used to correlate between two different output tables. In particular, the row ordering of say $X\cap Y$ and $X\cap Z$ will be the same up to some rows being valid while other may not. In the case of sets this ordering does not reveal additional information since it can be inferred given the ideal output. However, this is not true in general when the items being joined are key-value pairs. 
+
+
+\section{Computing a Function of a Table}
+
+
+\todo{Talk about what types of functions can easily be compute on a table...}
+
 \section{Beyond Three Parties}
+
+In some settings where many parties are providing tables to be computed on the three party requirement with at most one corruption may not be acceptable. In particular, a larger corruption threshold such as 3-out-of-5 or 4-out-of-7 may be desirable. Our protocol can naturally be extended to these setting with some caveats. First, the binary circuit based MPC protocol\cite{highthroughput} which our standard three party protocol relies on can naturally be extended to these larger (honest majority) corruption thresholds. Alternatively, several other suitable protocol such as\cite{...} have been proposed. This change immediately implies that the no minority set of corrupted parties can decrypt/reconstruct the secret shared tabled. However, our three party protocol also requires party 0 and 1 learning the randomized encodings in the clear.  As has previous been described, when the adversary learns both sets of randomized encodings they can infer information about the cardinality of the join. As such, our protocol offers two levels of security. When the adversary corrupts parties 0 and 1 the cardinality of the join is revealed. Otherwise, if an honest majority is present then the view of the corrupted parties can be simulated in the semi-honest setting. 
+
 
 \section{Voter Registration}
 
