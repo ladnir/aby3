@@ -9,6 +9,7 @@ namespace aby3
 {
     namespace Sh3
     {
+
         struct CommPkg {
             oc::Channel mPrev, mNext;
         };
@@ -113,6 +114,7 @@ namespace aby3
             const value_type& operator[](u64 i) const { return mData[i]; }
         };
 
+
         // a shared 64 binary value
         struct sb64
         {
@@ -187,6 +189,64 @@ namespace aby3
             }
 
         };
+
+        //template<Decimal D>
+        //struct sf64Matrix
+        //{
+        //    static const Decimal mDecimal = D;
+        //    std::array<eMatrix<i64>, 2> mShares;
+
+        //    struct ConstRow { const sf64Matrix& mMtx; const u64 mIdx; };
+        //    struct Row { sf64Matrix& mMtx; const u64 mIdx; const Row& operator=(const Row& row); const ConstRow& operator=(const ConstRow& row); };
+
+        //    struct ConstCol { const sf64Matrix& mMtx; const u64 mIdx; };
+        //    struct Col { sf64Matrix& mMtx; const u64 mIdx; const Col& operator=(const Col& col); const ConstCol& operator=(const ConstCol& row); };
+
+        //    sf64Matrix() = default;
+        //    sf64Matrix(u64 xSize, u64 ySize)
+        //    {
+        //        resize(xSize, ySize);
+        //    }
+
+        //    void resize(u64 xSize, u64 ySize)
+        //    {
+        //        mShares[0].resize(xSize, ySize);
+        //        mShares[1].resize(xSize, ySize);
+        //    }
+
+
+        //    u64 rows() const { return mShares[0].rows(); }
+        //    u64 cols() const { return mShares[0].cols(); }
+        //    u64 size() const { return mShares[0].size(); }
+
+        //    Ref<sf64<D>> operator()(u64 x, u64 y) const;
+        //    Ref<sf64<D>> operator()(u64 xy) const;
+        //    sf64Matrix operator+(const sf64Matrix& B) const;
+        //    sf64Matrix operator-(const sf64Matrix& B) const;
+
+        //    sf64Matrix transpose() const;
+        //    void transposeInPlace();
+
+
+        //    Row row(u64 i);
+        //    Col col(u64 i);
+        //    ConstRow row(u64 i) const;
+        //    ConstCol col(u64 i) const;
+
+        //    bool operator !=(const sf64Matrix& b) const
+        //    {
+        //        return !(*this == b);
+        //    }
+
+        //    bool operator ==(const sf64Matrix& b) const
+        //    {
+        //        return (rows() == b.rows() &&
+        //            cols() == b.cols() &&
+        //            mShares == b.mShares);
+        //    }
+
+        //};
+
 
 
         struct sbMatrix

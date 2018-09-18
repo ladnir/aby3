@@ -229,6 +229,7 @@ namespace aby3
         }
         
         const Sh3Task& noDependencies() const { return mNullTask; }
+        operator Sh3Task() const { return noDependencies(); }
 
         void addTask(span<Sh3Task> deps, Sh3Task& handle, Sh3Task::RoundFunc&& func);
 

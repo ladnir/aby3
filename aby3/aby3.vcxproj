@@ -18,6 +18,7 @@
     <ClCompile Include="Engines\sh3\Sh3BinaryEvaluator.cpp" />
     <ClCompile Include="Engines\sh3\Sh3Converter.cpp" />
     <ClCompile Include="Engines\sh3\Sh3Evaluator.cpp" />
+    <ClCompile Include="Engines\sh3\Sh3FixedPoint.cpp" />
     <ClCompile Include="Engines\sh3\Sh3Runtime.cpp" />
     <ClCompile Include="Engines\sh3\Sh3Types.cpp" />
     <ClCompile Include="OT\SharedOT.cpp" />
@@ -37,6 +38,7 @@
     <ClInclude Include="Engines\sh3\Sh3BinaryEvaluator.h" />
     <ClInclude Include="Engines\sh3\Sh3Converter.h" />
     <ClInclude Include="Engines\sh3\Sh3Evaluator.h" />
+    <ClInclude Include="Engines\sh3\Sh3FixedPoint.h" />
     <ClInclude Include="Engines\sh3\Sh3ShareGen.h" />
     <ClInclude Include="Engines\sh3\Sh3Types.h" />
     <ClInclude Include="Engines\sh3\Sh3Runtime.h" />
@@ -89,7 +91,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\libs\json\single_include;C:\libs\function2\include\;C:\libs\eigen\;C:\libs\NTL\include;C:\libs\boost;$(ProjectDir)/../../libOTe/;$(ProjectDir)/../../libOTe/cryptoTools;C:\libs\eigen;C:\Users\peter\repo\relic\include;C:\libs\mpir\lib\x64\$(Configuration);$(ProjectDir)..;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\libs\json\single_include;C:\libs\function2\include\;C:\libs\eigen\;C:\libs\NTL\include;C:\libs\boost;$(ProjectDir)/../../libOTe/;$(ProjectDir)/../../libOTe/cryptoTools;C:\libs\eigen;C:\libs\mpir\lib\x64\$(Configuration);$(ProjectDir)..</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ShowIncludes>false</ShowIncludes>
@@ -107,7 +109,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\libs\json\single_include;C:\libs\function2\include\;C:\libs\eigen\;C:\libs\NTL\include;C:\libs\boost;$(ProjectDir)/../../libOTe/;$(ProjectDir)/../../libOTe/cryptoTools;C:\libs\eigen;C:\Users\peter\repo\relic\include;C:\libs\mpir\lib\x64\$(Configuration);$(ProjectDir)..;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\libs\json\single_include;C:\libs\function2\include\;C:\libs\eigen\;C:\libs\NTL\include;C:\libs\boost;$(ProjectDir)/../../libOTe/;$(ProjectDir)/../../libOTe/cryptoTools;C:\libs\eigen;C:\libs\mpir\lib\x64\$(Configuration);$(ProjectDir)..</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ShowIncludes>false</ShowIncludes>

@@ -342,6 +342,7 @@ namespace aby3
         });
     }
 
+
     Sh3Task Sh3Encryptor::reveal(Sh3Task dep, const Sh3::sb64& x, i64& dest)
     {
         return dep.then([&x, &dest](Sh3::CommPkg& comm, Sh3Task& self) {

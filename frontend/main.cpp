@@ -138,11 +138,24 @@ void ComPsi_Intersect(u32 rows)
     //srvs[0].intersect(A, B);
 }
 
+void circuit()
+{
+    oc::BetaLibrary lib;
 
+
+    auto size = lib.int_int_mult(64, 64, 96);
+    auto depth = lib.int_int_mult(64, 64, 96, oc::BetaLibrary::Optimized::Depth);
+    size->levelByAndDepth();
+    depth->levelByAndDepth();
+
+    std::cout << "size: " << size->mNonlinearGateCount << " " << size->mLevelAndCounts.size() << std::endl;
+    std::cout << "size: " << depth->mNonlinearGateCount << " " << depth->mLevelAndCounts.size() << std::endl;
+}
 
 
 int main(int argc, char** argv)
 {
+    
     oc::CLP cmd(argc, argv);
 
     if (cmd.isSet("h"))

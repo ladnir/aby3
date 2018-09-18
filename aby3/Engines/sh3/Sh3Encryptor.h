@@ -3,6 +3,7 @@
 #include "Sh3ShareGen.h"
 #include "Sh3Runtime.h"
 #include <cryptoTools/Common/MatrixView.h>
+#include "Sh3FixedPoint.h"
 
 namespace aby3
 {
@@ -14,11 +15,21 @@ namespace aby3
         void init(u64 partyIdx, block prevSeed, block nextSeed, u64 buffSize = 256) { mShareGen.init(prevSeed, nextSeed, buffSize); mPartyIdx = partyIdx; }
         void init(u64 partyIdx, Sh3::CommPkg& comm, block seed, u64 buffSize = 256) { mShareGen.init(comm, seed, buffSize); mPartyIdx = partyIdx; }
 
+
+
+
         Sh3::si64 localInt(Sh3::CommPkg& comm, i64 val);
         Sh3::si64 remoteInt(Sh3::CommPkg& comm);
 
+
         Sh3Task localInt(Sh3Task dep, i64 val, Sh3::si64& dest);
         Sh3Task remoteInt(Sh3Task dep, Sh3::si64& dest);
+
+        template<Sh3::Decimal D>
+        Sh3Task localFixed(Sh3Task dep, Sh3::f64<D> val, Sh3::sf64<D>& dest);
+
+        template<Sh3::Decimal D>
+        Sh3Task remoteFixed(Sh3Task dep, Sh3::sf64<D>& dest);
 
         Sh3::sb64 localBinary(Sh3::CommPkg& comm, i64 val);
         Sh3::sb64 remoteBinary(Sh3::CommPkg& comm);
@@ -61,6 +72,13 @@ namespace aby3
         Sh3Task reveal(Sh3Task dep, const Sh3::si64& x, i64& dest);
         Sh3Task revealAll(Sh3Task dep, const Sh3::si64& x, i64& dest);
         Sh3Task reveal(Sh3Task dep, u64 partyIdx, const Sh3::si64& x);
+
+        template<Sh3::Decimal D>
+        Sh3Task reveal(Sh3Task dep, const Sh3::sf64<D>& x, Sh3::f64<D>& dest);
+        template<Sh3::Decimal D>
+        Sh3Task revealAll(Sh3Task dep, const Sh3::sf64<D>& x, Sh3::f64<D>& dest);
+        template<Sh3::Decimal D>
+        Sh3Task reveal(Sh3Task dep, u64 partyIdx, const Sh3::sf64<D>& x);
 
         i64 reveal(Sh3::CommPkg& comm, const Sh3::sb64& x);
         i64 revealAll(Sh3::CommPkg& comm, const Sh3::sb64& x);
@@ -108,5 +126,41 @@ namespace aby3
 
         void complateSharing(Sh3::CommPkg& comm, span<i64> send, span<i64> recv);
     };
+
+
+    template<Sh3::Decimal D>
+    Sh3Task Sh3Encryptor::localFixed(Sh3Task dep, Sh3::f64<D> val, Sh3::sf64<D>& dest)
+    {
+        // since under the hood we represent a fixed point val as an int, just call that function.
+        return localInt(dep, val.mValue, dest.mShare);
+    }
+
+    template<Sh3::Decimal D>
+    Sh3Task Sh3Encryptor::remoteFixed(Sh3Task dep, Sh3::sf64<D>& dest)
+    {
+        // since under the hood we represent a fixed point val as an int, just call that function.
+        return remoteInt(dep, dest.mShare);
+    }
+
+
+    template<Sh3::Decimal D>
+    Sh3Task Sh3Encryptor::reveal(Sh3Task dep, const Sh3::sf64<D>& x, Sh3::f64<D>& dest)
+    {
+        // since under the hood we represent a fixed point val as an int, just call that function.
+        return reveal(dep, x.mShare, dest.mValue);
+    }
+    template<Sh3::Decimal D>
+    Sh3Task Sh3Encryptor::revealAll(Sh3Task dep, const Sh3::sf64<D>& x, Sh3::f64<D>& dest)
+    {
+        // since under the hood we represent a fixed point val as an int, just call that function.
+        return revealAll(dep, x.mShare, dest.mValue);
+    }
+    template<Sh3::Decimal D>
+    Sh3Task Sh3Encryptor::reveal(Sh3Task dep, u64 partyIdx, const Sh3::sf64<D>& x)
+    {
+        // since under the hood we represent a fixed point val as an int, just call that function.
+        return reveal(dep, partyIdx, x.mShare);
+    }
+
 
 }

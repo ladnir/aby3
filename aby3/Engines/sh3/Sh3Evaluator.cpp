@@ -75,4 +75,32 @@ namespace aby3
             });
         });
     }
+
+    TruncationPair Sh3Evaluator::getTruncationTuple(u64 numShares, Sh3::Decimal d)
+    {
+        TruncationPair r;
+        
+        r.mLongShare.resize(numShares, 1);
+        r.mLongShare.setZero();
+
+        r.mShortShare.resize(numShares, 1);
+        r.mShortShare.mShares[0].setZero();
+        r.mShortShare.mShares[1].setZero();
+
+        return r;
+    }
+
+
+
+//#define INSTANTIATE_ASYNC_MUL_FIXED(D) \
+//    template \
+//    Sh3Task aby3::Sh3Evaluator::asyncMul( \
+//        Sh3Task & dependency, \
+//        const Sh3::sf64<D>& A,\
+//        const Sh3::sf64<D>& B,\
+//        Sh3::sf64<D>& C);
+//
+//    INSTANTIATE_ASYNC_MUL_FIXED(Sh3::Decimal::D8);
+//    INSTANTIATE_ASYNC_MUL_FIXED(Sh3::Decimal::D16);
+//    INSTANTIATE_ASYNC_MUL_FIXED(Sh3::Decimal::D32);
 }

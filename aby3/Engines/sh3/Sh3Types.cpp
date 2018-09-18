@@ -1,12 +1,4 @@
 #include "Sh3Types.h"
-namespace aby3
-{
-    namespace Sh3
-    {
-
-
-    }
-}
 
 bool aby3::Sh3::details::areEqualImpl(
     const std::array<oc::MatrixView<u8>, 2>& a,

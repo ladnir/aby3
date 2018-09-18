@@ -36,17 +36,33 @@ namespace aby3
 
     void Sh3Runtime::addTask(span<Sh3Task> deps, Sh3Task & handle, Sh3Task::RoundFunc&& func)
     {
-        auto base = mTasks.push();
-        base->mFunc = std::forward<Sh3Task::RoundFunc>(func);
-        configureTask(deps, handle, base);
+        if (func)
+        {
+            auto base = mTasks.push();
+            base->mFunc = std::forward<Sh3Task::RoundFunc>(func);
+            configureTask(deps, handle, base);
+        }
+        else
+        {
+            std::cout << "empty task (round function)" << std::endl;
+            throw RTE_LOC;
+        }
     }
 
 
     void Sh3Runtime::addTask(span<Sh3Task> deps, Sh3Task & handle, Sh3Task::ContinuationFunc&& func)
     {
-        auto base = mTasks.push();
-        base->mFunc = std::forward<Sh3Task::ContinuationFunc>(func);
-        configureTask(deps, handle, base);
+        if (func)
+        {
+            auto base = mTasks.push();
+            base->mFunc = std::forward<Sh3Task::ContinuationFunc>(func);
+            configureTask(deps, handle, base);
+        }
+        else
+        {
+            std::cout << "empty task (round function)" << std::endl;
+            throw RTE_LOC;
+        }
     }
 
     void Sh3Runtime::configureTask(span<Sh3Task> deps, Sh3Task & handle, Sh3TaskBase * base)
@@ -124,7 +140,14 @@ namespace aby3
         {
             auto func = std::move(*roundFuncPtr);
             task->mFunc = Sh3TaskBase::EmptyState{};
-            func(mComm, t);
+
+            if (func)
+                func(mComm, t);
+            else
+            {
+                std::cout << "empty function at " << task->mIdx << std::endl;
+                throw RTE_LOC;
+            }
         }
         else
         {
