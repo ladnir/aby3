@@ -41,25 +41,7 @@ namespace osuCrypto
         SharedTable join(
             SharedTable::ColRef leftJoinCol,
             SharedTable::ColRef rightJoinCol,
-            std::vector<SharedTable::ColRef> selects)
-        {
-            SelectQuery query;
-            auto jc = query.joinOn(leftJoinCol, rightJoinCol);
-
-            for (auto& s : selects)
-            {
-                if (&s.mCol == &leftJoinCol.mCol || &s.mCol == &rightJoinCol.mCol)
-                {
-                    query.addOutput(s.mCol.mName, jc);
-                }
-                else
-                {
-                    query.addOutput(s.mCol.mName, query.addInput(s));
-                }
-            }
-            
-            return joinImpl(query);
-        }
+			std::vector<SharedTable::ColRef> selects);
 
 
         SharedTable leftJoin(

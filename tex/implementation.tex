@@ -1,0 +1,44 @@
+
+
+
+
+
+
+\begin{figure*}[t!]\centering\footnotesize\label{fig:compare}
+% \begin{figure*}[h]\centering
+\begin{tabular}{|l |l|| r | r |r |r|r||r | r |r |r|r|}
+	\cline{3-12}
+	\multicolumn{1}{c}{}          & \multicolumn{1}{c}{}                           & \multicolumn{5}{|c||}{LAN}                        & \multicolumn{5}{|c|}{WAN}                         \\ \hline
+	\multirow{2}{*}{Operation}    & \multirow{1}{*}{Protocol,}                     &             \multicolumn{5}{c||}{$n$}             &             \multicolumn{5}{c|}{$n$}              \\
+	                              & \# Parties                                     & $2^8$ & $2^{12}$ & $2^{16}$ & $2^{20}$ & $2^{24}$ & $2^8$ & $2^{12}$ & $2^{16}$ & $2^{20}$ & $2^{24}$ \\ \hline\hline
+	\multirow{3}{*}{Intersection} & This                         \hfill ,3         & 0.02  & 0.03     & 0.2      & 4.9      &    117.8 &       &          &          &          &          \\ \cline{2-12}
+	                              & KKRT                     \hfill ,2             & 0.2   & 0.2      & 0.4      & 3.8      &     58.6 &   0.6 & 0.6      & 1.3      & 7.5      &    106.8 \\ \cline{2-12}
+	                              & BA$^*$                      \hfill ,3          & 2.9   & 23.4     & 374.4    & 5990.4   &  95846.4 &       &          &          &          &          \\ \hline\hline
+	\multirow{2}{*}{Joins/Union}  & This                        \hfill ,3          & 0.02  & 0.03     & 0.3      & 9.1      &    192.1 &       &          &          &          &          \\ \cline{2-12}
+	                              & LTW$^*$                      \hfill ,3         & 2.0   & 8.0      & 128.0    & 2048.0   &  32768.0 &    -- & --       & --       & --       &       -- \\ \hline\hline
+	\multirow{3}{*}{Cardinality}  & This                          \hfill ,3        & 0.01  & 0.02     & 0.2      & 3.1      &     74.5 &       &          &          &          &          \\ \cline{2-12}
+	                              & PSWW                           \hfill ,2       & --    & 2.2      & 9.1      & 86.6     &       -- &    -- & 10.0     & 45.3     & 389.9    &       -- \\ \cline{2-12}
+	                              & \cite{DBLP:conf/cans/CristofaroGT12} \hfill ,2 & 1.0   & 16.0     & 262.0    & 4190.0   &  67100.0 &    -- & --       & --       & --       &       -- \\ \hline\hline
+	\multirow{2}{*}{Sum}          & This                           \hfill ,3       & 0.03  & 0.04     & 0.3      & 6.8      &    158.8 &       &          &          &          &          \\ \cline{2-12}
+	                              & \cite{cryptoeprint:2017:738}    \hfill ,2      & 7.0   & 115.0    & 1860.0   & 29700.0  & 475000.0 &    -- & --       & --       & --       &       -- \\ \hline
+\end{tabular}
+\caption{	 }
+\end{figure*}
+
+
+
+
+\begin{figure*}[t!]\centering\footnotesize\label{fig:app}
+	% \begin{figure*}[h]\centering
+	\begin{tabular}{|l|| r | r |r |r|r|r||r|r | r |r |r|r|}
+		\cline{2-13}
+		\multicolumn{1}{c}{}         & \multicolumn{6}{|c||}{LAN}                                   & \multicolumn{6}{|c|}{WAN}                                    \\ \hline
+		\multirow{2}{*}{Application} &                  \multicolumn{6}{c||}{$n$}                   &                   \multicolumn{6}{c|}{$n$}                   \\
+		                             & $2^8$ & $2^{12}$ & $2^{16}$ & $2^{20}$ & $2^{24}$ & $2^{26}$ & $2^8$ & $2^{12}$ & $2^{16}$ & $2^{20}$ & $2^{24}$ & $2^{26}$ \\ \hline\hline
+		Voter Registration           & 0.1   & 0.1      & 1.3      & 21.9     &    350.4 &   5606.4 &       &          &          &          &          &          \\ \hline
+		Threat Log $\sim$ 2          & 0.02  & 0.03     & 0.2      & 5.1      &    121.4 &    488.1 &       &          &          &          &          &          \\ \hline
+		Threat Log $\sim$ 4          & 0.05  & 0.09     & 0.9      & 17.9     &    388.4 &   1553.9 &       &          &          &          &          &          \\ \hline
+		Threat Log $\sim$ 8          & 0.10  & 0.19     & 1.7      & 47.1     &   1021.0 &  16336.1 &       &          &          &          &          &          \\ \hline
+	\end{tabular}
+	\caption{	 }
+\end{figure*}

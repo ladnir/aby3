@@ -62,6 +62,10 @@ namespace osuCrypto
             else
                 throw RTE_LOC;
         }
+
+		ColumnBase& operator=(const ColumnBase&) = default;
+
+
         u64 getByteCount() const { return (getBitCount() + 7) / 8; }
         u64 getBitCount() const { return mType->getBitCount(); }
         TypeID getTypeID() const { return mType->getTypeID(); }
@@ -79,6 +83,8 @@ namespace osuCrypto
             : ColumnBase(std::move(name), type, size)
         { }
 
+
+
         aby3::Sh3::i64Matrix mData;
     };
 
@@ -93,6 +99,8 @@ namespace osuCrypto
         SharedColumn(std::string name, TypeID type, u64 size)
             : ColumnBase(std::move(name), type, size)
         { }
+
+		SharedColumn& operator=(const SharedColumn&) = default;
     };
 
     using ColumnInfo = std::tuple<std::string, TypeID, u64>;
@@ -238,6 +246,9 @@ namespace osuCrypto
     public:
         SelectQuery & mSelect;
         int mMemIdx;
+
+		SelectBundle(const SelectBundle&) = default;
+		SelectBundle(SelectBundle&&) = default;
 
         SelectBundle(SelectQuery& cir, int memIdx)
             : mSelect(cir)

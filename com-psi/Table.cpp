@@ -5,7 +5,7 @@ namespace osuCrypto
     SelectBundle SelectQuery::addInput(SharedTable::ColRef column)
     {
         if (mLeftTable == nullptr)
-            throw std::runtime_error("call joinOn(...) first");
+            throw std::runtime_error("call joinOn(...) first. " LOCATION);
 
         mMem.emplace_back();
         auto& mem = mMem.back();
@@ -46,7 +46,7 @@ namespace osuCrypto
     int SelectQuery::addOp(selectDetails::SelectOp op, int wire1, int wire2)
     {
         if (mLeftTable == nullptr)
-            throw std::runtime_error("call joinOn(...) first");
+            throw std::runtime_error("call joinOn(...) first. " LOCATION);
 
         if (wire1 >= mMem.size() ||
             wire2 >= mMem.size())
@@ -97,7 +97,7 @@ namespace osuCrypto
     int SelectQuery::addOp(selectDetails::SelectOp op, int wire1)
     {
         if (mLeftTable == nullptr)
-            throw std::runtime_error("call joinOn(...) first");
+            throw std::runtime_error("call joinOn(...) first. " LOCATION);
 
         if (op != selectDetails::Inverse ||
             mMem.size() <= wire1)
@@ -124,7 +124,7 @@ namespace osuCrypto
     void SelectQuery::addOutput(std::string name, const SelectBundle & column)
     {
         if (mLeftTable == nullptr)
-            throw std::runtime_error("call joinOn(...) first");
+            throw std::runtime_error("call joinOn(...) first. " LOCATION);
 
         mOutputs.emplace_back(mMem[column.mMemIdx].mIdx, name, -1);
         mMem[column.mMemIdx].mOutputIdx = mOutputs.size() - 1;

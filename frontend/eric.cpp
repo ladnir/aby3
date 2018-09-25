@@ -77,6 +77,7 @@ void eric(int n)
     for (auto& c : voter2Data.mColumns) prng.get<i64>(c.mData.data(), c.mData.size());
     for (auto& c : dmv1Data.mColumns) prng.get<i64>(c.mData.data(), c.mData.size());
     for (auto& c : dmv2Data.mColumns) prng.get<i64>(c.mData.data(), c.mData.size());
+	Timer t;
 
     auto routine = [&](int i)
     {
@@ -99,13 +100,16 @@ void eric(int n)
             dmv2 = srv.remoteInput(0);
         }
 
-        Timer t;
-        t.setTimePoint("start");
+		if(i==0)
+	        t.setTimePoint("start");
 
         auto select1 = std::vector<SharedTable::ColRef>{ dmv1["NA"], dmv1["SSN"], dmv1["AD"] };
         auto select2 = std::vector<SharedTable::ColRef>{ dmv2["NA"], dmv2["SSN"], dmv2["AD"] };
+
         auto state1 = srv.leftJoin(dmv1["DL"], voter1["DL"], select1, "registed");
+		if (i == 0) t.setTimePoint("left1");
         auto state2 = srv.leftJoin(dmv2["DL"], voter2["DL"], select2, "registed");
+		if (i == 0) t.setTimePoint("left2");
 
 
         SelectQuery select;
@@ -125,10 +129,10 @@ void eric(int n)
         select.addOutput("NA2", select.addInput(state2["NA"]) * reveal2);
 
         auto intersection = srv.joinImpl(select);
-        t.setTimePoint("end");
+		if (i == 0)
+			t.setTimePoint("done");
 
-        if(i ==0)
-            std::cout << "n = " << n << "\n" << t << std::endl;
+
     };
 
 
@@ -140,5 +144,10 @@ void eric(int n)
 
     t0.join();
     t1.join();
+
+	std::cout << "n = " << n << "\n" << t << std::endl;
+	std::cout << "    " << (srvs[0].mComm.mNext.getTotalDataSent() + srvs[0].mRt.mComm.mNext.getTotalDataSent()) << std::endl;
+	std::cout << "    " << (srvs[1].mComm.mNext.getTotalDataSent() + srvs[1].mRt.mComm.mNext.getTotalDataSent()) << std::endl;
+	std::cout << "    " << (srvs[2].mComm.mNext.getTotalDataSent() + srvs[2].mRt.mComm.mNext.getTotalDataSent()) << std::endl;
 
 }

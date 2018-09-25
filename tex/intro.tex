@@ -33,6 +33,6 @@ So far we have discussed inner join (intersection) between two tables. Several o
 
 We define the union of two tables to contains all records from the left table along with all the records from the right table which are not in the intersection. We define union in this way due an ambiguity around which table the records in the intersection should come from. Table minus is similarly defined as all of the left table where the joined on column(s) is not present in the right table. 
 
-Beyond these various join operations, our framework supports two broad classes of operations which are a function of a single table. The first is a general SQL select statement which can perform computation on each row (e.g. compute the max of two columns) and filter the results using a \texttt{where} clause predicate. The second class is referred as reduce operations which perform an aggregation across all of the rows of a table. For example, computing the sum or the max of a given column. 
+Beyond these various join operations, our framework supports two broad classes of operations which are a function of a single table. The first is a general SQL select statement which can perform computation on each row (e.g. compute the max of two columns) and filter the results using a \texttt{where} clause predicate. The second class is referred as an aggregation which perform an operation across all of the rows of a table. For example, computing the sum or the max of a given column. 
 
 

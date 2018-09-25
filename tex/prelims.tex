@@ -7,13 +7,13 @@ Our protocols are presented in the semi-honest three party setting with an hones
 
 
 
-Throughout the exposition we will assume these three parties, which we call \emph{servers}, provide the sets which are computed on. However, in the general case the sets being computed on can be privately input by an arbitrary party which does not participates in the computation. In particular, these \emph{client} parties will secret share there set between the servers and reconstruct the output shares that are indented for them. This setting is often referred to as the client server model\cite{aby3, secureML}. Later on we will also consider a setting with five servers that can tolerate the adversary corrupting any two of them. However, we will explicitly state when this alternative model is being considered.
+Throughout the exposition we will assume these three parties, which we sometimes call \emph{servers}, provide the sets which are computed on. However, in the general case the sets being computed on can be privately input by an arbitrary party which does not participates in the computation. In particular, these \emph{client} parties will secret share there set between the servers and reconstruct the output shares that are indented for them. This setting is often referred to as the client server model\cite{aby3, secureML}. Later on we will also consider a setting with five servers that can tolerate the adversary corrupting any two of them. However, we will explicitly state when this alternative model is being considered.
 
 
 
 \subsection{Notation}
 
-We will use the notation that $\share{x}$ is an additive secret sharing of the value $x$.
+We will use the notation that $\share{x}$ is an binary secret sharing of the value $x$.
 
 permutations: define that a permutation can be applied to an integer $i$ which maps the output position $i$ to the input position $\pi(i)$. Or, a permutation can be applied to a vector $V$ which applied the permutation to $V$, i.e. $\pi(V)=\{V_{\pi(1)}, ..., V_{\pi(n)}\}$. 
 

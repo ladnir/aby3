@@ -88,7 +88,7 @@ Our protocol begins by having the programmer sampling a two random functions $\p
 %LWZ11 = https://eprint.iacr.org/2011/429.pdf
 The simulatability of this protocol is straight forward and follows a similar logic as the oblivious shuffle protocol of Laur et al.\cite{LWZ11}. The view of the sender contains a uniformly distributed permutation of $n$ elements $\pi_0$ and a uniformly distributed vector $S$. Similarly, the view of the receiver contains $\pi_1: [m]\rightarrow [n]$ which is uniformly distributed (when $\pi_0$ is unobserved) and the vector $T$ is uniformly distributed given that it is masked by $S$. One important observation of this simulation is that $\pi_0,S$ can be generated locally by parties 0 and 1 using a common source of randomness, e.g. a seeded PRG. This reduces the rounds to 1 and linear communication complexity. 
 
-\paragraph{Universal Switching Network}
+\paragraph{Universal Switching Network}\label{sec:switch}
 
 A universal switching network with an \emph{arbitrary} program $\pi : [m]\rightarrow [n]$ can be constructed in three phases\cite{MS13, CMRS18}. In particular, the input vector $A$ will have three transformation applied $A\overset{\pi_1}{\rightarrow}B\overset{\pi_2}{\rightarrow}C\overset{\pi_3}{\rightarrow}D=\pi(A)$.
 \begin{enumerate}
@@ -150,7 +150,9 @@ The protocol just described considers the setting where the messages $B_i,B_{i+1
 \end{figure}
 
 
+\paragraph{Arithmetic Shares}
 
+The presentation above is framed in terms of binary secret shares. However, the same protocol strategy can work equally well for arithmetic shares. The main modification is that XOR operations in $\mathbb{F}_{2^\sigma}$ need to be appropriately replaced with addition and subtraction operations in $\mathbb{Z}_{2^\sigma}$. 
 
 
 \subsection{Join Protocols}\label{sec:join}
@@ -196,6 +198,8 @@ Recall that parties 0 and 1 respectively hold a 2-out-of-2 secret sharing $Y^0,Y
 Party 1 sends $(\textsc{Switch}, \pi)$ to \f{switch} and party 0 sends $(\textsc{Swich}, Y^0)$\footnote{Note that $Y^0$ has $n$ rows while $\pi$ is defined with an input vector containing $m\approx 1.5n$ rows. Party 0 will pad $Y^0$ with $m-n$ rows which contain all zeros. These will be mapped to the empty slots of the cuckoo table by the permutation/switching network.}. In response \f{switch} sends $\hat Y^{0,1}$ to party 1  and $\hat Y^{0,0}$ to party 2. Party 1 defines their output of this phase as $\hat Y^0:=\hat Y^{0,1} \oplus \pi(Y^1)$ and party 2 defines their output as $\hat Y^{1} =\hat Y^{0,0}$.
 
 It is now the case that $\hat Y = \hat Y^0\oplus \hat Y^1$ is a valid secret shared cuckoo hash table of the original table $Y$. In particular, for a given row $Y[i]$ with encoding $e=\mathbb{E}_y[i]$, there exists a $j\in \{h_1(e),h_2(e), h_3(e)\}$ such that  $\hat Y[j] = Y[i]$. Here, the $h_i$ functions are hash functions used to construct the cuckoo table $T$. Another important observation is that $\pi$ is a permutation and therefore the more efficient permutation protocol can be used in place of the universal switching protocol.
+
+We note that some of the columns of the tables may be secret shared in arithmetic group as opposed to binary shares. In this case the switching network will use the appropriate arithmetic operation as note in \sectionref{sec:switch}. 
 
 \paragraph{Selecting from the Cuckoo Table}
 
@@ -278,9 +282,11 @@ In addition to join queries, our framework can perform computation on a single t
 
 Our framework also considers a second class of functions on a table that allow computation between rows. For exampled, computing the sum of a column. We refer to this broad class of operations as an aggregation function. Depending on the exact computation, various levels of efficiencies can be achieved. Our primary approach is to employ the ABY$^3$ framework \cite{aby3} to express the desired computation in the most efficient way possible and then to evaluate the resulting circuit. Next we highlight a sampling of some important aggregation operations:
 \begin{itemize}
-	\item Sum: In this case there is a vector of secret shared data that need to be added together.  The default secret sharing format that we employ is a binary sharing. First all $n$ values are converted to an arithmetic sharing which requires $n\ell$ binary gates \cite{aby3}. The parties can then locally sum the arithmetic shares without any additional communication. This approach requires $\ell$ rounds of communication. One important note is that each row must be check to ensure that is is value. We propose doing this by computing the logical AND between the valid bit and the value being summed before it is converted to an arithmetic share.
+	\item Sum: In this case there is a vector of secret shared data that need to be added together.  The default secret sharing format that we employ is a binary sharing. First all $n$ values are converted to an arithmetic sharing which requires $n\ell$ binary gates \cite{aby3}. The parties can then locally sum the arithmetic shares without any additional communication. This approach requires $\ell$ rounds of communication. One important note is that each row must be check to ensure that it is value. We propose doing this by computing the logical AND between the valid bit and the value being summed before it is converted to an arithmetic share. Given this, the correct result is the sum of the arithmetic shares, regardless of the validity of any given row.
 	
-	\item Count/Cardinality: Counts and the cardinality can be similar way as sum except that the summation can be directly over the valid bits. Given this, more efficient bit injection protocol\cite{aby3} can be used to convert to arithmetic shares in a constant number of rounds.
+	\item Count/Cardinality: Here, we consider two cases. 1) In the general case we also assume that the actual secret shared table containing the join is desired. Here, the count/cardinality can be computed in a similar way as sum except that the summation is directly over the valid bits. The more efficient bit injection protocol\cite{aby3} can be used to convert each bit to an arithmetic sharing in a constant number of rounds. In particular, the malicious secure bit injection protocol provided in \cite{aby3} is suggested due to it reducing the overall communication. 
+	
+	2) In the case that only the cardinality is desired, a more efficient protocol can be applied. First, assume that the LowMC encoding procedure is used. Then the parties can first generate the randomized encodings but not reveal the secret shares to any party. Each of these two sets of shared encodings are then obviously shuffled and revealed to the parties which should learn the cardinality. In the Diffie-Hellman encodings are used, a straight forward adaption of the protocol of De Cristofaro  et. al \cite{DBLP:conf/cans/CristofaroGT12} can be used.
 	
 	\item  Min/Max: Unlike computing sums, logical operations such as max are most efficiently computed over using a binary sharing format. In particular, we propose a binary tree structure where elements are compared and the min/max item is propagated. Concerning invalid rows, these values can be initialized to the maximum or minimum value to guarantee that the other value will be propagated. The overall complexity of this approach is $O(n\ell)$ binary gates and $O(\ell log n)$ rounds.
 \end{itemize}
