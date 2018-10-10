@@ -1195,182 +1195,194 @@ namespace osuCrypto
 		if (a.mWires.size() < b.mWires.size())
 		{
 			int_int_mult_build(cd, b, a, c, op);
-			return;
 		}
-
-		u64 numRows = c.mWires.size();
-
-
-		// rows will hold
-		// {  b[0] * a ,
-		//    b[1] * a ,
-		//    ...      ,
-		//    b[n] * a }
-		// where row i contains min(c.mWires.size() - i, a.mWires.size())
-		std::vector<BetaBundle> rows(numRows);
-
-
-		// first, we compute the AND between the two inputs.
-		for (u64 i = 0; i < rows.size(); ++i)
+		else if (b.size() == 1)
 		{
+			if (c.size() > a.size())
+				throw RTE_LOC;
 
-			// this will hold the b[i] * a
-			rows[i].mWires.resize(std::min(c.mWires.size() - i, a.mWires.size()));
-
-			// initialize some unused wires, these will
-			// hold intermediate sums.
-			cd.addTempWireBundle(rows[i]);
-
-			if (i == 0)
+			// simply AND between b[0] and a.
+			for (u64 i = 0; i < c.size(); ++i)
 			{
-				// later, we will sum together all the
-				// rows, and this row at idx 0 will be
-				// the running total, so we want it to be
-				// the wires that represent the product c.
-				rows[0].mWires[0] = c.mWires[0];
-			}
-
-			if (rows.size() == 1)
-			{
-				for (u64 j = 1; j < rows[0].mWires.size(); ++j)
-				{
-					rows[0].mWires[j] = c.mWires[j];
-				}
-			}
-
-			if (a.mWires.size() == 1)
-			{
-				rows[i].mWires[0] = c.mWires[i];
-			}
-
-			const BetaWire& bi = b.mWires[std::min(i, b.mWires.size() - 1)];
-
-			u64 prev = cd.mNonlinearGateCount;
-			// compute the AND between b[i] * a[j].
-			for (u64 j = 0; j < rows[i].mWires.size(); ++j)
-			{
-				cd.addGate(
-					bi,
-					a.mWires[j],
-					GateType::And,
-					rows[i].mWires[j]);
-			}
-
-			//std::cout << "and[" << i << "] " << cd.mNonXorGateCount <<"  (+"<< (cd.mNonXorGateCount - prev) <<")" << std::endl;
-		}
-
-#define SERIAL
-#ifdef SERIAL
-		if (rows.size() > 1)
-		{
-
-			BetaBundle additonTemp(op == Optimized::Size ? 3 : a.mWires.size() * 2), temp2(rows[1].mWires.size());
-			cd.addTempWireBundle(additonTemp);
-			cd.addTempWireBundle(temp2);
-			//cd.addPrint("+");
-			//cd.addPrint(rows[0]);
-			//cd.addPrint("\n");
-
-			rows[0].mWires.erase(rows[0].mWires.begin());
-
-			// starting with rows[0] + rows[1], sum the rows together
-			// note that, after each sum, we will have computed one more
-			// bit of the final product.
-			for (u64 i = 1; i < rows.size(); i++)
-			{
-				BetaBundle sum(std::min(rows[i].mWires.size() + 1, c.mWires.size() - i));
-
-
-				//cd.addPrint("+");
-				//cd.addPrint(std::string(i, ' '));
-				//cd.addPrint(rows[i]);
-				//cd.addPrint("\n-----------------------------------------------------------------" + std::to_string(i) + " / " + std::to_string(b.mWires.size())+"  ");
-				//cd.addPrint(b.mWires[std::min(i, b.mWires.size() - 1)]);
-				//cd.addPrint("\n " + std::string(i, ' '));
-
-				cd.addTempWireBundle(sum);
-
-				sum.mWires[0] = c.mWires[i];
-
-				if (i == rows.size() - 1)
-				{
-					for (u64 j = 1; j < sum.mWires.size(); ++j)
-					{
-						sum.mWires[j] = c.mWires[i + j];
-					}
-				}
-
-				u64 prev = cd.mNonlinearGateCount;
-
-				int_int_add_build_so(cd, rows[i - 1], rows[i], sum, additonTemp);
-
-				//std::cout << "add[" << i << "] " << cd.mNonXorGateCount << "  (+" << (cd.mNonXorGateCount - prev) << ")" << std::endl;
-
-				//cd.addPrint(sum);
-				//cd.addPrint("\n ");
-				//cd.addPrint(c);
-				//cd.addPrint("\n");
-
-				rows[i].mWires.clear();
-				rows[i].mWires.insert(rows[i].mWires.begin(), sum.mWires.begin() + 1, sum.mWires.end());
+				cd.addGate(a.mWires[i], b.mWires[0], GateType::And, c.mWires[i]);
 			}
 		}
-
-
-		//cd.addPrint("=");
-		//cd.addPrint(c);
-		//cd.addPrint("\n\n");
-#else
-		this code has not been tested and surely contains errors
-
-			// while the serial code above should work, it is more sequential.
-			// as such, then using the 'leveled' presentation, fewer operations
-			// can be pipelined.
-
-			u64 k = 1, p = 1;
-		while (rows.size() > 1)
+		else
 		{
-			std::vector<BetaBundle> newTerms;
+			u64 numRows = c.mWires.size();
 
 
-			for (u64 i = 0; i < rows.size(); i += 2)
+			// rows will hold
+			// {  b[0] * a ,
+			//    b[1] * a ,
+			//    ...      ,
+			//    b[n] * a }
+			// where row i contains min(c.mWires.size() - i, a.mWires.size())
+			std::vector<BetaBundle> rows(numRows);
+
+
+			// first, we compute the AND between the two inputs.
+			for (u64 i = 0; i < rows.size(); ++i)
 			{
-				BetaBundle additonTemp(3);
-				cd.addTempWireBundle(additonTemp);
 
-				newTerms.emplace_back(rows[i + 1].mWires.size());
-				auto& prod = newTerms.back();
-				cd.addTempWireBundle(prod);
+				// this will hold the b[i] * a
+				rows[i].mWires.resize(std::min(c.mWires.size() - i, a.mWires.size()));
+
+				// initialize some unused wires, these will
+				// hold intermediate sums.
+				cd.addTempWireBundle(rows[i]);
 
 				if (i == 0)
 				{
-					for (u64 j = 0; j < k; ++j)
-					{
-						prod.mWires[j] = c.mWires[p++];
-					}
-
-					k *= 2;
+					// later, we will sum together all the
+					// rows, and this row at idx 0 will be
+					// the running total, so we want it to be
+					// the wires that represent the product c.
+					rows[0].mWires[0] = c.mWires[0];
 				}
 
-				auto sizeDiff = rows[i].mWires.size() - rows[i + 1].mWires.size();
+				if (rows.size() == 1)
+				{
+					for (u64 j = 1; j < rows[0].mWires.size(); ++j)
+					{
+						rows[0].mWires[j] = c.mWires[j];
+					}
+				}
 
-				std::vector<BetaWire> bottomBits(
-					rows[i].mWires.begin(),
-					rows[i].mWires.begin() + sizeDiff);
+				if (a.mWires.size() == 1)
+				{
+					rows[i].mWires[0] = c.mWires[i];
+				}
 
-				rows[i].mWires.erase(
-					rows[i].mWires.begin(),
-					rows[i].mWires.begin() + sizeDiff);
+				const BetaWire& bi = b.mWires[std::min(i, b.mWires.size() - 1)];
 
-				int_int_add_build(cd, rows[i], rows[i + 1], prod, additonTemp);
+				u64 prev = cd.mNonlinearGateCount;
+				// compute the AND between b[i] * a[j].
+				for (u64 j = 0; j < rows[i].mWires.size(); ++j)
+				{
+					cd.addGate(
+						bi,
+						a.mWires[j],
+						GateType::And,
+						rows[i].mWires[j]);
+				}
 
-				prod.mWires.insert(prod.mWires.begin(), bottomBits.begin(), bottomBits.end());
+				//std::cout << "and[" << i << "] " << cd.mNonXorGateCount <<"  (+"<< (cd.mNonXorGateCount - prev) <<")" << std::endl;
 			}
 
-			rows = std::move(newTerms);
-		}
+#define SERIAL
+#ifdef SERIAL
+			if (rows.size() > 1)
+			{
+
+				BetaBundle additonTemp(op == Optimized::Size ? 3 : a.mWires.size() * 2), temp2(rows[1].mWires.size());
+				cd.addTempWireBundle(additonTemp);
+				cd.addTempWireBundle(temp2);
+				//cd.addPrint("+");
+				//cd.addPrint(rows[0]);
+				//cd.addPrint("\n");
+
+				rows[0].mWires.erase(rows[0].mWires.begin());
+
+				// starting with rows[0] + rows[1], sum the rows together
+				// note that, after each sum, we will have computed one more
+				// bit of the final product.
+				for (u64 i = 1; i < rows.size(); i++)
+				{
+					BetaBundle sum(std::min(rows[i].mWires.size() + 1, c.mWires.size() - i));
+
+
+					//cd.addPrint("+");
+					//cd.addPrint(std::string(i, ' '));
+					//cd.addPrint(rows[i]);
+					//cd.addPrint("\n-----------------------------------------------------------------" + std::to_string(i) + " / " + std::to_string(b.mWires.size())+"  ");
+					//cd.addPrint(b.mWires[std::min(i, b.mWires.size() - 1)]);
+					//cd.addPrint("\n " + std::string(i, ' '));
+
+					cd.addTempWireBundle(sum);
+
+					sum.mWires[0] = c.mWires[i];
+
+					if (i == rows.size() - 1)
+					{
+						for (u64 j = 1; j < sum.mWires.size(); ++j)
+						{
+							sum.mWires[j] = c.mWires[i + j];
+						}
+					}
+
+					u64 prev = cd.mNonlinearGateCount;
+
+					int_int_add_build_so(cd, rows[i - 1], rows[i], sum, additonTemp);
+
+					//std::cout << "add[" << i << "] " << cd.mNonXorGateCount << "  (+" << (cd.mNonXorGateCount - prev) << ")" << std::endl;
+
+					//cd.addPrint(sum);
+					//cd.addPrint("\n ");
+					//cd.addPrint(c);
+					//cd.addPrint("\n");
+
+					rows[i].mWires.clear();
+					rows[i].mWires.insert(rows[i].mWires.begin(), sum.mWires.begin() + 1, sum.mWires.end());
+				}
+			}
+
+
+			//cd.addPrint("=");
+			//cd.addPrint(c);
+			//cd.addPrint("\n\n");
+#else
+			this code has not been tested and surely contains errors
+
+				// while the serial code above should work, it is more sequential.
+				// as such, then using the 'leveled' presentation, fewer operations
+				// can be pipelined.
+
+				u64 k = 1, p = 1;
+			while (rows.size() > 1)
+			{
+				std::vector<BetaBundle> newTerms;
+
+
+				for (u64 i = 0; i < rows.size(); i += 2)
+				{
+					BetaBundle additonTemp(3);
+					cd.addTempWireBundle(additonTemp);
+
+					newTerms.emplace_back(rows[i + 1].mWires.size());
+					auto& prod = newTerms.back();
+					cd.addTempWireBundle(prod);
+
+					if (i == 0)
+					{
+						for (u64 j = 0; j < k; ++j)
+						{
+							prod.mWires[j] = c.mWires[p++];
+						}
+
+						k *= 2;
+					}
+
+					auto sizeDiff = rows[i].mWires.size() - rows[i + 1].mWires.size();
+
+					std::vector<BetaWire> bottomBits(
+						rows[i].mWires.begin(),
+						rows[i].mWires.begin() + sizeDiff);
+
+					rows[i].mWires.erase(
+						rows[i].mWires.begin(),
+						rows[i].mWires.begin() + sizeDiff);
+
+					int_int_add_build(cd, rows[i], rows[i + 1], prod, additonTemp);
+
+					prod.mWires.insert(prod.mWires.begin(), bottomBits.begin(), bottomBits.end());
+				}
+
+				rows = std::move(newTerms);
+			}
 
 #endif
+		}
 	}
 	void BetaLibrary::int_int_div_rem_build(
 		BetaCircuit & cd,

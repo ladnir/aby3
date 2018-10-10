@@ -131,6 +131,7 @@ namespace osuCrypto
             //,const BetaBundle & divByZero,
             //bool checkDivByZero
         );
+
         void uint_uint_div_rem_build(
             BetaCircuit& cd,
             const BetaBundle& a1,

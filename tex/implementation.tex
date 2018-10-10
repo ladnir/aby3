@@ -1,44 +1,109 @@
 
 
+\section{Experiments}\label{sec:eval}
+
+
+We implemented our full set of protocols and applications along with a performance evaluation of them here. Specifically, we considered set intersection (without associated values), our various join and union operations, intersection cardinality, and intersection sum of key-value pairs along with the two application described in \sectionref{sec:app}. We also compare to protocols that offer a similar functionality, i.e. \cite{CCS:KKRT16, PSWW18,ASIACCS:BlaAgu12,DBLP:conf/cans/CristofaroGT12,cryptoeprint:2017:738} Our implementation is written in c++ and building on primitives provided by \cite{libOTe}. Crucial is the performance of implementation is the while spread use of SIMD instructions that allow processing 128 binary gates with a throughput of one cycle.
 
 
 
+\paragraph{Experimental Setup.} We performed all of our experiments on a single server equipped with two 18 core CPUs at 2.7 GHz and 256 GB of RAM. Despite have many cores, our implementation restricts each party to a \emph{single thread}. We note this is a limitation of the implementation and not of the protocol themselves. Our protocols communicate over a loop back device on the local area network which allows to shape the traffic flow to emulate a LAN and WAN setting. Specifically, the LAN setting allows 10 Gbps throughput with a latency of a quarter millisecond while the WAN setting allows an average 100 Mbps and 40 millisecond latency.
 
-\begin{figure*}[t!]\centering\footnotesize\label{fig:compare}
+All cryptographic operations are performed with computational security parameter $\kappa=128$ and statistical security $\lambda=40$. We consider set/table sizes of $n\in\{2^8, 2^{12}, 2^{16}, 2^{20}, 2^{24}\}$ and $n=2^{26}$ in some cases. Times are reported as the average of several execrations.
+
+\begin{figure*}[t!]\centering\footnotesize
 % \begin{figure*}[h]\centering
 \begin{tabular}{|l |l|| r | r |r |r|r||r | r |r |r|r|}
 	\cline{3-12}
-	\multicolumn{1}{c}{}          & \multicolumn{1}{c}{}                           & \multicolumn{5}{|c||}{LAN}                        & \multicolumn{5}{|c|}{WAN}                         \\ \hline
-	\multirow{2}{*}{Operation}    & \multirow{1}{*}{Protocol,}                     &             \multicolumn{5}{c||}{$n$}             &             \multicolumn{5}{c|}{$n$}              \\
-	                              & \# Parties                                     & $2^8$ & $2^{12}$ & $2^{16}$ & $2^{20}$ & $2^{24}$ & $2^8$ & $2^{12}$ & $2^{16}$ & $2^{20}$ & $2^{24}$ \\ \hline\hline
-	\multirow{3}{*}{Intersection} & This                         \hfill ,3         & 0.02  & 0.03     & 0.2      & 4.9      &    117.8 &       &          &          &          &          \\ \cline{2-12}
-	                              & KKRT                     \hfill ,2             & 0.2   & 0.2      & 0.4      & 3.8      &     58.6 &   0.6 & 0.6      & 1.3      & 7.5      &    106.8 \\ \cline{2-12}
-	                              & BA$^*$                      \hfill ,3          & 2.9   & 23.4     & 374.4    & 5990.4   &  95846.4 &       &          &          &          &          \\ \hline\hline
-	\multirow{2}{*}{Joins/Union}  & This                        \hfill ,3          & 0.02  & 0.03     & 0.3      & 9.1      &    192.1 &       &          &          &          &          \\ \cline{2-12}
-	                              & LTW$^*$                      \hfill ,3         & 2.0   & 8.0      & 128.0    & 2048.0   &  32768.0 &    -- & --       & --       & --       &       -- \\ \hline\hline
-	\multirow{3}{*}{Cardinality}  & This                          \hfill ,3        & 0.01  & 0.02     & 0.2      & 3.1      &     74.5 &       &          &          &          &          \\ \cline{2-12}
-	                              & PSWW                           \hfill ,2       & --    & 2.2      & 9.1      & 86.6     &       -- &    -- & 10.0     & 45.3     & 389.9    &       -- \\ \cline{2-12}
-	                              & \cite{DBLP:conf/cans/CristofaroGT12} \hfill ,2 & 1.0   & 16.0     & 262.0    & 4190.0   &  67100.0 &    -- & --       & --       & --       &       -- \\ \hline\hline
-	\multirow{2}{*}{Sum}          & This                           \hfill ,3       & 0.03  & 0.04     & 0.3      & 6.8      &    158.8 &       &          &          &          &          \\ \cline{2-12}
-	                              & \cite{cryptoeprint:2017:738}    \hfill ,2      & 7.0   & 115.0    & 1860.0   & 29700.0  & 475000.0 &    -- & --       & --       & --       &       -- \\ \hline
+	\multicolumn{1}{c}{}              & \multicolumn{1}{c}{}                                       & \multicolumn{5}{|c||}{LAN}                         & \multicolumn{5}{|c|}{WAN}                         \\ \hline
+	\multirow{2}{*}{Operation}        & \multirow{1}{*}{Protocol,}                                 &             \multicolumn{5}{c||}{$n$}              &             \multicolumn{5}{c|}{$n$}              \\
+	                                  & \# Parties                                                 & $2^8$ & $2^{12}$ & $2^{16}$ & $2^{20}$ &  $2^{24}$ & $2^8$ & $2^{12}$ & $2^{16}$ & $2^{20}$ & $2^{24}$ \\ \hline\hline
+	\multirow{3}{*}{Intersection} & This                         \hfill ,3                     & 0.02  & 0.03     & 0.2      & 4.9      &     117.8 &   2.3 & 2.5      & 6.4      & 41.4     &    902.0 \\ \cline{2-12}
+	                                  & \cite{CCS:KKRT16}                     \hfill ,2            & 0.2   & 0.2      & 0.4      & 3.8      &      58.6 &   0.6 & 0.6      & 1.3      & 7.5      &    106.8 \\ \cline{2-12}
+	                                  & \cite{ASIACCS:BlaAgu12}$^*$                      \hfill ,3 & 2.9   & 23.4     & 374.4    & 5,990.4  &  95,846.4 &    -- & --       & --       & --       &       -- \\ \hline\hline
+	\multirow{2}{*}{Joins/Union}      & This                        \hfill ,3                      & 0.02  & 0.03     & 0.3      & 9.1      &     192.1 &   2.6 & 2.9      & 6.6      & 61.4     &   1,337.8 \\ \cline{2-12}
+	                                  & \cite{LTW13}$^*$                      \hfill ,3            & 2.0   & 8.0      & 128.0    & 2,048.0  &  32,768.0 &    -- & --       & --       & --       &       -- \\ \hline\hline
+	\multirow{3}{*}{Cardinality}      & This                          \hfill ,3                    & 0.01  & 0.02     & 0.2      & 3.1      &      74.5 &   1.1 & 1.1      & 1.8      & 15.8     &    267.4 \\ \cline{2-12}
+	                                  & \cite{PSWW18}a                          \hfill ,2          & --    & 2.2      & 9.1      & 86.6     &        -- &    -- & 10.0     & 45.3     & 389.9    &       -- \\ \cline{2-12}
+	                                  & \cite{PSWW18}b                          \hfill ,2          & --    & --       & --       & --       &        -- &    -- & 13.0     & 56.2     & --       &       -- \\ \cline{2-12}
+	                                  & \cite{DBLP:conf/cans/CristofaroGT12} \hfill ,2             & 1.0   & 16.0     & 262.0    & 4190.0   &  67,100.0 &    -- & --       & --       & --       &       -- \\ \hline\hline
+	\multirow{2}{*}{Sum}              & This                           \hfill ,3                   & 0.03  & 0.04     & 0.3      & 6.8      &     158.8 &   3.7 & 4.0      & 7.9      & 51.0     &   1,099.6 \\ \cline{2-12}
+	                                  & \cite{cryptoeprint:2017:738}    \hfill ,2                  & 7.0   & 115.0    & 1,860.0  & 29,700.0 & 475,000.0 &    -- & --       & --       & --       &       -- \\ \hline
 \end{tabular}
-\caption{	 }
+\caption{	\label{fig:compare} }
 \end{figure*}
 
 
 
 
-\begin{figure*}[t!]\centering\footnotesize\label{fig:app}
+\begin{figure*}[t!]\centering\footnotesize
+	% \begin{figure*}[h]\centering
+	\begin{tabular}{|l |l|| r | r |r |r|r|}
+		\cline{3-7}
+		\multicolumn{1}{c}{}              & \multicolumn{1}{c}{}                            & \multicolumn{5}{|c|}{Total Communication (MB)}    \\ \hline
+		\multirow{2}{*}{Operation}        & \multirow{1}{*}{Protocol,}                      &             \multicolumn{5}{c|}{$n$}              \\
+		                                  & \# Parties                                      & $2^8$ & $2^{12}$ & $2^{16}$ & $2^{20}$ & $2^{24}$ \\ \hline\hline
+		\multirow{2}{*}{Set Intersection} & This                         \hfill ,3          & 0.2   & 3.0      & 48.1     & 769.4    & 12,318.2 \\ \cline{2-7}
+		                                  & \cite{CCS:KKRT16}                     \hfill ,2 & 0.04  & 0.5      & 8.1      & 127.2    &  1,955.2 \\ \hline\hline
+		\multirow{2}{*}{Joins/Union}      & This                        \hfill ,3           & 0.3   & 4.9      & 78.1     & 1,249.4  & 19,998.1 \\ \cline{2-7}
+		                                  & \cite{LTW13}$^*$                      \hfill ,3 &       &          &          &          &          \\ \hline\hline
+		\multirow{3}{*}{Cardinality}      & This                          \hfill ,3         & 0.1   & 2.0      & 32.6     & 521.5    &  8,344.0 \\ \cline{2-7}
+		                                  & \cite{PSWW18}a                   \hfill ,2      & --    & 52.7     & 826.1    & 9,971.4  &       -- \\ \cline{2-7}
+		                                  & \cite{PSWW18}b                   \hfill ,2      & --    & 14.3     & 171.3    & --       &       -- \\ \cline{2-7}
+		                                  & \cite{DBLP:conf/cans/CristofaroGT12} \hfill ,2  & 0.1   & 0.4      & 6.2      & 99.0     &  1,584.0 \\ \hline\hline
+		\multirow{2}{*}{Sum}              & This                           \hfill ,3        & 0.3   & 2.0      & 33.1     & 526.5    &  8,372.0 \\ \cline{2-7}
+		                                  & \cite{cryptoeprint:2017:738}    \hfill ,2       & 0.1   & 1.9      & 30.2     & 483.0    &  7,728.0 \\ \hline\hline
+		Voter Intra-state                 & This                           \hfill ,3        & 0.2   & 3.4      & 54.1     & 867.1    & 13,903.6 \\ \hline
+		Voter Inter-state                 & This                           \hfill ,3        & 0.4   & 5.7      & 91.3     & 1,463.9  & 23,482.8 \\ \hline\hline
+		Threat Log $\sim$ 2               & This                           \hfill ,3        & 0.2   & 3.1      & 50.2     & 804.2    & 12,867.9 \\ \hline
+		Threat Log $\sim$ 4               & This                           \hfill ,3        & 0.6   & 9.7      & 155.4    & 2,487.8  & 39,804.4 \\ \hline
+		Threat Log $\sim$ 8               & This                           \hfill ,3        & 1.4   & 22.8     & 365.7    & 5,854.9  & 93,677.5 \\ \hline
+	\end{tabular}
+	\caption{\label{fig:comm}	 }
+\end{figure*}
+
+
+
+
+\paragraph{Set Intersection.} We first consider set intersection. In this case the two tables of our protocol consist of a single column which is joined on. We compare our protocol to \cite{CCS:KKRT16} which is a two party set intersection protocol where the input sets each are known in the clear to one of the parties and one party learns the intersection exactly. This is contrasted by our three party protocol where the input and output sets are secret shared between the parties. That is, our protocol is composable while \cite{CCS:KKRT16} is not. Both our protocol and \cite{CCS:KKRT16} were benchmarked on the same hardware. We also compare to the three party protocol of \cite{ASIACCS:BlaAgu12} which is composable and was not benchmarked on the same hardware. The \cite{ASIACCS:BlaAgu12} was benchmarked on three AMD Opteron computers at 2.6GHz connected on a LAN network. This protocol first sorts the two input sets/tables which in practice requires $O(n\log^2 n)$ operations/communication and $O(n)$ rounds\cite{ASIACCS:BlaAgu12}. In contrast, our protocol and \cite{CCS:KKRT16} requires $O(n)$ operations/communication and $O(1)$ rounds. 
+
+This asymptotic difference also translates to a large difference in the concrete running time as shown in \figureref{fig:compare}. Out of these three protocol \cite{CCS:KKRT16} is the fastest requiring 3.8 seconds in the LAN setting to intersect two sets of size $n=2^{20}$ while our protocol requires 4.9 seconds. However, our protocol is fully composable while \cite{CCS:KKRT16} is not. Considering this we argue that a slowdown of $1.28\times$ is acceptable. When compared to \cite{ASIACCS:BlaAgu12} which provides the same composable functionality, our protocol is $1220\times$ faster.
+
+In the WAN setting our protocol has a relatively slowdown compared to \cite{CCS:KKRT16}. This can be contributed to our protocol require significantly more rounds (still constant) and communication. For instance, with $n=2^{20}$ the protocol of \cite{CCS:KKRT16} in the WAN setting requires 7.5 seconds while our protocol requires 41 seconds, a difference of $5.5\times$. With respect to the communication overhead, our protocol for $n=2^{20}$ requires 769 MB of communication and \cite{CCS:KKRT16} requires 127, a difference of $6\times$. The WAN running time and communication overhead of \cite{ASIACCS:BlaAgu12} is not known due to their code not being available.
+
+
+\paragraph{Joins/Union. } The second point of comparison is performing an inner join protocol on two tables consisting of five column 32 bit columns. We note that \cite{ASIACCS:BlaAgu12} is capable of this task but no performance results were available. Instead we compare with the join protocol of \cite{LTW13}. This protocol is composable but requires that the cardinality of the intersection be revealed after each join is performed. As previously discussed, this leakage limits the applicability of the protocol in many applications. The numbers reported for \cite{LTW13} are from their paper and the experiments were performed on three servers each with 12 CPUs at 3GHz in the LAN setting. As can be seen in \figureref{fig:compare}, our protocol is roughly $200\times$ faster in the LAN setting. For example, with $n=2^{20}$ our protocol requires a running time of 9.1 seconds while \cite{LTW13} requires a running time of 2048 seconds. Moreover, when you comparing the relative cost between our set intersection and join protocol you can observe that the additional 4 columns in the join does not significantly increast the overall running time. For example, in the WAN setting a intersection with $n=2^{20}$ requires 41 seconds while the addition of the four columns results in a  running time of 61 seconds. For both protocol, operations such as left join and unions can be performed with little to no additional computation as compared to inner join as discussed here.
+
+\paragraph{Cardinality. } The set cardinality protocol presented here also out performs all previous protocols. As described in \sectionref{sec:card}, our cardinality protocol allows the omission of the switching network which reduces the amount of communication and overall running time. We demonstrate the performance by comparing with the two-party protocols of Pinkas et al. \cite{PSWW18} and De Cristofaro et al. \cite{DBLP:conf/cans/CristofaroGT12}. The protocol of  \cite{PSWW18} was benchmarked on two multi-core i7 machines at 3.7GHz and 16GB of RAM with similar network settings. For the protocol of \cite{DBLP:conf/cans/CristofaroGT12}, we performed rough estimates on the time required for our machine to perform the computation without any communication overhead. For sets of size $n=2^{20}$ our protocol requires 3.1 seconds in the LAN setting and 15.8 in the WAN setting. The next fastest protocol is \cite{PSWW18} which requires 86.6 seconds in the LAN setting and 390 seconds in the WAN setting. In both cases this represents more than a $20\times$ difference in running time.  \cite{PSWW18} considers a variant of their protocol optimized for the WAN setting which reduces their communication at the expense of increased running time. The protocol of \cite{DBLP:conf/cans/CristofaroGT12} requires the most running time by a large margin due to the protocol being based on exponentiation. Just to locally perform these public key operations requires roughly 4200 seconds of computation on our benchmark machine, a difference of $1350\times$. However, the protocol of \cite{DBLP:conf/cans/CristofaroGT12} also requires the least amount of communication, consisting of 99MB for $n=2^{20}$ while our protocol requires 521MB followed by \cite{PSWW18}  with almost 10GB.
+
+
+\paragraph{Sum. } The last generic comparison we perform is for securely computed the weighted sum of the intersection. Our protocol for performing this task is described in \sectionref{sec:card}. We compare to the protocol of Ion et al. \cite{cryptoeprint:2017:738} which can be viewed as an extension of the public key based cardinality protocol of \cite{DBLP:conf/cans/CristofaroGT12}. In particular, \cite{cryptoeprint:2017:738}  also revealed the cardinality of the intersection and then performs a secondary computation using Paillier homomorphic encryption to compute the sum. Although this protocol reveals more information than ours, we still think it is a valuable point of comparison. Not surprisingly,  the protocol of \cite{cryptoeprint:2017:738} requires significantly more computation time than our protocol. For a dataset size of $n=2{20}$, their protocol requires almost 30000 seconds to just perform the public key operations without any communication. Our protocol requires just 6.8 seconds in the LAN setting and 51 in the WAN setting. Both of these protocol also consume roughly the same amount of communication with \cite{cryptoeprint:2017:738} requiring 483MB and our protocol requires 527MB, a increase of just 9 percent. 
+
+\begin{figure*}[t!]\centering\footnotesize
 	% \begin{figure*}[h]\centering
 	\begin{tabular}{|l|| r | r |r |r|r|r||r|r | r |r |r|r|}
 		\cline{2-13}
 		\multicolumn{1}{c}{}         & \multicolumn{6}{|c||}{LAN}                                   & \multicolumn{6}{|c|}{WAN}                                    \\ \hline
 		\multirow{2}{*}{Application} &                  \multicolumn{6}{c||}{$n$}                   &                   \multicolumn{6}{c|}{$n$}                   \\
 		                             & $2^8$ & $2^{12}$ & $2^{16}$ & $2^{20}$ & $2^{24}$ & $2^{26}$ & $2^8$ & $2^{12}$ & $2^{16}$ & $2^{20}$ & $2^{24}$ & $2^{26}$ \\ \hline\hline
-		Voter Registration           & 0.1   & 0.1      & 1.3      & 21.9     &    350.4 &   5606.4 &       &          &          &          &          &          \\ \hline
-		Threat Log $\sim$ 2          & 0.02  & 0.03     & 0.2      & 5.1      &    121.4 &    488.1 &       &          &          &          &          &          \\ \hline
-		Threat Log $\sim$ 4          & 0.05  & 0.09     & 0.9      & 17.9     &    388.4 &   1553.9 &       &          &          &          &          &          \\ \hline
-		Threat Log $\sim$ 8          & 0.10  & 0.19     & 1.7      & 47.1     &   1021.0 &  16336.1 &       &          &          &          &          &          \\ \hline
+		Voter Intra-state            & 0.01  & 0.02     & 0.2      & 4.7      &    114.7 &  2,190.1 &   1.0 &      1.0 & 2.2      & 27.1     & 456.1    &  7,463.9 \\ \hline
+		Voter Inter-state            & 0.01  & 0.02     & 0.3      & 7.0      &    134.8 &  2,546.4 &   1.6 &      1.6 & 4.0      & 45.4     & 747.7    & 12,284.1 \\ \hline
+		Threat Log $N=2$          & 0.02  & 0.03     & 0.2      & 5.1      &    121.4 &    488.1 &   2.4 &      2.5 & 4.8      & 34.6     & 585.6    &  2,342.4 \\ \hline
+		Threat Log $N=4$           & 0.05  & 0.09     & 0.9      & 17.9     &    388.4 &  1,553.9 &   6.6 &      6.8 & 13.1     & 108.7    & 1,739.2  &  6,956.8 \\ \hline
+		Threat Log $N=8$          & 0.10  & 0.19     & 1.7      & 47.1     &  1,021.0 & 16,336.1 &  14.9 &     15.3 & 30.0     & 264.3    & 4,228.8  & 16,915.2 \\ \hline
 	\end{tabular}
-	\caption{	 }
+	\caption{\label{fig:app}	 }
 \end{figure*}
+
+
+\paragraph{Voter Registration. } We now turn our attention the application of auditing the voter registration data between and within the United States as described in \sectionref{sec:voter}. In summary, this application checks that a registered voter is not registered in more than one state and cross validates that their current address is correct. Only the identities of the voters which have conflicting data are revealed to the appropriate state to facilitate a process to contact the individual. In addition, the application can help assist the process of enrolling unregistered citizens. This audit processes is performed using two types of join queries. First, each state computes a left join between the DMV database and the list of registered voters. In \figureref{fig:comm} and \ref{fig:app} we call this join \emph{Voter Intra-state}. For all pairs of states, these tables are then joined to identify the any registration error, e.g. double registered. This join is referred to as \emph{Voter Inter-state}. Performance metrics are reported for each of these joins individually and then we estimate the total cost to perform the computation nation wide. 
+
+As shown in \figureref{fig:app}, our  protocol can perform the \emph{Voter Intra-state} join with an input set size of 16 million voters ($n=2^{24}$) in 115 seconds on a LAN network and in 456 seconds on a WAN network. Considering all but three states have a voting population less than $n=2^{24}$, we consider this a realistic estimate on the running time overhead. Our protocol also achieves relatively good communication overhead of 13.9 GB (\figureref{fig:comm}), where each of the servers sends roughly one third of this. On averages, that is 830 bytes for each of the $n$ records. Given these tables, the \emph{Voter Inter-state} join is performed between all pairs of states. For two states with $n=2^{24}$, the benchmark machine required 135 seconds in the LAN setting and 748 seconds in the WAN setting. The added overhead in this second join protocol is an additional \texttt{where} clause which requires a moderate sized binary circuit to be securely evaluated. This join requires 23.4 GB of communication, or 1.4KB for each of the $n$ records.
+
+Given the high value and low frequency of this computation we argue that these computational overheads are very reasonable. Given the current population estimates of each state, we extrapolate that the overall running time to run the protocol between all 50 states in a LAN setting would be 53,340 seconds or 14.8 hours and  285,687 seconds in the WAN setting. However, the running time in the WAN setting could easily be reduced by running protocols in parallel and increasing the bandwidth above the relatively low 100Mbps per party. The total communication overhead is 9,131 GB which is the main bottleneck.  While this amount of communication is non-negligible, the actual dollar amount on a cloud such as AWS\cite{aws} is relatively low, totaling roughly \$820 at a rate of \$0.09 per GB\cite{aws_pricing}. 
+
+
+\paragraph{Threat Log. } In this application $N$ party secret share their data between the three computational parties and delegate the task of identifying the events that appear in at least $k$ out of the $N$ data sets. As described in \sectionref{sec:threatlog}, the protocol proceeds by taking the union of the sets and then the number of times each event occurred is counted and compared against $k$. Each event that appears more than $k$ times is then revealed to all parties. The union protocol can only function with respect to two input set. To compute the union of $N$ sets we use a binary tree structure where pairs of sets are combined. As such, there are a total of $N-1$ union operations and a depth of $\log N$ protocol instances.
+
+When benchmarking we consider $N=\{2,4,8\}$ input sets each of size $n\in \{2^8, 2^{12}, 2^{16}, 2^{20}, 2^{24}\}$. Since we do not reveal the size of the union, the final table will be of size $nN$. For $N=2$ sets each with $n=2^{24}$ items our protocol requires 121 seconds in the LAN setting and 586 seconds in the WAN setting. The total communication is 804MB, or approximately 24 bytes per records. If we increase the number of sets to $N=8$ we observe that the LAN running time increases to 1,021 seconds and 4,228 seconds  in the WAN setting. Given the the total input size increased by $4\times$, we observe roughly an $8\times$ increase in running time. This difference is due to each successive union operation being twice as big. Theoretically the running time and communication of this protocol is therefore $O(nN\log N)$.
+

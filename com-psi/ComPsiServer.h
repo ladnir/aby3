@@ -21,7 +21,7 @@ namespace osuCrypto
     {
     public:
         u64 mIdx, mKeyBitCount = 80;
-        CommPkg mComm;
+        //CommPkg mComm;
         PRNG mPrng;
 
         aby3::Sh3Runtime mRt;

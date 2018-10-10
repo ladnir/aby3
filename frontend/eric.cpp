@@ -79,10 +79,16 @@ void eric(int n)
     for (auto& c : dmv2Data.mColumns) prng.get<i64>(c.mData.data(), c.mData.size());
 	Timer t;
 
+	std::array<u64, 3> comm_p, cc;
+	std::array<u64, 3> comm_0;
+	std::array<u64, 3> comm_1;
+
     auto routine = [&](int i)
     {
         auto& srv = srvs[i];
 
+		srvs[i].mRt.mComm.mNext.resetStats();
+		srvs[i].mRt.mComm.mPrev.resetStats();
         SharedTable voter1, voter2, dmv1, dmv2;
 
         if (i == 0)
@@ -103,35 +109,69 @@ void eric(int n)
 		if(i==0)
 	        t.setTimePoint("start");
 
+		comm_p[i] = (srvs[i].mRt.mComm.mNext.getTotalDataSent() + srvs[i].mRt.mComm.mPrev.getTotalDataSent());
+
+		srvs[i].mRt.mComm.mNext.resetStats();
+		srvs[i].mRt.mComm.mPrev.resetStats();
+		cc[i] = (srvs[i].mRt.mComm.mNext.getTotalDataSent() + srvs[i].mRt.mComm.mPrev.getTotalDataSent());
+
         auto select1 = std::vector<SharedTable::ColRef>{ dmv1["NA"], dmv1["SSN"], dmv1["AD"] };
         auto select2 = std::vector<SharedTable::ColRef>{ dmv2["NA"], dmv2["SSN"], dmv2["AD"] };
 
         auto state1 = srv.leftJoin(dmv1["DL"], voter1["DL"], select1, "registed");
 		if (i == 0) t.setTimePoint("left1");
+		comm_0[i] = (srvs[i].mRt.mComm.mNext.getTotalDataSent() + srvs[i].mRt.mComm.mPrev.getTotalDataSent());
+
+
+		srvs[i].mRt.mComm.mNext.resetStats();
+		srvs[i].mRt.mComm.mPrev.resetStats();
+
         auto state2 = srv.leftJoin(dmv2["DL"], voter2["DL"], select2, "registed");
 		if (i == 0) t.setTimePoint("left2");
+		comm_1[i] = (srvs[i].mRt.mComm.mNext.getTotalDataSent() + srvs[i].mRt.mComm.mPrev.getTotalDataSent());
 
+		srvs[i].mRt.mComm.mNext.resetStats();
+		srvs[i].mRt.mComm.mPrev.resetStats();
 
         SelectQuery select;
         auto SSN = select.joinOn(state1["SSN"], state2["SSN"]);
-        auto date1 = select.addInput(state1["AD"]);
-        auto date2 = select.addInput(state2["AD"]);
-        auto reg1 = select.addInput(state1["registed"]);
-        auto reg2 = select.addInput(state2["registed"]);
 
-        auto older1 = date1 < date2;
-        auto older2 = !older1;
-        auto doubleReg = reg1 & reg2;
-        auto reveal1 = doubleReg | (older1 & reg1);
-        auto reveal2 = doubleReg | (older2 & reg2);
+		if (true)
+		{
 
-        select.addOutput("NA1", select.addInput(state1["NA"]) * reveal1);
-        select.addOutput("NA2", select.addInput(state2["NA"]) * reveal2);
+			auto date1 = select.addInput(state1["AD"]);
+			auto date2 = select.addInput(state2["AD"]);
+			auto reg1 = select.addInput(state1["registed"]);
+			auto reg2 = select.addInput(state2["registed"]);
+			select.noReveal("s");
+
+			auto older1 = date1 < date2;
+			auto older2 = !older1;
+			auto doubleReg = reg1 & reg2;
+			auto reveal1 = doubleReg | (older1 & reg1);
+			auto reveal2 = doubleReg | (older2 & reg2);
+
+			select.addOutput("NA1", select.addInput(state1["NA"]) * reveal1);
+			select.addOutput("NA2", select.addInput(state2["NA"]) * reveal2);
+
+
+		}
+		else
+		{
+			select.addOutput("SSN", SSN);
+		}
 
         auto intersection = srv.joinImpl(select);
+
+		if (i == 0)
+		{
+			std::cout << "s s " << voter1.rows() << "  " << state2.rows() << "  " << intersection.rows() << std::endl;
+			
+					
+		}
+		
 		if (i == 0)
 			t.setTimePoint("done");
-
 
     };
 
@@ -145,9 +185,15 @@ void eric(int n)
     t0.join();
     t1.join();
 
-	std::cout << "n = " << n << "\n" << t << std::endl;
-	std::cout << "    " << (srvs[0].mComm.mNext.getTotalDataSent() + srvs[0].mRt.mComm.mNext.getTotalDataSent()) << std::endl;
-	std::cout << "    " << (srvs[1].mComm.mNext.getTotalDataSent() + srvs[1].mRt.mComm.mNext.getTotalDataSent()) << std::endl;
-	std::cout << "    " << (srvs[2].mComm.mNext.getTotalDataSent() + srvs[2].mRt.mComm.mNext.getTotalDataSent()) << std::endl;
+	auto comm0 = (srvs[0].mRt.mComm.mNext.getTotalDataSent() + srvs[0].mRt.mComm.mPrev.getTotalDataSent());
+	auto comm1 = (srvs[1].mRt.mComm.mNext.getTotalDataSent() + srvs[1].mRt.mComm.mPrev.getTotalDataSent());
+	auto comm2 = (srvs[2].mRt.mComm.mNext.getTotalDataSent() + srvs[2].mRt.mComm.mPrev.getTotalDataSent());
+	std::cout << "n = " << n << "   " << comm0 + comm1 + comm2
+		<< "\n    cc " << cc[0] + cc[1] + cc[2]
+		<< "\n    pp " << comm_p[0] + comm_p[1] + comm_p[2]
+		<< "\n    j0 " << comm_0[0] + comm_0[1] + comm_0[2]
+		<< "\n    j1 " << comm_1[0] + comm_1[1] + comm_1[2]
+		<< "\n    j2 " << comm0 + comm1 + comm2
+		<<"\n" << t << std::endl;
 
 }

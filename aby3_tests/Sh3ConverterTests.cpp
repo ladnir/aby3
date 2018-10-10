@@ -3,6 +3,7 @@
 #include "aby3/Engines/sh3/Sh3Encryptor.h"
 #include <cryptoTools/Crypto/PRNG.h>
 #include <cryptoTools/Common/BitIterator.h>
+#include <cryptoTools/Common/Log.h>
 using namespace aby3;
 using namespace oc;
 

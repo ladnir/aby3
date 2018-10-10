@@ -1,18 +1,12 @@
 \section{Introduction}
 
-asdf, bla. Set intersection, union, database operations, composable.
+We consider the problem of performing database join operations on SQL styled tables which secret shared between three or more parties. In particular, the proposed protocol takes two or more arbitrarily  secret shared database tables and constructs a new table containing the join, e.g. inner join/intersection, of the two tables without revealing any partial information at all. Our protocol is constant round and  has $O(n)$ computation, communication  overhead to join two tables with $n$ records. Simulation based security is achieved in the semi-honest three party honest majority setting. Our primary protocol requires the key(s) being joined on be unique. However, we also consider the case when this is not met.
 
+New techniques for performing set intersection, inner join and related functionalities have shown great promise for practical deployment. To name a few, Ion et al. at Google recently deployed a private set intersection sum protocol\cite{cryptoeprint:2017:738} to allow customers of google ads to correlate the impact online advertising has on generating offline sales while preserving user privacy. Pinkas et al. \cite{PSWW18} also introduced a practical protocol that can compute any (symmetric) function of the intersection and associated data. In both cases these protocols can be frames in terms of SQL queries where an inner join is computed followed by an aggregation on the resulting table, e.g. summing a column.  
 
+The majority of these types of protocols consider the two party setting and are based on various cryptographic primitives, e.g. exponentiation\cite{cryptoeprint:2017:738} or oblivious transfer\cite{PSWW18}, fully homomorphic encryption\cite{CLR17}. However, in this work we relax the security model to consider three parties with an honest majority. The motivation of this relaxation is that typically protocols, e.g.\cite{highthroughput}, in this setting require the security parameter $\kappa=128$ times less computation and communication when compared to similar two party protocols.
 
-
-\input{related}
-
-
-\subsection{Our Results}
-
-We present the first composable
-
-
+Given this observation we investigate how to leverage the efficiency gains in the three party setting to construct practical protocols for performing set intersection and other SQL like operations where both the inputs and outputs are secret shared. One critical aspect of this input/output requirement is that join operations can then be \emph{composed} together, there the output of one can be the input to another. Allowing this composibility greatly increased the ability to perform highly complex queries and enables external parties to contribute data simply be secret sharing it between the primary parties.
 
 \subsection{Functionality}
 
@@ -33,6 +27,18 @@ So far we have discussed inner join (intersection) between two tables. Several o
 
 We define the union of two tables to contains all records from the left table along with all the records from the right table which are not in the intersection. We define union in this way due an ambiguity around which table the records in the intersection should come from. Table minus is similarly defined as all of the left table where the joined on column(s) is not present in the right table. 
 
-Beyond these various join operations, our framework supports two broad classes of operations which are a function of a single table. The first is a general SQL select statement which can perform computation on each row (e.g. compute the max of two columns) and filter the results using a \texttt{where} clause predicate. The second class is referred as an aggregation which perform an operation across all of the rows of a table. For example, computing the sum or the max of a given column. 
+Beyond these various join operations, our framework supports two broad classes of operations which are a function of a single table. The first is a general SQL select statement which can perform computation on each row (e.g. compute the max of two columns) and filter the results using a \texttt{where} clause predicate. The second class is referred as an aggregation which perform an operation across all of the rows of a table. For example, computing the sum, counts or the max of a given column. 
 
 
+
+\subsection{Our Results}
+
+We present the first practical secure multiply party computation protocol for performing SQL styled database joins with linear overhead and constant round. Our protocol is fully composable in that the input and output tables are generically secret shared between the parties. No partial information is revealed at any point. We achieve this result by combining various technique from private set intersection and secure computation more broadly. In particular, we use the binary secret sharing technique of \cite{highthroughput} with enhancements described by \cite{aby3}. We then combine this secret sharing scheme with cuckoo hashing\cite{usenix:PSZ14}, an oblivious PRF\cite{lowmc} and a custom protocol for evaluating an oblivious switching network\cite{MS13}. Using these building blocks our protocol is capable of computing the intersection of two tables of $n=2^{20}$ rows in 4.9 seconds.  Alternatively, the cardinality of the intersection can be computed in just 3.1 seconds. Beyond these two specific functionalities, our protocol is generic in that the output is a secret shared tabled that can have arbitrary computation applied to it. Compared to existing three party protocols with similar functionality (composable), our implementation is roughly $1000\times$ faster. When compared with \emph{non-composable} two party protocol, we observe a larger difference ranging from our protocol being $1.24\times$ slower to $4000\times$ faster depending on what functionality is being computed. 
+
+
+Building on our proposed protocol we demonstrate it's utility by showcasing two applications. The first involves running our protocol between and within the states of the United States to validate the accuracy of the voter registration data in a privacy preserving way. The Pew Charitable Trust\cite{pew} reported 1 in 8 voter registration records in the United States contains a serious error while 1 in 4 eligible citizens remain unregister. Our privacy preserving validation includes the ability to identify when an individual's address is out of date or more seriously if someone is register to vote in more than one state which could allow them to cast two votes. Additionally it can be used to help register eligible citizens. Our protocol ensures that only the minimum amount of information is revealed, namely the identities of individuals with serious registration errors. Due to how the data is distributed between different government agencies, it is critical that our protocol allows for composable operations. We implement this application and demonstrate that it is practical to run at a national scale (quarter billion records) and low cost.
+
+The second application that we consider allows multiples organizations to compare computer security incidents and logs to more accurately identify unwanted activities, e.g. a bot net. Several companies already offer this service including Facebook's ThreadExchange\cite{threat} and an open source alternative\cite{alt_threat}. One of the primary limitations of these existing solutions is the requirement that each organization send their security logs to a central party, e.g Facebook. We propose using our protocol to distribute the trust of this central party between three (or more) parties such that privacy is guaranteed so long as there is an honest majority.
+
+
+\input{related}

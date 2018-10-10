@@ -184,6 +184,7 @@ namespace osuCrypto
                 lib.int_bitInvert_build(cir, mem[gate.mIn1], mem[gate.mOut]);
                 break;
             case selectDetails::Multiply:
+
                 lib.int_int_mult_build(cir, mem[gate.mIn1], mem[gate.mIn2], mem[gate.mOut]);
                 break;
             case selectDetails::Add:

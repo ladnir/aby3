@@ -13,7 +13,7 @@ namespace osuCrypto
     {
         mIdx = idx;
 
-        mComm = { prev.addChannel(), next.addChannel() };
+        //mComm = { prev.addChannel(), next.addChannel() };
 
         aby3::Sh3::CommPkg comm{ prev.addChannel(), next.addChannel() };
         mRt.init(idx, comm);
@@ -63,15 +63,15 @@ namespace osuCrypto
 
         u64 rows = t.rows();
 
-        mComm.mNext.asyncSendCopy(rows);
-        mComm.mPrev.asyncSendCopy(rows);
+		mRt.mComm.mNext.asyncSendCopy(rows);
+		mRt.mComm.mPrev.asyncSendCopy(rows);
 
         std::vector<std::array<u64, 2>> sizes(t.mColumns.size());
         for (u64 i = 0; i < t.mColumns.size(); ++i)
             sizes[i] = { t.mColumns[i].getBitCount(), (u64)t.mColumns[i].getTypeID() };
 
-        mComm.mNext.asyncSendCopy(sizes);
-        mComm.mPrev.asyncSend(std::move(sizes));
+		mRt.mComm.mNext.asyncSendCopy(sizes);
+		mRt.mComm.mPrev.asyncSend(std::move(sizes));
 
         for (u64 i = 0; i < t.mColumns.size(); ++i)
         {
@@ -79,8 +79,8 @@ namespace osuCrypto
             ret.mColumns[i].mName = t.mColumns[i].mName;
             ret.mColumns[i].resize(rows, t.mColumns[i].getBitCount());
 
-            mComm.mNext.asyncSendCopy(t.mColumns[i].mName);
-            mComm.mPrev.asyncSendCopy(t.mColumns[i].mName);
+			mRt.mComm.mNext.asyncSendCopy(t.mColumns[i].mName);
+			mRt.mComm.mPrev.asyncSendCopy(t.mColumns[i].mName);
 
             aby3::Sh3::sbMatrix& a1 = ret.mColumns[i];
 
@@ -93,7 +93,7 @@ namespace osuCrypto
     SharedTable ComPsiServer::remoteInput(u64 partyIdx)
     {
         SharedTable ret;
-        auto chl = ((mIdx + 1) % 3 == partyIdx) ? mComm.mNext : mComm.mPrev;
+        auto chl = ((mIdx + 1) % 3 == partyIdx) ? mRt.mComm.mNext : mRt.mComm.mPrev;
 
         u64 rows;
         chl.recv(rows);
@@ -120,10 +120,10 @@ namespace osuCrypto
 
     void ComPsiServer::p0CheckSelect(MatrixView<u8> cuckooTable, span<Matrix<u8>> a2)
     {
-        mComm.mNext.send(cuckooTable.data(), cuckooTable.size());
-        mComm.mNext.send(a2[0].data(), a2[0].size());
-        mComm.mNext.send(a2[1].data(), a2[1].size());
-        mComm.mNext.send(a2[2].data(), a2[2].size());
+        mRt.mComm.mNext.send(cuckooTable.data(), cuckooTable.size());
+        mRt.mComm.mNext.send(a2[0].data(), a2[0].size());
+        mRt.mComm.mNext.send(a2[1].data(), a2[1].size());
+        mRt.mComm.mNext.send(a2[2].data(), a2[2].size());
     }
     std::string hexString(u8* ptr, u32 size)
     {
@@ -146,10 +146,10 @@ namespace osuCrypto
         a3[1].resize(a2[1].rows(), cuckooTable.cols());
         a3[2].resize(a2[2].rows(), cuckooTable.cols());
 
-        mComm.mPrev.recv(c2.data(), c2.size());
-        mComm.mPrev.recv(a3[0].data(), a3[0].size());
-        mComm.mPrev.recv(a3[1].data(), a3[1].size());
-        mComm.mPrev.recv(a3[2].data(), a3[2].size());
+        mRt.mComm.mPrev.recv(c2.data(), c2.size());
+        mRt.mComm.mPrev.recv(a3[0].data(), a3[0].size());
+        mRt.mComm.mPrev.recv(a3[1].data(), a3[1].size());
+        mRt.mComm.mPrev.recv(a3[2].data(), a3[2].size());
 
 
         for (u64 i = 0; i < cuckooTable.size(); ++i)
@@ -758,7 +758,7 @@ namespace osuCrypto
         }
 
         OblvPermutation oblvPerm;
-        oblvPerm.program(mComm.mNext, mComm.mPrev, std::move(perm), mPrng, share0, (std::to_string(mIdx)) + "_cuckoo_hash", OutputType::Additive);
+        oblvPerm.program(mRt.mComm.mNext, mRt.mComm.mPrev, std::move(perm), mPrng, share0, (std::to_string(mIdx)) + "_cuckoo_hash", OutputType::Additive);
 
 
         //{
@@ -825,7 +825,7 @@ namespace osuCrypto
         }
 
         OblvPermutation oblvPerm;
-        oblvPerm.send(mComm.mNext, mComm.mPrev, std::move(share1), (std::to_string(mIdx)) + "_cuckoo_hash_send");
+        oblvPerm.send(mRt.mComm.mNext, mRt.mComm.mPrev, std::move(share1), (std::to_string(mIdx)) + "_cuckoo_hash_send");
 
         //mEnc.reveal(mRt.mComm, 0, leftTable.mKeys);
     }
@@ -851,7 +851,7 @@ namespace osuCrypto
         share1.setZero();
 
         OblvPermutation oblvPerm;
-        oblvPerm.recv(mComm.mPrev, mComm.mNext, share1, share1.rows(), (std::to_string(mIdx)) + "_cuckoo_hash_recv");
+        oblvPerm.recv(mRt.mComm.mPrev, mRt.mComm.mNext, share1, share1.rows(), (std::to_string(mIdx)) + "_cuckoo_hash_recv");
 
 
         //auto dest = share1.data();
@@ -893,7 +893,7 @@ namespace osuCrypto
         OblvSwitchNet snet(std::to_string(mIdx));
         for (u64 h = 0; h < 3; ++h)
         {
-            snet.sendRecv(mComm.mNext, mComm.mPrev, cuckooHashTable, dest[h]);
+            snet.sendRecv(mRt.mComm.mNext, mRt.mComm.mPrev, cuckooHashTable, dest[h]);
         }
 
         return std::move(dest);
@@ -904,7 +904,7 @@ namespace osuCrypto
         OblvSwitchNet snet(std::to_string(mIdx));
         for (u64 h = 0; h < 3; ++h)
         {
-            snet.help(mComm.mPrev, mComm.mNext, mPrng, destRows, srcRows, bytes);
+            snet.help(mRt.mComm.mPrev, mRt.mComm.mNext, mPrng, destRows, srcRows, bytes);
         }
     }
 
@@ -978,7 +978,7 @@ namespace osuCrypto
 
         for (u64 h = 0; h < 3; ++h)
         {
-            snet.program(mComm.mNext, mComm.mPrev, progs[h], mPrng, dest[h], OutputType::Additive);
+            snet.program(mRt.mComm.mNext, mRt.mComm.mPrev, progs[h], mPrng, dest[h], OutputType::Additive);
         }
 
 
@@ -1036,7 +1036,7 @@ namespace osuCrypto
         aby3::Sh3BinaryEvaluator eval;
 
         if (ComPsiServer_debug)
-            eval.enableDebug(mIdx, mComm.mPrev, mComm.mNext);
+            eval.enableDebug(mIdx, mRt.mComm.mPrev, mRt.mComm.mNext);
 
         eval.setCir(&cir, size);
 
@@ -1259,7 +1259,7 @@ namespace osuCrypto
         aby3::Sh3BinaryEvaluator eval;
 
         if (ComPsiServer_debug)
-            eval.enableDebug(mIdx, mComm.mPrev, mComm.mNext);
+            eval.enableDebug(mIdx, mRt.mComm.mPrev, mRt.mComm.mNext);
 
         eval.setCir(&cir, size);
         eval.setInput(0, leftJoinCol.mCol);
