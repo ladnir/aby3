@@ -3,27 +3,28 @@
 
 \subsection{Security Model}
 
-Our protocols are presented in the semi-honest three party setting with an honest majority. That is, our protocols are computationally secure conditioned on the adversary corrupting at most one of the three parties. 
+Our protocols are presented in the semi-honest three party setting with an honest majority. That is, our protocols are computationally secure conditioned on the adversary corrupting at most one of the three parties. See \cite{highthroughput,aby3} for details.
 
 
 
-Throughout the exposition we will assume these three parties, which we sometimes call \emph{servers}, provide the sets which are computed on. However, in the general case the sets being computed on can be privately input by an arbitrary party which does not participates in the computation. In particular, these \emph{client} parties will secret share there set between the servers and reconstruct the output shares that are indented for them. This setting is often referred to as the client server model\cite{aby3, secureML}. Later on we will also consider a setting with five servers that can tolerate the adversary corrupting any two of them. However, we will explicitly state when this alternative model is being considered.
+Throughout the exposition we will assume these three parties, which we sometimes call \emph{servers}, provide the sets which are computed on. However, in the general case the sets being computed on can be privately input by an arbitrary party which does not participate in the computation. These \emph{client} parties will secret share their set between the servers and reconstruct the output shares that are intended for them. This setting is often referred to as the client server model\cite{aby3, secureML}. Later on we will also consider a setting with five servers that can tolerate the adversary corrupting any two of them. However, we will explicitly state when this alternative model is being considered.
 
 
 
 \subsection{Notation}
 
-We will use the notation that $\share{x}$ is an binary secret sharing of the value $x$.
-
-permutations: define that a permutation can be applied to an integer $i$ which maps the output position $i$ to the input position $\pi(i)$. Or, a permutation can be applied to a vector $V$ which applied the permutation to $V$, i.e. $\pi(V)=\{V_{\pi(1)}, ..., V_{\pi(n)}\}$. 
 
 
+
+Let $[n]$ denote the set $\{1,2,...,n\}$. Vector indices start at 1.
+We define a permutation of size $n$ as an injective function $\pi : [n] \rightarrow [n]$. We extend this definition such that when $\pi$ is applied to a vector $V$ of $n$ elements, then  $\pi(V)=\{V_{\pi(1)}, ..., V_{\pi(n)}\}$. 
+
+The image of a function $f : X \rightarrow Y$ is defined as $image(f) := \{y\in Y : \exists x\in X, f(x)=y\}$. Preimage of a pair $(f,y)$ is defined as $preimage(f,y):=\{x\in X : f(x) = y\}$.
 define a function image and preimage.
 
 
-\subsection{MPC Protocol}
 
-State that we use the ABY 3 framework. 
+Our protocol builds on the ABY$^3$ framework of Rindal and Mohassel\cite{aby3}. We will use the notation that $\share{x}$ is an binary secret sharing of the value $x$. Note that the framework of \cite{aby3} provides efficient facilities to convert to other types of shares, e.g. arithmetic and fixed point. For the rest of the exposition we will take such conversions for granted and thereby any computation on tables that can be expressed in this framework.
 
 \subsection{Cuckoo Hash Tables}
 
