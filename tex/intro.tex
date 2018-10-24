@@ -12,20 +12,36 @@ Given this observation we investigate how to leverage the efficiency gains in th
 
 Our protocol offers a wide variety of functionality including set intersection, set union, set difference and a variety of SQL-like joins with complex boolean queries. Generally speaking, our protocol works on tables of secret shared data which are functionally similar to SQL tables. This is contrasted by traditional PSI and PSU protocols\cite{usenix:PSZ14,USENIX:PSSZ15,PSZ16,CCS:KKRT16} in that each record is now a tuple as opposed to a single element. 
 
-We define our database tables in the natural way. Each table can be view as a collection of rows or as a vector of columns. For a table $X$, we denote the $i$th row as $X[i]$ and the $j$th column as $X_j$. Note that each column of a table has the same length but can contain different data types, e.g. $X_1$ is a column of 32 bit fixed point decimal values and $X_2$ is a column of 1024 bit strings.
+We define our database tables in the natural way. Each table can be view as a collection of rows or as a vector of columns. For a table $X$, we denote the $i$th row as $X[i]$ and the $j$th column as $X_j$. 
+\iffullversion
+Note that each column of a table has the same length but can contain different data types, e.g. $X_1$ is a column of 32 bit fixed point decimal values and $X_2$ is a column of 1024 bit strings.
 
-
+\fi
 Our core protocol requires that the columns/keys being \emph{joined on} contain unique values. For example, if we consider the following SQL styled join/intersection query
 $$
-\texttt{select } X_1, X_2, Y_2 \texttt{ from } X \texttt{ inner join } Y \texttt{ on } X_1 = Y_1
+\texttt{select } X_2 \texttt{ from } X \texttt{ inner join } Y \texttt{ on } X_1 = Y_1
 $$
-then the joined on columns/keys are $X_1$ and $Y_1$. This uniqueness condition can also be extended to the setting where multiple columns are being compared for equality. In this case the tuple of these columns must be unique. Later on we will discuss the case when such a uniqueness property does not hold. Our protocols also support a \texttt{where} clause that filters the selection using an arbitrary predicate of the $X$ and $Y$ row. Furthermore, the \texttt{select} clause can also return a function of the two rows. For example,
-$$
-\texttt{select } X_1,max(X_2, Y_2)  \texttt{ from } X \texttt{ inner join } Y \texttt{ on } X_1 = Y_1 \texttt{ where } Y_2 > 23.3
-$$
-In general, the supported join operations can be characterized in three parts: 1) The select function $S(\cdot)$ that defines how the rows of $X,Y$ are used to construct each output row, e.g. $S(X,Y)=(X_1, max(X_2,Y_2))$ in the example above. 2) The predicate $P(\cdot)$ that defines the where clause, and 3) which columns are being joined on. We require that both $S$ and $P$ must be expressible in the framework of \cite{aby3} which we provide a custom implementation of.
+then the joined on columns/keys are $X_1$ and $Y_1$. This uniqueness condition can be extended to the setting where multiple columns are being compared for equality. 
+\iffullversion
+In this case the tuple of these columns must be unique. 
+\fi
+Later on we will discuss the case when such a uniqueness property does not hold. Our protocols also support a \texttt{where} clause that filters the selection using an arbitrary predicate of the $X$ and $Y$ row. Furthermore, the \texttt{select} clause can also return a function of the two rows. For example,
+\begin{align*}
+\texttt{select }&  X_1,max(X_2, Y_2)  \texttt{ from } X \texttt{ inner join } Y \\
+\texttt{on }& X_1 = Y_1 \texttt{ where } Y_2 > 23.3
+\end{align*}
+In general, the supported join operations can be characterized in three parts: 1) The select function $S(\cdot)$ that defines how the rows of $X,Y$ are used to construct each output row, e.g. $S(X,Y)=(X_1, max(X_2,Y_2))$
+\iffullversion
+in the example above
+\fi. 2) The predicate $P(\cdot)$ that defines the where clause, and 3) which columns are being joined on.
+\iffullversion
+ We require that both $S$ and $P$ must be expressible in the framework of \cite{aby3} which we provide a custom implementation of.
+\fi
 
-So far we have discussed inner join (intersection) between two tables. Several other types of joins are also supported including left and right joins, set union and set minus (difference) and full joins. A left join takes the inner join and includes all of the missing records from the left table. For the records solely from the left table, the resulting table contains \texttt{NULL} for the columns from the right table. Right join is defined symmetrically. A full join is a natural extension where all the missing rows from $X$ and $Y$ are added to the output table.
+\iffullversion
+So far we have discussed inner join (intersection) between two tables. 
+\fi
+Several other types of joins are also supported including left and right joins, set union and set minus (difference) and full joins. A left join takes the inner join and includes all of the missing records from the left table. For the records solely from the left table, the resulting table contains \texttt{NULL} for the columns from the right table. Right join is defined symmetrically. A full join is a natural extension where all the missing rows from $X$ and $Y$ are added to the output table.
 
 We define the union of two tables to contain all records from the left table along with all the records from the right table which are not in the intersection. We define union in this way due an ambiguity around which table the records in the intersection should come from. Table minus is similarly defined as all of the left table where the joined on column(s) is not present in the right table. 
 
@@ -35,10 +51,28 @@ Beyond these various join operations, our framework supports two broad classes o
 
 \subsection{Our Results}
 
-We present the first practical secure multi-party computation protocol for performing SQL styled database joins with linear overhead and constant round. Our protocol is fully composable in that the input and output tables are generically secret shared between the parties. No partial information is revealed at any point. We achieve this result by combining various techniques from private set intersection and secure computation more broadly while requiring the joined on keys be unique. We build on the the binary secret sharing technique of \cite{highthroughput} with enhancements described by \cite{aby3}. We then combine this secret sharing scheme with cuckoo hashing\cite{usenix:PSZ14}, an MPC friendly PRF\cite{lowmc} and a custom protocol for evaluating an oblivious switching network\cite{MS13}. Using these building blocks our protocol is capable of computing the intersection of two tables of $n=2^{20}$ rows in 4.9 seconds.  Alternatively, the cardinality of the intersection can be computed in just 3.1 seconds. Beyond these two specific functionalities, our protocol is generic in that the output is a secret shared tabled that can have arbitrary computation applied to it. Compared to existing three party protocols with similar functionality (composable), our implementation is roughly $1000\times$ faster. When compared with \emph{non-composable} two party protocol, we observe a larger difference ranging from our protocol being $1.25\times$ slower to $4000\times$ faster depending on what functionality is being computed. 
+We present the first practical secure multi-party computation protocol for performing SQL styled database joins with linear overhead and constant round. Our protocol is fully composable in that the input and output tables are generically secret shared between the parties. 
+\iffullversion
+	No partial information is revealed at any point. 
+\fi
+	We achieve this result by combining various techniques from private set intersection and secure computation more 
+\iffullversion 
+	broadly while requiring the joined on keys be unique.
+\else
+	broadly.
+\fi
+ We build on the the binary secret sharing technique of \cite{highthroughput} with enhancements described by \cite{aby3}. We then combine this secret sharing scheme with cuckoo hashing\cite{usenix:PSZ14}, an MPC friendly PRF\cite{lowmc} and a custom protocol for evaluating an oblivious switching network\cite{MS13}. Using these building blocks our protocol is capable of computing the intersection of two tables of $n=2^{20}$ rows in 4.9 seconds. 
+\iffullversion 
+	Alternatively, the cardinality of the intersection can be computed in just 3.1 seconds.
+\fi
+  Beyond these two specific functionalities, our protocol allows arbitrary computation applied to a shared table. Compared to existing three party protocols with similar functionality (composable), our implementation is roughly $1000\times$ faster. When compared with \emph{non-composable} two party protocol, we observe a larger difference ranging from our protocol being $1.25\times$ slower to $4000\times$ faster depending on what functionality is being computed. 
 
 
-Building on our proposed protocol we demonstrate it's utility by showcasing two applications. The first involves running our protocol between and within the states of the United States to validate the accuracy of the voter registration data in a privacy preserving way. The Pew Charitable Trust\cite{pew} reported 1 in 8 voter registration records in the United States contains a serious error while 1 in 4 eligible citizens remain unregistered. Our privacy preserving validation includes the ability to identify when an individual's address is out of date or more seriously if someone is registered to vote in more than one state which could allow them to cast two votes. Additionally, our protocol can help register eligible citizens. Our protocol ensures that only the minimum amount of information is revealed, namely the identities of individuals with serious registration errors. Due to how the data is distributed between different governmental agencies, it is critical that our protocol allows for composable operations. We implement this application and demonstrate that it is practical to run at a national scale (quarter billion records) and low cost.
+Building on our proposed protocol we demonstrate it's utility by showcasing two applications. The first involves running our protocol between and within the states of the United States to validate the accuracy of the voter registration data in a privacy preserving way. The Pew Charitable Trust\cite{pew} reported 1 in 8 voter registration records in the United States contains a serious error while 1 in 4 eligible citizens remain unregistered. Our privacy preserving validation identifies when an individual's address is out of date or more seriously if someone is registered to vote in more than one state which could allow them to cast two votes. 
+\iffullversion
+Additionally, our protocol can help register eligible citizens. Our protocol ensures that only the minimum amount of information is revealed, namely the identities of individuals with serious registration errors.
+\fi 
+Due to how the data is distributed between different governmental agencies, it is critical that our protocol allows for composable operations. We implement this application and demonstrate that it is practical to run at a national scale (quarter billion records) and low cost.
 
 The second application that we consider allows multiple organizations to compare computer security incidents and logs to more accurately identify unwanted activities, e.g. a bot net. Several companies already offer this service including Facebook's ThreatExchange\cite{threat} and an open source alternative\cite{alt_threat}. One of the primary limitations of these existing solutions is the requirement that each organization send their security logs to a central party, e.g Facebook. We propose using our protocol to distribute the trust of this central party between three (or more) parties such that privacy is guaranteed so long as there is an honest majority.
 

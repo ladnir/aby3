@@ -24,9 +24,11 @@ Once this join is performed, each state holds a secret shared table of all their
 	stateA = \texttt{select }& DMV.name,\\
 							 & DMV.ID, \\
 							 & DMV.SSN, \\
-							 & DVM.date > Voter.date\ ? DMV.date : Voter.date \texttt{ as } date,\\
-							 & DVM.date > Voter.date\ ? DMV.address : Voter.address \texttt{ as } address,\\
-							 & DVM.address \neq Voter.address \texttt{ as } voterOutOfDate, \\ 
+							 & DVM.date > Voter.date \ ?\\
+							 &\quad DMV.date : Voter.date \texttt{ as } date,\\
+							 & DVM.date > Voter.date \ ?\\
+							 &\quad  DMV.address : Voter.address \texttt{ as } address,\\
+							 & DVM.address \neq Voter.address \texttt{ as } mixedAddress, \\ 
 							 & Voter.name \neq \texttt{ NULL as } registered \\
 			 \texttt{ from } & DMV \texttt{ left join } Voter \\
 			   \texttt{ on } & DMV.ID = Voter.ID \\
@@ -38,13 +40,13 @@ Once this join is performed, each state holds a secret shared table of all their
 							   & stateB.registered \\
 			   \texttt{ from } & stateA \texttt{ inner join } stateB \\
    			     \texttt{ on } & stateA.SSN = stateB.SSN\\
-   			  \texttt{ where } & (stateA.date < stateB.date \texttt{ and } stateA.registered = \texttt{true}) \\
-     			   \texttt{ or } & (stateA.registered = \texttt{ true and }stateB.registered = \texttt{true})\\
+   			  \texttt{ where } & (stateA.date < stateB.date \texttt{ and } stateA.registered ) \\
+     			   \texttt{ or } & (stateA.registered \qquad \qquad \ \, \texttt{ and }stateB.registered )\\
    resultB = \texttt{select } & ...
 	\end{align*}
 }
 
-First, state \emph{A} can query the table $stateA$ to reveal all IDs and addresses where the $voterOutOfDate$ attribute is set to \texttt{true}. This reveals exactly the people who have conflicting addresses between that state's voter and DMV databases. When comparing voter registration data between states, state B should define $stateB$ in a symmetric manner as $stateA$. The table $resultA$ contains all of the records which are revealed to state \emph{A} and $resultB$, which is symmetrically defined, contains the results for state \emph{B}. We note that $resultA$ and $resultB$ can be constructed with only one join.
+First, state \emph{A} can query the table $stateA$ to reveal all IDs and addresses where the $mixedAddress$ attribute is set to \texttt{true}. This reveals exactly the people who have conflicting addresses between that state's voter and DMV databases. When comparing voter registration data between states, state B should define $stateB$ in a symmetric manner as $stateA$. The table $resultA$ contains all of the records which are revealed to state \emph{A} and $resultB$, which is symmetrically defined, contains the results for state \emph{B}. We note that $resultA$ and $resultB$ can be constructed with only one join.
 
 Both types of these queries can easily be performed in our secure framework. All of the conditional logic for the select and where clauses are implemented using a binary circuit immediately after the primary join protocol is performed. This has the effect that overhead of these operation is simply the size of the circuit which implements the logic times the number of potential rows contained in the output. 
 

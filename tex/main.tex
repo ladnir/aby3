@@ -2,8 +2,12 @@
 \fullversionfalse
 %\fullversiontrue
 
-\documentclass[11pt,letterpaper]{article}
-\usepackage[paper=letterpaper,margin=1in]{geometry}
+\iffullversion
+	\documentclass[11pt,letterpaper]{article}
+	\usepackage[paper=letterpaper,margin=1in]{geometry}
+\else
+	\documentclass[10pt]{IEEEtran}
+\fi 
 
 \input{headers}
 \title{FaSe DB: Fast and Secure Database Joins on Secret Shared Data}

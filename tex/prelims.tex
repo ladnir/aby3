@@ -6,9 +6,9 @@
 Our protocols are presented in the semi-honest three party setting with an honest majority. That is, our protocols are computationally secure conditioned on the adversary corrupting at most one of the three parties. See \cite{highthroughput,aby3} for details.
 
 
-
+\iffullversion
 Throughout the exposition we will assume these three parties, which we sometimes call \emph{servers}, provide the sets which are computed on. However, in the general case the sets being computed on can be privately input by an arbitrary party which does not participate in the computation. These \emph{client} parties will secret share their set between the servers and reconstruct the output shares that are intended for them. This setting is often referred to as the client server model\cite{aby3, secureML}. Later on we will also consider a setting with five servers that can tolerate the adversary corrupting any two of them. However, we will explicitly state when this alternative model is being considered.
-
+\fi
 
 
 \subsection{Notation}
@@ -28,4 +28,4 @@ Our protocol builds on the ABY$^3$ framework of Rindal and Mohassel\cite{aby3}. 
 
 \subsection{Cuckoo Hash Tables}
 
-The core data structure that our protocols employ is a cuckoo hash table. This data structure is parameterized by a capacity $n$, two (or more) hash functions $h_0, h_1$ and a vector $T$ which has $m=O(n)$ slots, $T[1], ..., T[m]$. For any $x$ that has been added to the hash table, there is an invariant that $x$ will be located at $T[{h_0(x)}]$ or $T[{h_1(x)}]$. Testing if an $x$ is in the hash table therefore only requires inspecting these two locations. $x$ is added to the hash table by inserting $x$ into slot $T[h_i(x)]$ where $i\in \{0,1\}$ is picked at random. If there is an existing item at this slot, the old item $y$ is removed and reinserted at its other hash function location. Given a hash table with $m\approx1.6n$ slots and three hash functions, then $n$ items can be inserted with overwhelming probability $O(n)$ reinsertions \cite{DRRT18}. 
+The core data structure that our protocols employ is a cuckoo hash table. This data structure is parameterized by a capacity $n$, two (or more) hash functions $h_0, h_1$ and a vector $T$ which has $m=O(n)$ slots, $T[1], ..., T[m]$. For any $x$ that has been added to the hash table, there is an invariant that $x$ will be located at $T[{h_0(x)}]$ or $T[{h_1(x)}]$. Testing if an $x$ is in the hash table therefore only requires inspecting these two locations. $x$ is added to the hash table by inserting $x$ into slot $T[h_i(x)]$ where $i\in \{0,1\}$ is picked at random. If there is an existing item at this slot, the old item $y$ is removed and reinserted at its other hash function location. Given a hash table with $m\approx1.6n$ slots and three hash functions, then $n$ items can be inserted with overwhelming probability $O(n)$ reinsertions \cite{DRRT18}. For technical reasons we require $h_i(x)\neq h_j(x)$ for all $x$ and $i\neq j$.
