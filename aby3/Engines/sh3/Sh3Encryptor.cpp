@@ -370,6 +370,7 @@ namespace aby3
     Sh3Task Sh3Encryptor::reveal(Sh3Task dep, const Sh3::si64Matrix& x, Sh3::i64Matrix& dest)
     {
         return dep.then([&x, &dest](Sh3::CommPkg& comm, Sh3Task& self) {
+			dest.resize(x.rows(), x.cols());
             comm.mNext.recv(dest.data(), dest.size());
             dest += x.mShares[0];
             dest += x.mShares[1];

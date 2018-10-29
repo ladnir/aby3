@@ -20,8 +20,6 @@ std::vector<std::string> unitTestTag{ "u", "unitTest" };
 
 
 
-
-
 void ComPsi_Intersect(u32 rows, u32 cols = 0, bool sum = false)
 {
 	using namespace aby3;
@@ -473,6 +471,8 @@ void help()
 
 int main(int argc, char** argv)
 {
+
+
 	try {
 
 

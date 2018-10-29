@@ -23,17 +23,19 @@ namespace aby3
         }
 
 
-
         template struct fp<i64, D0>;
         template struct fp<i64, D8>;
         template struct fp<i64, D16>;
         template struct fp<i64, D32>;
 
-
-
         template struct sf64<D0>;
         template struct sf64<D8>;
         template struct sf64<D16>;
         template struct sf64<D32>;
+
+		template struct sf64Matrix<D0>;
+		template struct sf64Matrix<D8>;
+		template struct sf64Matrix<D16>;
+		template struct sf64Matrix<D32>;
     }
 }

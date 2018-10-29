@@ -42,9 +42,15 @@ namespace aby3
         void localIntMatrix(Sh3::CommPkg& comm, const Sh3::i64Matrix& m, Sh3::si64Matrix& dest);
         Sh3Task localIntMatrix(Sh3Task dep, const Sh3::i64Matrix& m, Sh3::si64Matrix& dest);
 
-        // generates a integer sharing of the matrix ibput by the remote party and places the result in dest
+        // generates a integer sharing of the matrix input by the remote party and places the result in dest
         void remoteIntMatrix(Sh3::CommPkg& comm, Sh3::si64Matrix& dest);
         Sh3Task remoteIntMatrix(Sh3Task dep, Sh3::si64Matrix& dest);
+
+		template<Sh3::Decimal D>
+		Sh3Task localFixedMatrix(Sh3Task dep, const Sh3::f64Matrix<D>& m, Sh3::sf64Matrix<D>& dest);
+
+		template<Sh3::Decimal D>
+		Sh3Task remoteFixedMatrix(Sh3Task dep, Sh3::sf64Matrix<D>& dest);
 
         // generates a binary sharing of the matrix m and places the result in dest
         void localBinMatrix(Sh3::CommPkg& comm, const Sh3::i64Matrix& m, Sh3::sbMatrix& dest);
@@ -79,6 +85,15 @@ namespace aby3
         Sh3Task revealAll(Sh3Task dep, const Sh3::sf64<D>& x, Sh3::f64<D>& dest);
         template<Sh3::Decimal D>
         Sh3Task reveal(Sh3Task dep, u64 partyIdx, const Sh3::sf64<D>& x);
+
+
+		template<Sh3::Decimal D>
+		Sh3Task reveal(Sh3Task dep, const Sh3::sf64Matrix<D>& x, Sh3::f64Matrix<D>& dest);
+		template<Sh3::Decimal D>
+		Sh3Task revealAll(Sh3Task dep, const Sh3::sf64Matrix<D>& x, Sh3::f64Matrix<D>& dest);
+		template<Sh3::Decimal D>
+		Sh3Task reveal(Sh3Task dep, u64 partyIdx, const Sh3::sf64Matrix<D>& x);
+
 
         i64 reveal(Sh3::CommPkg& comm, const Sh3::sb64& x);
         i64 revealAll(Sh3::CommPkg& comm, const Sh3::sb64& x);
@@ -143,6 +158,30 @@ namespace aby3
     }
 
 
+	template<Sh3::Decimal D>
+	Sh3Task Sh3Encryptor::localFixedMatrix(Sh3Task dep, const Sh3::f64Matrix<D>& m, Sh3::sf64Matrix<D>& dest)
+	{
+		static_assert(sizeof(Sh3::f64<D>) == sizeof(i64), "assumpition for this cast.");
+		auto& mCast = (const Sh3::i64Matrix&)m;
+
+		static_assert(sizeof(Sh3::sf64Matrix<D>) == sizeof(si64Matrix), "assumpition for this cast.");
+		auto& destCast = (si64Matrix&)dest;
+
+		return localIntMatrix(dep, mCast, destCast);
+	}
+
+	template<Sh3::Decimal D>
+	Sh3Task Sh3Encryptor::remoteFixedMatrix(Sh3Task dep, Sh3::sf64Matrix<D>& dest)
+	{
+
+		static_assert(sizeof(Sh3::sf64Matrix<D>) == sizeof(si64Matrix), "assumpition for this cast.");
+		auto& destCast = (si64Matrix&)dest;
+
+		return remoteIntMatrix(dep, destCast);
+	}
+
+
+
     template<Sh3::Decimal D>
     Sh3Task Sh3Encryptor::reveal(Sh3Task dep, const Sh3::sf64<D>& x, Sh3::f64<D>& dest)
     {
@@ -161,6 +200,45 @@ namespace aby3
         // since under the hood we represent a fixed point val as an int, just call that function.
         return reveal(dep, partyIdx, x.mShare);
     }
+
+
+
+	template<Sh3::Decimal D>
+	Sh3Task Sh3Encryptor::reveal(Sh3Task dep, const Sh3::sf64Matrix<D>& x, Sh3::f64Matrix<D>& dest)
+	{
+
+		static_assert(sizeof(Sh3::sf64Matrix<D>) == sizeof(si64Matrix), "assumpition for this cast.");
+		auto& xCast = (si64Matrix&)x;
+
+
+		static_assert(sizeof(Sh3::f64<D>) == sizeof(i64), "assumpition for this cast.");
+		auto& destCast = (i64Matrix&)dest;
+
+		// since under the hood we represent a fixed point val as an int, just call that function.
+		return reveal(dep, xCast, destCast);
+	}
+	template<Sh3::Decimal D>
+	Sh3Task Sh3Encryptor::revealAll(Sh3Task dep, const Sh3::sf64Matrix<D>& x, Sh3::f64Matrix<D>& dest)
+	{
+		static_assert(sizeof(Sh3::sf64Matrix<D>) == sizeof(si64Matrix), "assumpition for this cast.");
+		auto& xCast = (si64Matrix&)x;
+
+
+		static_assert(sizeof(Sh3::f64<D>) == sizeof(i64), "assumpition for this cast.");
+		auto& destCast = (i64Matrix&)dest;
+
+		// since under the hood we represent a fixed point val as an int, just call that function.
+		return revealAll(dep, xCast, destCast);
+	}
+	template<Sh3::Decimal D>
+	Sh3Task Sh3Encryptor::reveal(Sh3Task dep, u64 partyIdx, const Sh3::sf64Matrix<D>& x)
+	{
+		static_assert(sizeof(Sh3::sf64Matrix<D>) == sizeof(si64Matrix), "assumpition for this cast.");
+		auto& xCast = (si64Matrix&)x;
+
+		// since under the hood we represent a fixed point val as an int, just call that function.
+		return reveal(dep, partyIdx, xCast);
+	}
 
 
 }
