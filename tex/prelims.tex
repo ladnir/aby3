@@ -3,7 +3,7 @@
 
 \subsection{Security Model}
 
-Our protocols are presented in the semi-honest three party setting with an honest majority. That is, our protocols are computationally secure conditioned on the adversary corrupting at most one of the three parties. See \cite{highthroughput,aby3} for details.
+Our protocols are presented in the semi-honest three-party setting with an honest majority. That is, our protocols are computationally secure conditioned on the adversary corrupting at most one of the three parties. See \cite{highthroughput,aby3} for details.
 
 
 \iffullversion
@@ -20,7 +20,6 @@ Let $[n]$ denote the set $\{1,2,...,n\}$. Vector indices start at 1.
 We define a permutation of size $n$ as an injective function $\pi : [n] \rightarrow [n]$. We extend this definition such that when $\pi$ is applied to a vector $V$ of $n$ elements, then  $\pi(V)=\{V_{\pi(1)}, ..., V_{\pi(n)}\}$. 
 
 The image of a function $f : X \rightarrow Y$ is defined as $image(f) := \{y\in Y : \exists x\in X, f(x)=y\}$. Preimage of a pair $(f,y)$ is defined as $preimage(f,y):=\{x\in X : f(x) = y\}$.
-define a function image and preimage.
 
 
 
@@ -28,4 +27,4 @@ Our protocol builds on the ABY$^3$ framework of Rindal and Mohassel\cite{aby3}. 
 
 \subsection{Cuckoo Hash Tables}
 
-The core data structure that our protocols employ is a cuckoo hash table. This data structure is parameterized by a capacity $n$, two (or more) hash functions $h_0, h_1$ and a vector $T$ which has $m=O(n)$ slots, $T[1], ..., T[m]$. For any $x$ that has been added to the hash table, there is an invariant that $x$ will be located at $T[{h_0(x)}]$ or $T[{h_1(x)}]$. Testing if an $x$ is in the hash table therefore only requires inspecting these two locations. $x$ is added to the hash table by inserting $x$ into slot $T[h_i(x)]$ where $i\in \{0,1\}$ is picked at random. If there is an existing item at this slot, the old item $y$ is removed and reinserted at its other hash function location. Given a hash table with $m\approx1.6n$ slots and three hash functions, then $n$ items can be inserted with overwhelming probability $O(n)$ reinsertions \cite{DRRT18}. For technical reasons we require $h_i(x)\neq h_j(x)$ for all $x$ and $i\neq j$.
+The core data structure that our protocols employ is a cuckoo hash table. This data structure is parameterized by a capacity $n$, two (or more) hash functions $h_0, h_1$ and a vector $T$ which has $m=O(n)$ slots, $T[1], ..., T[m]$. For any $x$ that has been added to the hash table, there is an invariant that $x$ will be located at $T[{h_0(x)}]$ or $T[{h_1(x)}]$. Testing if an $x$ is in the hash table therefore only requires inspecting these two locations. $x$ is added to the hash table by inserting $x$ into slot $T[h_i(x)]$ where $i\in \{0,1\}$ is picked at random. If there is an existing item at this slot, the old item $y$ is removed and reinserted at its other hash function location. Given a hash table with $m\approx1.6n$ slots and three hash functions, then $n$ items can be inserted with overwhelming probability $O(n)$ reinsertions \cite{DRRT18}. For technical reasons we require $h_i(x)\neq h_j(x)$ for all $x$ and $i\neq j$. \todo{how is this achieved? it wasn't 100\% clear}
