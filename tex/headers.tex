@@ -23,6 +23,9 @@
     urlcolor=darkblue
 }
 
+\newcommand{\ytable}{\ensuremath{T}\xspace}
+\newcommand{\Party}[1]{\ensuremath{P_{#1}}\xspace}
+
 \newcommand{\false}{\ensuremath{\textsc{false}}\xspace}
 \newcommand{\true}{\ensuremath{\textsc{true}}\xspace}
 
@@ -30,6 +33,14 @@
 \newcommand{\Naive}{Na\"{\i}ve\xspace}
 
 \newcommand{\share}[1]{\ensuremath{\llbracket #1\rrbracket}\xspace}
+\newcommand{\shareA}[1]{\ensuremath{\llbracket #1\rrbracket}^{\textsf{A}}\xspace}
+\newcommand{\shareTwo}[1]{\ensuremath{\llangle #1\rrangle}\xspace}
+
+\newcommand{\Null}{\texttt{NULL}\xspace}
+\newcommand{\XNull}{\ensuremath{X_\Null}\xspace}
+\newcommand{\YNull}{\ensuremath{Y_\Null}\xspace}
+\newcommand{\ZNull}{\ensuremath{Z_\Null}\xspace}
+
 \newcommand{\F}{\ensuremath{\mathbb{F}}\xspace}
 \newcommand{\C}{\ensuremath{\mathcal{C}}\xspace}
 \newcommand{\M}{\ensuremath{\mathcal{M}}\xspace}
@@ -157,3 +168,43 @@
 \newcommand{\pirblocksize}{\ensuremath{b}\xspace}
 \newcommand{\cuckooexpansion}{\ensuremath{e}\xspace}
 \newcommand{\cuckootable}{\ensuremath{CT}\xspace}
+
+
+
+
+
+%=====================================================================
+%                      define \llangle, \rrangle
+%=====================================================================
+\makeatletter
+\DeclareFontFamily{OMX}{MnSymbolE}{}
+\DeclareSymbolFont{MnLargeSymbols}{OMX}{MnSymbolE}{m}{n}
+\SetSymbolFont{MnLargeSymbols}{bold}{OMX}{MnSymbolE}{b}{n}
+\DeclareFontShape{OMX}{MnSymbolE}{m}{n}{
+	<-6>  MnSymbolE5
+	<6-7>  MnSymbolE6
+	<7-8>  MnSymbolE7
+	<8-9>  MnSymbolE8
+	<9-10> MnSymbolE9
+	<10-12> MnSymbolE10
+	<12->   MnSymbolE12
+}{}
+\DeclareFontShape{OMX}{MnSymbolE}{b}{n}{
+	<-6>  MnSymbolE-Bold5
+	<6-7>  MnSymbolE-Bold6
+	<7-8>  MnSymbolE-Bold7
+	<8-9>  MnSymbolE-Bold8
+	<9-10> MnSymbolE-Bold9
+	<10-12> MnSymbolE-Bold10
+	<12->   MnSymbolE-Bold12
+}{}
+
+\let\llangle\@undefined
+\let\rrangle\@undefined
+\DeclareMathDelimiter{\llangle}{\mathopen}%
+{MnLargeSymbols}{'164}{MnLargeSymbols}{'164}
+\DeclareMathDelimiter{\rrangle}{\mathclose}%
+{MnLargeSymbols}{'171}{MnLargeSymbols}{'171}
+\makeatother
+
+
