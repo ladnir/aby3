@@ -172,6 +172,57 @@ namespace aby3
 
 		return r;
 	}
+
+
+	//struct ostreamLock2
+	//{
+	//	std::ostream& out;
+	//	std::unique_lock<std::mutex> mLock;
+
+	//	ostreamLock2(ostreamLock2&& v)
+	//		: out(v.out)
+	//		, mLock(std::move(v.mLock))
+	//	{
+	//	};
+
+	//	ostreamLock2(std::ostream& o) 
+	//		: out(o)
+	//		, mLock(oc::gIoStreamMtx)
+	//	{}
+
+	//	template<typename T>
+	//	ostreamLock2& operator<<(const T& v)
+	//	{
+	//		out << v;
+	//		return *this;
+	//	}
+
+	//	template<typename T>
+	//	ostreamLock2& operator<<(T& v)
+	//	{
+	//		out << v;
+	//		return *this;
+	//	}
+	//	ostreamLock2& operator<< (std::ostream& (*v)(std::ostream&))
+	//	{
+	//		out << v;
+	//		return *this;
+	//	}
+	//	ostreamLock2& operator<< (std::ios& (*v)(std::ios&))
+	//	{
+	//		out << v;
+	//		return *this;
+	//	}
+	//	ostreamLock2& operator<< (std::ios_base& (*v)(std::ios_base&))
+	//	{
+	//		out << v;
+	//		return *this;
+	//	}
+	//};
+
+
+	//ostreamLocker lout(std::cout);
+
 	 
 	template<Sh3::Decimal D>
 	Sh3Task aby3::Sh3Evaluator::asyncMul(
@@ -188,8 +239,8 @@ namespace aby3
 			auto abMinusR
 				= A.mShare.mData[0] * B.mShare.mData[0]
 				+ A.mShare.mData[0] * B.mShare.mData[1]
-				+ A.mShare.mData[1] * B.mShare.mData[0]
-				+ mShareGen.getShare();
+				+ A.mShare.mData[1] * B.mShare.mData[0];
+				//+ mShareGen.getShare();
 
 
 			//oc::ostreamLock(std::cout) << "ab " << mPartyIdx << ": " << abMinusR << " - "<< truncationTuple.mLongShare(0) << 
@@ -197,6 +248,8 @@ namespace aby3
 
 			abMinusR -= truncationTuple.mLongShare(0);
 			C.mShare = truncationTuple.mShortShare(0);
+
+			lout << mPartyIdx << " " << abMinusR << std::endl;
 
 			//{
 			//	comm.mPrev.asyncSend(truncationTuple.mLongShare(0));
@@ -269,7 +322,6 @@ namespace aby3
 
 
 
-
 	template<Sh3::Decimal D>
 	Sh3Task aby3::Sh3Evaluator::asyncMul(
 		Sh3Task & dependency,
@@ -279,16 +331,18 @@ namespace aby3
 	{
 		return dependency.then([&](Sh3::CommPkg& comm, Sh3Task& self) -> void
 		{
-			
 			auto abMinusR
 				=( A.mShares[0] * B.mShares[0]
 				+ A.mShares[0] * B.mShares[1]
 				+ A.mShares[1] * B.mShares[0]).eval();
 
-			for (u64 i = 0; i < abMinusR.size(); ++i)
-				abMinusR(i) += mShareGen.getShare();
+			//for (u64 i = 0; i < abMinusR.size(); ++i)
+			//	abMinusR(i) += mShareGen.getShare(); 
+
+			lout << mPartyIdx << " " << abMinusR(0) << std::endl;
 
 			auto truncationTuple = getTruncationTuple(abMinusR.rows(), abMinusR.cols(), C.mDecimal);
+
 			abMinusR -= truncationTuple.mLongShare;
 			C.mShares = std::move(truncationTuple.mShortShare.mShares);
 

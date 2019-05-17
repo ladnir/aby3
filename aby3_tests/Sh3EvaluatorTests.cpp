@@ -168,7 +168,7 @@ void Sh3_Evaluator_asyncMul_fixed_test()
 	auto chl21 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "12").addChannel();
 
 
-	int trials = 100;
+	int trials = 1;
 	CommPkg comms[3];
 	comms[0] = { chl02, chl01 };
 	comms[1] = { chl10, chl12 };
@@ -202,7 +202,7 @@ void Sh3_Evaluator_asyncMul_fixed_test()
 			f64<D8> b = (prng.get<i32>() >> 8) / 100.0;
 			f64<D8> c;
 
-			//std::cout << a.mValue << " * " << b.mValue << " -> " << a.mValue * b.mValue << std::endl;
+			std::cout << a.mValue << " * " << b.mValue << " -> " << (a * b).mValue << std::endl;
 
 			Sh3::sf64<D8> A; enc.localFixed(rt, a, A);
 			Sh3::sf64<D8> B; enc.localFixed(rt, b, B).get();
@@ -350,7 +350,8 @@ void Sh3_Evaluator_asyncMul_matrixFixed_test()
 
 			c = a * b;
 
-			//std::cout << a.mValue << " * " << b.mValue << " -> " << a.mValue * b.mValue << std::endl;
+
+			std::cout << *a(0).mData << " * " << *b(0).mData << " -> " << *c(0).mData << std::endl;
 
 			Sh3::sf64Matrix<D8> A(size, size); enc.localFixedMatrix(rt, a, A);
 			Sh3::sf64Matrix<D8> B(size, size); enc.localFixedMatrix(rt, b, B).get();
@@ -389,11 +390,11 @@ void Sh3_Evaluator_asyncMul_matrixFixed_test()
 				{
 					failed = true;
 
-					ostreamLock(std::cout)
+					ostreamLock(std::cout) << "\n"
 						//<< "p" << rt.mPartyIdx << ": " << "a   " << prettyShare(rt.mPartyIdx, A.mShare) << " ~ " << a << std::endl
 						//<< "p" << rt.mPartyIdx << ": " << "b   " << prettyShare(rt.mPartyIdx, B.mShare) << " ~ " << b << std::endl
 						<< c(i) << std::endl
-						<< cc(i) << " (" << cc(i) << ")" << std::endl;
+						<< cc(i) << std::endl;
 				}
 			}
 

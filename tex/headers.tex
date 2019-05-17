@@ -1,6 +1,5 @@
 \usepackage{amsmath,amsfonts,amssymb,tikz,multirow,stmaryrd,xspace,enumitem}
-\usepackage[hyphens]{url}
-\usepackage{varwidth}
+\usepackage{url}
 \usepackage{amsthm}
 \usepackage{caption}
 
@@ -10,9 +9,6 @@
 
 %this should save a minimum amount of space and in theory look nicer
 \usepackage{ellipsis, ragged2e, marginnote}
-\usepackage[tracking=true]{microtype}
-\DeclareMicrotypeSet*[tracking]{my}{ font = */*/*/sc/* }
-\SetTracking{encoding = *, shape = sc}{45}
 
 \usepackage[]{hyperref}
 
@@ -42,7 +38,7 @@
 \newcommand{\ZNull}{\ensuremath{Z_\Null}\xspace}
 
 \newcommand{\F}{\ensuremath{\mathbb{F}}\xspace}
-\newcommand{\C}{\ensuremath{\mathcal{C}}\xspace}
+\renewcommand{\C}{\ensuremath{\mathcal{C}}\xspace}
 \newcommand{\M}{\ensuremath{\mathcal{M}}\xspace}
 \renewcommand{\O}{\ensuremath{\mathcal{O}}\xspace}
 \renewcommand{\P}{\ensuremath{\mathcal{P}}\xspace}
@@ -92,9 +88,6 @@
     \framebox{\codebox{#1}}%
 }
 
-\newcommand{\comment}[1]{
-    \sl\small\color{black!50} \mbox{ // #1 }
-}
 
 
 %%%%%%%%%%%%%%%%%%%%
@@ -103,7 +96,7 @@
     \newtheorem{theorem}{Theorem}
     \newtheorem{definition}[theorem]{Definition}
     \newtheorem{claim}[theorem]{Claim}
-    \newtheorem{lemma}[theorem]{Lemma}
+    %\newtheorem{lemma}[theorem]{Lemma}
     \newtheorem{proposition}[theorem]{Proposition}
 \newtheorem{corol}[theorem]{Corollary}
 \newtheorem{assumption}[theorem]{Assumption}

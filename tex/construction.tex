@@ -76,11 +76,14 @@ The LowMC cipher is parameterized by a block size $\ell$, keys size $\kappa$, s-
 %
 %\paragraph{Long Encodings} 
 
+
 One issue with the LowMC approach alone is that the input size is fixed to be at most $\ell\in\{80,100\}$ bits. However, we will see that the larger join protocol requires an arbitrary input size $\sigma$. This is accommodated by applying a universal hash function to the input shares. Specifically, the parties jointly pick a random matrix $E\gets\{0,1\}^{\sigma\times \ell}$. The parties can then locally multiply each secret shared input before it is sent into the LowMC block cipher.
 
 The security of this transformation follows from $xE\neq x'E$ with overwhelming probability if $x\neq x'$. In particular, $f(x)=xE$ is a universal hash function given that $E$ is independent of $x$. As such the probability that $f(x)=f(x')$ for any $x\neq x'$  is $2^{-\ell}$. Applying the birthday bound we obtain that probability of any collisions among the tuples is $2^{-\ell+p}$ where $p=\log_2 D^2/2=2\log_2(D)-1$ and $D=\sum_i d_i$.
 
 Conditioned on the inputs to the block cipher being unique, the outputs of the block cipher is also distinct and indistinguishable from random $\ell$ bit strings. As such, in the simulation the real outputs can be replaced with that of the ideal functionality so long as $2^{-\ell+p}$ is statistically negligible, i.e. $\ell-p\geq\lambda$.
+
+
 %$n*n=n^2$
 %$(D-1) + (D-2)+...+1 = \sum_{i=1}^D (D-i)= D^2/2 = (2n)^2/2=2n^2$
 
@@ -210,6 +213,7 @@ The simulation of the full protocol ([switch] of \figureref{fig:switching-net}) 
 			
 			{\bf [Permute]} Upon the command $(\textsc{Permute}, \pi)$ from  \programmer and $(\textsc{Permute}, A)$ from  \sender.  $\pi: [m]\rightarrow [n]$ is parsed as a \emph{injective} function and  $A\in \{0,1\}^{n\times \sigma}$ as a vector of $n$ elements. Then:
 				\begin{enumerate}[leftmargin=.8cm]
+					\item If $n<m$,  \sender redefines $A$ to be $A := A || \{0\}^{(m-n)\times \sigma}$ and all parties redefine $n:=m$.
 					\item  \programmer samples a uniformly random bijective function $\pi_0 : [n]\rightarrow[n]$ and computes the injective function $\pi_1 :[n] \rightarrow[m]$ such that $\pi_1\circ \pi_0 = \pi$.  $\pi_0 $ and a random vector $S\gets \{0,1\}^{n\times \sigma}$ are sent to  \sender.
 					\item  \sender computes and sends $B := \{ A_{\pi_0(1)} \oplus S_1, ..., A_{\pi_0(n)} \oplus S_n\}$ to  \receiver.
 					\item  \programmer sends $\pi_1$ and a random vector $T\gets\{0,1\}^{m\times\sigma}$ to  \receiver who outputs $C^0:=\{B_{\pi_1(1)} \oplus T_1,...,B_{\pi_1(m)}\oplus T_m\}$.  \programmer outputs $C^1:=\{ S_{\pi_1(1)}\oplus T_1,...,S_{\pi_1(m)}\oplus T_m\}$.
@@ -217,7 +221,7 @@ The simulation of the full protocol ([switch] of \figureref{fig:switching-net}) 
 				
 				{\bf [Switch]} Upon the command $(\textsc{Switch}, \pi)$ from  \programmer and $(\textsc{Switch}, A)$ from  \sender. $\pi: [m]\rightarrow [n]$ is parsed as a function and  $A\in \{0,1\}^{n\times \sigma}$ as a vector of $n$ elements. Then:
 				\begin{enumerate}[leftmargin=.8cm]
-					\item If $n<m$,  \sender redefines $A$ to be $A := A || \{0\}^{(m-n)\times \sigma}$ and all parties redefine $n:=m$.
+					
 					\item  \programmer samples an injective function $\pi_1:[m]\rightarrow [n]$ such that for $i\in image(\pi)$ and $k=|preimage(\pi, i)|$, there exists a $j$ where $\pi_1(j)=i$ and $\{\pi_1(j+1), ...,\pi_1(j+k) \}\cap image(\pi)=\emptyset$.
 					
 					 \programmer  sends $(\textsc{Permute}, \pi_1)$ to \proto{switch} and  \sender sends $(\textsc{Permute}, A)$.  \programmer receives $B^{0}\in \{0,1\}^{m\times \sigma}$ in response and  \receiver receives $B^{1}\in \{0,1\}^{m\times \sigma}$. 
