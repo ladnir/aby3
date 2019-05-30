@@ -53,7 +53,7 @@ namespace Lynx
         out.resizeLike(inputs);
         for (u64 i = 0; i < in.size(); ++i)
         {
-            in(i) = inputs(i) * (1ull << mDecimal);
+            in(i) = static_cast<Word>(inputs(i) * (1ull << mDecimal));
         }
 
         eval(in, out, print);
@@ -153,7 +153,7 @@ namespace Lynx
             for (u64 t = 0; t < mCoefficients.size(); ++t)
             {
                 Engine::Word ft = 0;
-                auto inPower = (1 << mDecimal);
+				Engine::Word inPower = (1ll << mDecimal);
                 if (print)
                     std::cout << "   " << int(inputRegions(i, t)) << " * (";
 

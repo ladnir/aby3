@@ -358,7 +358,7 @@ void Sh3_Encryptor_asyncIO_test()
 
     auto rr = [&](int i)
     {
-        setThreadName("t_"+ToString(i));
+        setThreadName("t_"+std::to_string(i));
         auto& e = enc[i];
         //auto& c = comm[i];
         Sh3Runtime rt(i, comm[i]);

@@ -121,7 +121,7 @@ void lowMC_FileCircuit_test() {
         throw std::runtime_error(LOCATION);
 
 
-    std::string filename = "./lowMCCircuit_b" + ToString(sizeof(LowMC2<>::block)) + "_k" + ToString(sizeof(LowMC2<>::keyblock)) +".json";
+    std::string filename = "./lowMCCircuit_b" + std::to_string(sizeof(LowMC2<>::block)) + "_k" + std::to_string(sizeof(LowMC2<>::keyblock)) +".json";
 
     oc::BetaCircuit cir;
 
@@ -261,7 +261,7 @@ void lowMC_BinFileCircuit_test() {
         throw std::runtime_error(LOCATION);
 
 
-    std::string filename = "./lowMCCircuit_b" + ToString(sizeof(LowMC2<>::block)) + "_k" + ToString(sizeof(LowMC2<>::keyblock)) + ".bin";
+    std::string filename = "./lowMCCircuit_b" + std::to_string(sizeof(LowMC2<>::block)) + "_k" + std::to_string(sizeof(LowMC2<>::keyblock)) + ".bin";
 
     oc::BetaCircuit cir;
 

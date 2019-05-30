@@ -58,7 +58,7 @@ void ComPsi_computeKeys_test()
     aby3::Sh3::i64Matrix r0, r1;
     auto t0 = std::thread([&]() {
         auto i = 0;
-        setThreadName("t_" + ToString(i));
+        setThreadName("t_" + std::to_string(i));
         auto A = srvs[i].localInput(a);
         auto B = srvs[i].localInput(b);
 
@@ -71,7 +71,7 @@ void ComPsi_computeKeys_test()
         {
             for (u64 j = 0; j < a.mColumns[0].mData.cols(); ++j)
             {
-                //std::cout << (j ? ", " : ToString(i) + " : ") << r(i, j);
+                //std::cout << (j ? ", " : std::to_string(i) + " : ") << r(i, j);
                 if (r0(i, j) != r0(i + 1, j))
                 {
                     std::cout << i << std::endl;
@@ -87,7 +87,7 @@ void ComPsi_computeKeys_test()
 
     auto routine = [&](int i)
     {
-        setThreadName("t_" + ToString(i));
+        setThreadName("t_" + std::to_string(i));
 
         auto A = srvs[i].remoteInput(0);
         auto B = srvs[i].remoteInput(0);
@@ -173,7 +173,7 @@ void ComPsi_cuckooHash_test()
     auto t0 = std::thread([&]() {
         auto i = 0;
 
-        setThreadName("t_" + ToString(i));
+        setThreadName("t_" + std::to_string(i));
         auto A = srvs[i].localInput(a);
         std::vector<SharedColumn*> select{ &A["key"].mCol, &A["data"].mCol };
 
@@ -183,7 +183,7 @@ void ComPsi_cuckooHash_test()
 
     auto t1 = std::thread([&]() {
         auto i = 1;
-        setThreadName("t_" + ToString(i));
+        setThreadName("t_" + std::to_string(i));
         auto A = srvs[i].remoteInput(0);
         std::vector<SharedColumn*> select{ &A["key"].mCol, &A["data"].mCol };
         m2 = srvs[i].cuckooHashRecv(select);
@@ -191,7 +191,7 @@ void ComPsi_cuckooHash_test()
 
     auto t2 = std::thread([&]() {
         auto i = 2;
-        setThreadName("t_" + ToString(i));
+        setThreadName("t_" + std::to_string(i));
         auto A = srvs[i].remoteInput(0);
         std::vector<SharedColumn*> select{ &A["key"].mCol, &A["data"].mCol };
         srvs[i].cuckooHashSend(select, cuckooParams);
@@ -614,7 +614,7 @@ void ComPsi_Intersect_test(u32 rows, u32 rows2)
     });
 
     auto r = [&](int i) {
-        setThreadName("t" + ToString(i));
+        setThreadName("t" + std::to_string(i));
         auto A = srvs[i].remoteInput(0);
         auto B = srvs[i].remoteInput(0);
 
@@ -801,7 +801,7 @@ void ComPsi_leftUnion_test()
     });
 
     auto r = [&](int i) {
-        setThreadName("t" + ToString(i));
+        setThreadName("t" + std::to_string(i));
         auto A = srvs[i].remoteInput(0);
         auto B = srvs[i].remoteInput(0);
 

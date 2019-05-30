@@ -312,7 +312,7 @@ namespace aby3
             u64 mShareCount;
 
             std::array<oc::MatrixView<T>, 2> mShares;
-            std::unique_ptr<T[]> mBacking;
+            std::unique_ptr<u8[]> mBacking;
 
             sPackedBinBase() = default;
             sPackedBinBase(u64 shareCount, u64 bitCount, u64 wordMultiple = 1)
@@ -351,9 +351,9 @@ namespace aby3
                     auto sizeBytes = (sizeT + 1) * sizeof(T);
                     auto totalT = 2 * sizeT + 1; // plus one to make sure we have enought space for aligned storage.
 
-                    mBacking.reset(new T[totalT]); 
+                    mBacking.reset(new u8[totalT * sizeof(T)]); 
 
-                    void* ptr = mBacking.get();
+                    void* ptr = reinterpret_cast<void*>(mBacking.get());
                     auto alignment = alignof(T);
                     
                     if (!std::align(alignment, sizeT * sizeof(T), ptr, sizeBytes))

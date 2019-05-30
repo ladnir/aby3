@@ -18,7 +18,7 @@ namespace osuCrypto
 
 	BetaCircuit * osuCrypto::BetaLibrary::int_int_add(u64 aSize, u64 bSize, u64 cSize, Optimized op)
 	{
-		auto key = "add" + ToString(int(op)) + "_" + ToString(aSize) + "x" + ToString(bSize) + "x" + ToString(cSize);
+		auto key = "add" + std::to_string(int(op)) + "_" + std::to_string(aSize) + "x" + std::to_string(bSize) + "x" + std::to_string(cSize);
 
 		auto iter = mCirMap.find(key);
 
@@ -58,7 +58,7 @@ namespace osuCrypto
 
 	BetaCircuit * osuCrypto::BetaLibrary::int_int_add_msb(u64 aSize)
 	{
-		auto key = "add_msb_" + ToString(aSize);
+		auto key = "add_msb_" + std::to_string(aSize);
 
 		auto iter = mCirMap.find(key);
 
@@ -88,7 +88,7 @@ namespace osuCrypto
 
 	BetaCircuit * BetaLibrary::uint_uint_add(u64 aSize, u64 bSize, u64 cSize)
 	{
-		auto key = "uintAdd" + ToString(aSize) + "x" + ToString(bSize) + "x" + ToString(cSize);
+		auto key = "uintAdd" + std::to_string(aSize) + "x" + std::to_string(bSize) + "x" + std::to_string(cSize);
 
 		auto iter = mCirMap.find(key);
 
@@ -122,7 +122,7 @@ namespace osuCrypto
 		i64 bVal,
 		u64 cSize)
 	{
-		auto key = "add" + ToString(aSize) + "xConst" + ToString(bSize) + "v" + ToString(bVal) + "x" + ToString(cSize);
+		auto key = "add" + std::to_string(aSize) + "xConst" + std::to_string(bSize) + "v" + std::to_string(bVal) + "x" + std::to_string(cSize);
 
 		auto iter = mCirMap.find(key);
 
@@ -154,7 +154,7 @@ namespace osuCrypto
 
 	BetaCircuit * BetaLibrary::int_int_subtract(u64 aSize, u64 bSize, u64 cSize)
 	{
-		auto key = "subtract" + ToString(aSize) + "x" + ToString(bSize) + "x" + ToString(cSize);
+		auto key = "subtract" + std::to_string(aSize) + "x" + std::to_string(bSize) + "x" + std::to_string(cSize);
 
 		auto iter = mCirMap.find(key);
 
@@ -185,7 +185,7 @@ namespace osuCrypto
 	BetaCircuit * BetaLibrary::uint_uint_subtract(u64 aSize, u64 bSize, u64 cSize)
 	{
 
-		auto key = "uintSubtract" + ToString(aSize) + "x" + ToString(bSize) + "x" + ToString(cSize);
+		auto key = "uintSubtract" + std::to_string(aSize) + "x" + std::to_string(bSize) + "x" + std::to_string(cSize);
 
 		auto iter = mCirMap.find(key);
 
@@ -215,7 +215,7 @@ namespace osuCrypto
 
 	BetaCircuit * BetaLibrary::int_intConst_subtract(u64 aSize, u64 bSize, i64 bVal, u64 cSize)
 	{
-		auto key = "subtract" + ToString(aSize) + "xConst" + ToString(bSize) + "v" + ToString(bVal) + "x" + ToString(cSize);
+		auto key = "subtract" + std::to_string(aSize) + "xConst" + std::to_string(bSize) + "v" + std::to_string(bVal) + "x" + std::to_string(cSize);
 
 		auto iter = mCirMap.find(key);
 
@@ -247,7 +247,7 @@ namespace osuCrypto
 
 	BetaCircuit * BetaLibrary::int_int_mult(u64 aSize, u64 bSize, u64 cSize, Optimized op)
 	{
-		auto key = "mult" + ToString(aSize) + "x" + ToString(bSize) + "x" + ToString(cSize) + "x" + ToString(int(op));
+		auto key = "mult" + std::to_string(aSize) + "x" + std::to_string(bSize) + "x" + std::to_string(cSize) + "x" + std::to_string(int(op));
 
 		auto iter = mCirMap.find(key);
 
@@ -276,7 +276,7 @@ namespace osuCrypto
 	BetaCircuit * BetaLibrary::int_int_div(u64 aSize, u64 bSize, u64 cSize)
 	{
 
-		auto key = "div" + ToString(aSize) + "x" + ToString(bSize) + "x" + ToString(cSize);
+		auto key = "div" + std::to_string(aSize) + "x" + std::to_string(bSize) + "x" + std::to_string(cSize);
 
 		auto iter = mCirMap.find(key);
 
@@ -305,7 +305,7 @@ namespace osuCrypto
 
 	BetaCircuit * BetaLibrary::int_bitInvert(u64 aSize)
 	{
-		auto key = "bitInvert" + ToString(aSize);
+		auto key = "bitInvert" + std::to_string(aSize);
 
 		auto iter = mCirMap.find(key);
 
@@ -329,7 +329,7 @@ namespace osuCrypto
 
 	BetaCircuit * BetaLibrary::int_int_bitwiseAnd(u64 aSize, u64 bSize, u64 cSize)
 	{
-		auto key = "bitwiseAnd" + ToString(aSize) + "x" + ToString(bSize) + "x" + ToString(cSize);
+		auto key = "bitwiseAnd" + std::to_string(aSize) + "x" + std::to_string(bSize) + "x" + std::to_string(cSize);
 
 		auto iter = mCirMap.find(key);
 
@@ -356,7 +356,7 @@ namespace osuCrypto
 
 	BetaCircuit * BetaLibrary::int_int_bitwiseOr(u64 aSize, u64 bSize, u64 cSize)
 	{
-		auto key = "bitwiseOr" + ToString(aSize) + "x" + ToString(bSize) + "x" + ToString(cSize);
+		auto key = "bitwiseOr" + std::to_string(aSize) + "x" + std::to_string(bSize) + "x" + std::to_string(cSize);
 
 		auto iter = mCirMap.find(key);
 
@@ -382,7 +382,7 @@ namespace osuCrypto
 	}
 	BetaCircuit * BetaLibrary::int_int_bitwiseXor(u64 aSize, u64 bSize, u64 cSize)
 	{
-		auto key = "bitwiseXor" + ToString(aSize) + "x" + ToString(bSize) + "x" + ToString(cSize);
+		auto key = "bitwiseXor" + std::to_string(aSize) + "x" + std::to_string(bSize) + "x" + std::to_string(cSize);
 
 		auto iter = mCirMap.find(key);
 
@@ -410,7 +410,7 @@ namespace osuCrypto
 
 	BetaCircuit * BetaLibrary::int_Piecewise_helper(u64 size, u64 numThesholds)
 	{
-		auto key = "piecewise_helper" + ToString(size) + "_" + ToString(numThesholds);
+		auto key = "piecewise_helper" + std::to_string(size) + "_" + std::to_string(numThesholds);
 
 		auto iter = mCirMap.find(key);
 
@@ -478,7 +478,7 @@ namespace osuCrypto
 		{
 			int_int_add_msb_build_do(cd, aa[t], b, thresholds[t], temps[t]);
 			//std::cout << t << " @ " << thresholds[t].mWires[0] << std::endl;
-			//cd.addPrint(ToString(t) + "  ");
+			//cd.addPrint(std::to_string(t) + "  ");
 			//cd.addPrint(thresholds[t]);
 			//cd.addPrint("\n");
 		}
@@ -503,7 +503,7 @@ namespace osuCrypto
 
 	BetaCircuit * BetaLibrary::int_int_lt(u64 aSize, u64 bSize)
 	{
-		auto key = "lessThan" + ToString(aSize) + "x" + ToString(bSize);
+		auto key = "lessThan" + std::to_string(aSize) + "x" + std::to_string(bSize);
 
 		auto iter = mCirMap.find(key);
 
@@ -529,7 +529,7 @@ namespace osuCrypto
 
 	BetaCircuit * BetaLibrary::int_int_gteq(u64 aSize, u64 bSize)
 	{
-		auto key = "greatThanEq" + ToString(aSize) + "x" + ToString(bSize);
+		auto key = "greatThanEq" + std::to_string(aSize) + "x" + std::to_string(bSize);
 
 		auto iter = mCirMap.find(key);
 
@@ -555,7 +555,7 @@ namespace osuCrypto
 
 	BetaCircuit * BetaLibrary::uint_uint_lt(u64 aSize, u64 bSize)
 	{
-		auto key = "uintLessThan" + ToString(aSize) + "x" + ToString(bSize);
+		auto key = "uintLessThan" + std::to_string(aSize) + "x" + std::to_string(bSize);
 		auto iter = mCirMap.find(key);
 
 		if (iter == mCirMap.end())
@@ -580,7 +580,7 @@ namespace osuCrypto
 
 	BetaCircuit * BetaLibrary::uint_uint_gteq(u64 aSize, u64 bSize)
 	{
-		auto key = "uintGreatThanEq" + ToString(aSize) + "x" + ToString(bSize);
+		auto key = "uintGreatThanEq" + std::to_string(aSize) + "x" + std::to_string(bSize);
 		auto iter = mCirMap.find(key);
 
 		if (iter == mCirMap.end())
@@ -606,7 +606,7 @@ namespace osuCrypto
 	BetaCircuit * BetaLibrary::int_int_multiplex(u64 aSize)
 	{
 
-		auto key = "multiplex" + ToString(aSize);
+		auto key = "multiplex" + std::to_string(aSize);
 
 		auto iter = mCirMap.find(key);
 
@@ -636,7 +636,7 @@ namespace osuCrypto
 
 	BetaCircuit * BetaLibrary::int_removeSign(u64 aSize)
 	{
-		auto key = "removeSign" + ToString(aSize);
+		auto key = "removeSign" + std::to_string(aSize);
 		auto iter = mCirMap.find(key);
 		if (iter == mCirMap.end())
 		{
@@ -660,7 +660,7 @@ namespace osuCrypto
 
 	BetaCircuit * BetaLibrary::int_addSign(u64 aSize)
 	{
-		auto key = "addSign" + ToString(aSize);
+		auto key = "addSign" + std::to_string(aSize);
 		auto iter = mCirMap.find(key);
 		if (iter == mCirMap.end())
 		{
@@ -686,7 +686,7 @@ namespace osuCrypto
 
 	BetaCircuit * BetaLibrary::int_negate(u64 aSize)
 	{
-		auto key = "negate" + ToString(aSize);
+		auto key = "negate" + std::to_string(aSize);
 		auto iter = mCirMap.find(key);
 		if (iter == mCirMap.end())
 		{
@@ -860,9 +860,9 @@ namespace osuCrypto
 		for (u64 level = 0; level < d; ++level)
 		{
 
-			//cd.addPrint("\nG " + ToString(level) + ": ");
+			//cd.addPrint("\nG " + std::to_string(level) + ": ");
 			//cd.addPrint(GG);
-			//cd.addPrint("\nP " + ToString(level) + ": ");
+			//cd.addPrint("\nP " + std::to_string(level) + ": ");
 			//cd.addPrint(PP);
 
 			// 1,2,4,8,16,32,64,...
@@ -906,9 +906,9 @@ namespace osuCrypto
 			}
 		}
 
-		//cd.addPrint("\nG " + ToString(d) + ": ");
+		//cd.addPrint("\nG " + std::to_string(d) + ": ");
 		//cd.addPrint(GG);
-		//cd.addPrint("\nP " + ToString(d) + ": ");
+		//cd.addPrint("\nP " + std::to_string(d) + ": ");
 		//cd.addPrint(PP);
 		//cd.addPrint("\n");
 
@@ -1004,9 +1004,9 @@ namespace osuCrypto
 		for (u64 level = 0; level < d; ++level)
 		{
 
-			//cd.addPrint("\nG " + ToString(level) + ": ");
+			//cd.addPrint("\nG " + std::to_string(level) + ": ");
 			//cd.addPrint(GG);
-			//cd.addPrint("\nP " + ToString(level) + ": ");
+			//cd.addPrint("\nP " + std::to_string(level) + ": ");
 			//cd.addPrint(PP);
 
 			// 1,2,4,8,16,32,64,...
@@ -1047,9 +1047,9 @@ namespace osuCrypto
 			}
 		}
 
-		//cd.addPrint("\nG " + ToString(d) + ": ");
+		//cd.addPrint("\nG " + std::to_string(d) + ": ");
 		//cd.addPrint(GG);
-		//cd.addPrint("\nP " + ToString(d) + ": ");
+		//cd.addPrint("\nP " + std::to_string(d) + ": ");
 		//cd.addPrint(PP);
 		//cd.addPrint("\n");
 
@@ -1502,7 +1502,7 @@ namespace osuCrypto
 
 			//std::cout << "iter[" << i << "]  geq  " << cd.mNonXorGateCount << "  (+" << (cd.mNonXorGateCount - prev) << ")  " << remTemp.mWires.size() << std::endl;
 
-			//cd.addPrint("rem[" + ToString(i) + "] = ");
+			//cd.addPrint("rem[" + std::to_string(i) + "] = ");
 			//cd.addPrint(remainder);
 			//cd.addPrint("\n");
 			//cd.addPrint(remainder);
@@ -1525,9 +1525,9 @@ namespace osuCrypto
 
 
 
-			//cd.addPrint(" ( rem[" + ToString(i) + "] = ");
+			//cd.addPrint(" ( rem[" + std::to_string(i) + "] = ");
 			//cd.addPrint(remainder);
-			//cd.addPrint(") - (sub[" + ToString(i) + "] = ");
+			//cd.addPrint(") - (sub[" + std::to_string(i) + "] = ");
 			//cd.addPrint(sub);
 
 

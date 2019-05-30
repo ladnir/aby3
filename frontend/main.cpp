@@ -482,25 +482,12 @@ int main(int argc, char** argv)
 
 		if (cmd.isSet(unitTestTag))
 		{
-			set = true;
 			auto tests = tests_cryptoTools::Tests;
 			tests += aby3_tests;
 			tests += ComPsi_tests;
 
-			if (cmd.isSet("list"))
-			{
-				tests.list();
-			}
-			else
-			{
-				cmd.setDefault("loop", 1);
-				auto loop = cmd.get<u64>("loop");
-
-				if (cmd.hasValue(unitTestTag))
-					tests.run(cmd.getMany<u64>(unitTestTag), loop);
-				else
-					tests.runAll(loop);
-			}
+			tests.runIf(cmd);
+			return 0;
 		}
 		if (cmd.isSet("eric"))
 		{

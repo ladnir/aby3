@@ -164,8 +164,8 @@ namespace aby3
 		static_assert(sizeof(Sh3::f64<D>) == sizeof(i64), "assumpition for this cast.");
 		auto& mCast = (const Sh3::i64Matrix&)m;
 
-		static_assert(sizeof(Sh3::sf64Matrix<D>) == sizeof(si64Matrix), "assumpition for this cast.");
-		auto& destCast = (si64Matrix&)dest;
+		static_assert(sizeof(Sh3::sf64Matrix<D>) == sizeof(Sh3::si64Matrix), "assumpition for this cast.");
+		auto& destCast = (Sh3::si64Matrix&)dest;
 
 		return localIntMatrix(dep, mCast, destCast);
 	}
@@ -174,8 +174,8 @@ namespace aby3
 	Sh3Task Sh3Encryptor::remoteFixedMatrix(Sh3Task dep, Sh3::sf64Matrix<D>& dest)
 	{
 
-		static_assert(sizeof(Sh3::sf64Matrix<D>) == sizeof(si64Matrix), "assumpition for this cast.");
-		auto& destCast = (si64Matrix&)dest;
+		static_assert(sizeof(Sh3::sf64Matrix<D>) == sizeof(Sh3::si64Matrix), "assumpition for this cast.");
+		auto& destCast = (Sh3::si64Matrix&)dest;
 
 		return remoteIntMatrix(dep, destCast);
 	}
@@ -207,12 +207,12 @@ namespace aby3
 	Sh3Task Sh3Encryptor::reveal(Sh3Task dep, const Sh3::sf64Matrix<D>& x, Sh3::f64Matrix<D>& dest)
 	{
 
-		static_assert(sizeof(Sh3::sf64Matrix<D>) == sizeof(si64Matrix), "assumpition for this cast.");
-		auto& xCast = (si64Matrix&)x;
+		static_assert(sizeof(Sh3::sf64Matrix<D>) == sizeof(Sh3::si64Matrix), "assumpition for this cast.");
+		auto& xCast = (Sh3::si64Matrix&)x;
 
 
 		static_assert(sizeof(Sh3::f64<D>) == sizeof(i64), "assumpition for this cast.");
-		auto& destCast = (i64Matrix&)dest;
+		auto& destCast = (Sh3::i64Matrix&)dest;
 
 		// since under the hood we represent a fixed point val as an int, just call that function.
 		return reveal(dep, xCast, destCast);
@@ -220,12 +220,12 @@ namespace aby3
 	template<Sh3::Decimal D>
 	Sh3Task Sh3Encryptor::revealAll(Sh3Task dep, const Sh3::sf64Matrix<D>& x, Sh3::f64Matrix<D>& dest)
 	{
-		static_assert(sizeof(Sh3::sf64Matrix<D>) == sizeof(si64Matrix), "assumpition for this cast.");
-		auto& xCast = (si64Matrix&)x;
+		static_assert(sizeof(Sh3::sf64Matrix<D>) == sizeof(Sh3::si64Matrix), "assumpition for this cast.");
+		auto& xCast = (Sh3::si64Matrix&)x;
 
 
 		static_assert(sizeof(Sh3::f64<D>) == sizeof(i64), "assumpition for this cast.");
-		auto& destCast = (i64Matrix&)dest;
+		auto& destCast = (Sh3::i64Matrix&)dest;
 
 		// since under the hood we represent a fixed point val as an int, just call that function.
 		return revealAll(dep, xCast, destCast);
@@ -233,8 +233,8 @@ namespace aby3
 	template<Sh3::Decimal D>
 	Sh3Task Sh3Encryptor::reveal(Sh3Task dep, u64 partyIdx, const Sh3::sf64Matrix<D>& x)
 	{
-		static_assert(sizeof(Sh3::sf64Matrix<D>) == sizeof(si64Matrix), "assumpition for this cast.");
-		auto& xCast = (si64Matrix&)x;
+		static_assert(sizeof(Sh3::sf64Matrix<D>) == sizeof(Sh3::si64Matrix), "assumpition for this cast.");
+		auto& xCast = (Sh3::si64Matrix&)x;
 
 		// since under the hood we represent a fixed point val as an int, just call that function.
 		return reveal(dep, partyIdx, xCast);

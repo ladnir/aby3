@@ -5,6 +5,8 @@
 #include "Sh3Runtime.h"
 #include <cryptoTools/Crypto/sha1.h>
 #include "Sh3ShareGen.h"
+#include <boost/align/aligned_allocator.hpp>
+#include <vector>
 
 namespace aby3
 {
@@ -19,6 +21,7 @@ namespace aby3
 #endif
 
 #define BINARY_ENGINE_DEBUG
+
 #ifdef BINARY_ENGINE_DEBUG
     private:
         bool mDebug = false;
@@ -99,8 +102,9 @@ namespace aby3
             return b;
         }
 
-        std::unique_ptr<block_type[]> mShareBacking;
-        span<block_type> mShareBuff;
+        //std::unique_ptr<block_type[]> mShareBacking;
+		std::vector<block_type, boost::alignment::aligned_allocator<block_type>> mShareBuff;
+        //span<block_type> mShareBuff;
         u64 mShareIdx;
         std::array<oc::AES, 2> mShareAES;
 

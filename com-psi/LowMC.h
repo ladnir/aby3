@@ -166,7 +166,7 @@ namespace osuCrypto
                         // c = a + b + c + ab
                         cir.addGate(cc, a_b, GateType::Xor, c);
                     }
-                    //cir.addPrint("state[" + ToString(r) + "].sbox  ");
+                    //cir.addPrint("state[" + std::to_string(r) + "].sbox  ");
                     //cir.addPrint(state);
                     //cir.addPrint("\n");
 
@@ -196,7 +196,7 @@ namespace osuCrypto
                             }
                         }
                     }
-                    //cir.addPrint("state[" + ToString(r) + "].mul   ");
+                    //cir.addPrint("state[" + std::to_string(r) + "].mul   ");
                     //cir.addPrint(temp);
                     //cir.addPrint("\n");
 
@@ -208,7 +208,7 @@ namespace osuCrypto
                             cir.addInvert(temp[i]);
                         }
                     }
-                    //cir.addPrint("state[" + ToString(r) + "].const ");
+                    //cir.addPrint("state[" + std::to_string(r) + "].const ");
                     //cir.addPrint(temp);
                     //cir.addPrint("\n");
 
@@ -219,7 +219,7 @@ namespace osuCrypto
                     }
 
 
-                    //cir.addPrint("state[" + ToString(r) + "].      ");
+                    //cir.addPrint("state[" + std::to_string(r) + "].      ");
                     //cir.addPrint(state);
                     //cir.addPrint("\n");
                 }
@@ -429,7 +429,7 @@ namespace osuCrypto
                     }
                     else
                     {
-                        std::string fileName("./linMtx_" + ToString(r) + ".txt");
+                        std::string fileName("./linMtx_" + std::to_string(r) + ".txt");
                         std::ifstream in;
                         in.open(fileName, std::ios::in);
 
@@ -484,7 +484,7 @@ namespace osuCrypto
                     }
                     else
                     {
-                        std::string fileName("./keyMtx_" + ToString(r) + ".txt");
+                        std::string fileName("./keyMtx_" + std::to_string(r) + ".txt");
                         std::ifstream in;
                         in.open(fileName, std::ios::in);
 

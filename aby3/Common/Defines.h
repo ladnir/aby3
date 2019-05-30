@@ -1,6 +1,6 @@
 #pragma once
 #include <cryptoTools/Common/Defines.h>
-
+#define _WIN32_WINNT 0x0501
 namespace aby3
 {
     using u64 = oc::u64;

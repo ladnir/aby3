@@ -2,7 +2,7 @@
 #include <cryptoTools/Crypto/PRNG.h>
 #include <iomanip>
 #include <cryptoTools/Common/Log.h>
-
+using namespace oc;
 namespace aby3
 {
 
@@ -97,133 +97,65 @@ namespace aby3
 	//	return ss.str();
 	//}
 
+	
+
 	TruncationPair Sh3Evaluator::getTruncationTuple(u64 xSize, u64 ySize, Sh3::Decimal d)
 	{
-		TruncationPair r;
-
-		//r.mLongShare.setZero();
-
-		//r.mShortShare.resize(numShares, 1);
-
-		oc::PRNG prng(oc::toBlock(mTruncationIdx));
-		std::array<Sh3::i64Matrix, 3> shares;
-		shares[0].resize(xSize, ySize);
-		shares[1].resize(xSize, ySize);
-
-		r.mLongShare.resize(xSize, ySize);
-
-		prng.get(r.mLongShare.data(), xSize* ySize); // r
-		//r.mLongShare(0) >>= 2;
-		//r.mLongShare.setZero();
-		//r.mLongShare(0) = -5 << d;
-		//r.mLongShare(0) &= (u64(-1) >> 34);
-
-		//if (1)
+		TruncationPair pair;
+		auto zeroSharing = [](PRNG & prng, u64 xSize, u64 ySize)
 		{
-			prng.get(shares[0].data(), xSize* ySize); // share 0
-			prng.get(shares[1].data(), xSize* ySize); // share 1
+			std::array<Sh3::i64Matrix, 3> shares;
+
+			shares[0].resize(xSize, ySize);
+			shares[1].resize(xSize, ySize);
+			//prng.get(shares[0].data(), shares[0].size()); // share 0
+			//prng.get(shares[1].data(), shares[1].size()); // share 1
 			shares[2] = -shares[0] - shares[1];// share 2 = -share 0 -share 1
-		}
-		//else
-		//{
-		//	shares[0].setZero();
-		//	shares[1].setZero();
 
-		//	shares[2].resize(numShares, 1);
-		//	shares[2].setZero();
-		//}
+			return shares;
+		};
 
-		//shares[0] += r.mLongShare >> d; // share0 += r >> d
+		oc::PRNG prng(oc::toBlock(mTruncationIdx++));
 
-		for (u64 i = 0; i < r.mLongShare.size(); ++i)
-			shares[0](i) += r.mLongShare(i) >> d;
+		Sh3::i64Matrix r(xSize, ySize);
+		prng.get(r.data(), xSize* ySize);
 
-		//auto t = r.mLongShare;
+		auto shares = zeroSharing(prng, xSize, ySize);
+		auto truncShares = zeroSharing(prng, xSize, ySize);
 
-		if (mPartyIdx) r.mLongShare.setZero();
 
-		//if (t / (1ull << d) != shares[0] + shares[1] + shares[2])
-		//	throw RTE_LOC;
-		//
+		for (u64 i = 0; i < r.size(); ++i)
+			shares[0](i) += r(i);
+
+		for (u64 i = 0; i < r.size(); ++i)
+			truncShares[0](i) += r(i) >> d;
+
 
 		if (mPartyIdx == 0)
 		{
-			r.mShortShare.mShares[0] = std::move(shares[0]);
-			r.mShortShare.mShares[1] = std::move(shares[2]);
+			pair.mR = std::move(shares[0]);
+			pair.mRTrunc.mShares[0] = std::move(truncShares[0]);
+			pair.mRTrunc.mShares[1] = std::move(truncShares[2]);
 		}
 		else if (mPartyIdx == 1)
 		{
-			r.mShortShare.mShares[0] = std::move(shares[1]);
-			r.mShortShare.mShares[1] = std::move(shares[0]);
+			pair.mR = std::move(shares[1]);
+			pair.mRTrunc.mShares[0] = std::move(truncShares[1]);
+			pair.mRTrunc.mShares[1] = std::move(truncShares[0]);
 		}
 		else
 		{
-			r.mShortShare.mShares[0] = std::move(shares[2]);
-			r.mShortShare.mShares[1] = std::move(shares[1]);
-
+			pair.mR = std::move(shares[2]);
+			pair.mRTrunc.mShares[0] = std::move(truncShares[2]);
+			pair.mRTrunc.mShares[1] = std::move(truncShares[1]);
 		}
 
-		//oc::ostreamLock(std::cout)<< "t"<< mPartyIdx<< " "  << prettyShare(mPartyIdx, r.mShortShare.mShares[0](0), r.mShortShare.mShares[1](0)) << std::endl;
-
-		//r.mShortShare
-		//r.mShortShare.mShares[0].setZero();
-		//r.mShortShare.mShares[1].setZero();
-
-
-		return r;
+		//pair.mR.setZero();
+		//pair.mRTrunc.mShares[0].setZero();
+		//pair.mRTrunc.mShares[1].setZero();
+		return pair;
 	}
 
-
-	//struct ostreamLock2
-	//{
-	//	std::ostream& out;
-	//	std::unique_lock<std::mutex> mLock;
-
-	//	ostreamLock2(ostreamLock2&& v)
-	//		: out(v.out)
-	//		, mLock(std::move(v.mLock))
-	//	{
-	//	};
-
-	//	ostreamLock2(std::ostream& o) 
-	//		: out(o)
-	//		, mLock(oc::gIoStreamMtx)
-	//	{}
-
-	//	template<typename T>
-	//	ostreamLock2& operator<<(const T& v)
-	//	{
-	//		out << v;
-	//		return *this;
-	//	}
-
-	//	template<typename T>
-	//	ostreamLock2& operator<<(T& v)
-	//	{
-	//		out << v;
-	//		return *this;
-	//	}
-	//	ostreamLock2& operator<< (std::ostream& (*v)(std::ostream&))
-	//	{
-	//		out << v;
-	//		return *this;
-	//	}
-	//	ostreamLock2& operator<< (std::ios& (*v)(std::ios&))
-	//	{
-	//		out << v;
-	//		return *this;
-	//	}
-	//	ostreamLock2& operator<< (std::ios_base& (*v)(std::ios_base&))
-	//	{
-	//		out << v;
-	//		return *this;
-	//	}
-	//};
-
-
-	//ostreamLocker lout(std::cout);
-
-	 
 	template<Sh3::Decimal D>
 	Sh3Task aby3::Sh3Evaluator::asyncMul(
 		Sh3Task & dependency,
@@ -243,26 +175,26 @@ namespace aby3
 				//+ mShareGen.getShare();
 
 
-			//oc::ostreamLock(std::cout) << "ab " << mPartyIdx << ": " << abMinusR << " - "<< truncationTuple.mLongShare(0) << 
-			//	" = " << abMinusR - truncationTuple.mLongShare(0) << std::endl;
+			//oc::ostreamLock(std::cout) << "ab " << mPartyIdx << ": " << abMinusR << " - "<< truncationTuple.mR(0) << 
+			//	" = " << abMinusR - truncationTuple.mR(0) << std::endl;
 
-			abMinusR -= truncationTuple.mLongShare(0);
-			C.mShare = truncationTuple.mShortShare(0);
+			abMinusR -= truncationTuple.mR(0);
+			C.mShare = truncationTuple.mRTrunc(0);
 
-			lout << mPartyIdx << " " << abMinusR << std::endl;
 
+			//lout << mPartyIdx << " " << abMinusR << std::endl;
 			//{
-			//	comm.mPrev.asyncSend(truncationTuple.mLongShare(0));
-			//	comm.mNext.asyncSend(truncationTuple.mLongShare(0));
+			//	comm.mPrev.asyncSend(truncationTuple.mR(0));
+			//	comm.mNext.asyncSend(truncationTuple.mR(0));
 			//	i64 l1, l2;
 			//	comm.mPrev.recv(l1);
 			//	comm.mNext.recv(l2);
-			//	auto l = truncationTuple.mLongShare(0) + l1 + l2;
+			//	auto l = truncationTuple.mR(0) + l1 + l2;
 			//	auto ls = (l / (1ll << C.mDecimal));
-			//	comm.mPrev.asyncSend(truncationTuple.mShortShare.mShares[0](0));
+			//	comm.mPrev.asyncSend(truncationTuple.mRTrunc.mShares[0](0));
 			//	i64 s2;
 			//	comm.mNext.recv(s2);
-			//	auto s = s2 + truncationTuple.mShortShare.mShares[0](0) + truncationTuple.mShortShare.mShares[1](0);
+			//	auto s = s2 + truncationTuple.mRTrunc.mShares[0](0) + truncationTuple.mRTrunc.mShares[1](0);
 			//	oc::ostreamLock(std::cout) << "sss " << l << " " << s << " " << ls << " " << s - ls << std::endl;
 			//}
 
@@ -297,8 +229,12 @@ namespace aby3
 
 					// xy/2^d = (r/2^d) + ((xy-r) / 2^d)
 					C.mShare.mData[mPartyIdx] += (*shares)[0] >> C.mDecimal;
+
+					//lout << mPartyIdx << " " << C.mShare.mData[mPartyIdx] << std::endl
+					//	<<  "* " << C.mShare.mData[1^mPartyIdx] << std::endl;
 				});
 			}
+
 		});
 	}
 
@@ -331,20 +267,22 @@ namespace aby3
 	{
 		return dependency.then([&](Sh3::CommPkg& comm, Sh3Task& self) -> void
 		{
-			auto abMinusR
-				=( A.mShares[0] * B.mShares[0]
+			Sh3::i64Matrix abMinusR
+				= A.mShares[0] * B.mShares[0]
 				+ A.mShares[0] * B.mShares[1]
-				+ A.mShares[1] * B.mShares[0]).eval();
+				+ A.mShares[1] * B.mShares[0];
 
 			//for (u64 i = 0; i < abMinusR.size(); ++i)
 			//	abMinusR(i) += mShareGen.getShare(); 
 
-			lout << mPartyIdx << " " << abMinusR(0) << std::endl;
 
 			auto truncationTuple = getTruncationTuple(abMinusR.rows(), abMinusR.cols(), C.mDecimal);
 
-			abMinusR -= truncationTuple.mLongShare;
-			C.mShares = std::move(truncationTuple.mShortShare.mShares);
+			abMinusR -= truncationTuple.mR;
+			C.mShares = std::move(truncationTuple.mRTrunc.mShares);
+
+			//lout << "p" << mPartyIdx << " ab \n" << abMinusR << std::endl;
+				//<< "p"<< mPartyIdx << " c \n" << C.mShares[0]<<",\n"<< C.mShares[1] << std::endl;
 
 			auto& rt = self.getRuntime();
 
@@ -377,6 +315,7 @@ namespace aby3
 					fu0.get();
 					fu1.get();
 
+					//lout << "p" << mPartyIdx << " ab \n" << (*shares)[0] << ",\n" << (*shares)[1] << ",\n" << (*shares)[2] << std::endl;
 					// xy-r
 					(*shares)[0] += (*shares)[1] + (*shares)[2];
 
@@ -385,8 +324,16 @@ namespace aby3
 					auto& s = (*shares)[0];
 					for(u64 i =0; i < v.size(); ++i)
 						v(i) += s(i) >> C.mDecimal;
+
+
+					//lout <<"p" << mPartyIdx << "\n" << v <<",\n" 						<<  C.mShares[1 ^ mPartyIdx] << std::endl;
+
 				});
 			}
+			//else
+			//{
+			//	lout << "p " << mPartyIdx << "\n" << C.mShares[0] << ",\n" << C.mShares[1] << std::endl;
+			//}
 		});
 	}
 

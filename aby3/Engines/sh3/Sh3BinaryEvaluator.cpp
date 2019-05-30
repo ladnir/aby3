@@ -543,9 +543,9 @@ namespace aby3
         return out;
     }
 
-    std::string prettyShare(int partyIdx, int share0, int share1 = -1)
+    std::string prettyShare(u64 partyIdx, i64 share0, i64 share1 = -1)
     {
-        std::array<int, 3> shares;
+        std::array<i64, 3> shares;
         shares[partyIdx] = share0;
         shares[(partyIdx + 2) % 3] = share1;
         shares[(partyIdx + 1) % 3] = -1;
@@ -567,8 +567,8 @@ namespace aby3
 
 
 
-        i32 shareCountDiv8 = (mMem.shareCount() + 7) / 8;
-        i32 simdWidth128 = mMem.simdWidth();
+        i32 shareCountDiv8 = static_cast<i32>((mMem.shareCount() + 7) / 8);
+        i32 simdWidth128 = static_cast<i32>(mMem.simdWidth());
         //auto simdWidth1024 = (simdWidth128 + 7) / 8;
 
         if (mLevel > mCir->mLevelCounts.size())
@@ -625,22 +625,23 @@ namespace aby3
             mShareIdx = 0;
             mShareAES[0].setKey(seed0);
             mShareAES[1].setKey(seed1);
-            mShareBacking.reset();
-            mShareBacking.reset(new block_type[simdWidth128 + 1]);
+            //mShareBacking.reset();
+			//mShareBacking.reset(new block_type[simdWidth128 + 1]);
+			mShareBuff.resize(simdWidth128 + 1);
 
 
-            // see if new returned a pointer with the correct alignment
-            auto offset = u64(mShareBacking.get()) % alignof(block_type);
+            //// see if new returned a pointer with the correct alignment
+            //auto offset = u64(mShareBacking.get()) % alignof(block_type);
 
-            // if not, compute how many bytes to move it forward.
-            if (offset)
-                offset = alignof(block_type)-offset;
+            //// if not, compute how many bytes to move it forward.
+            //if (offset)
+            //    offset = alignof(block_type)-offset;
 
-            // correct the pointer
-            auto alignedPtr = (block_type*)((u8*)mShareBacking.get() + offset);
+            //// correct the pointer
+            //auto alignedPtr = (block_type*)((u8*)mShareBacking.get() + offset);
 
-            // wrap the aligned pointer in a span for safety.
-            mShareBuff = span<block_type>(alignedPtr, simdWidth128);
+            //// wrap the aligned pointer in a span for safety.
+            //mShareBuff = span<block_type>(alignedPtr, simdWidth128);
 #else
             mShareGen.init(seed0, seed1, simdWidth128 * sizeof(block_type) / sizeof(block));
 #endif
@@ -673,7 +674,7 @@ namespace aby3
             mRecvData.resize(andGateCount * shareCountDiv8);
             auto writeIter = sendBuff.begin();
             auto prevSendIdx = 0ull;
-            auto nextSendIdx = std::min<i32>(bufferSize, sendBuff.size());
+            auto nextSendIdx = std::min<i32>(bufferSize, static_cast<i32>(sendBuff.size()));
 
             //std::vector<block_type> s0_in0_data(simdWidth128), s0_in1_data(simdWidth128);
             //std::vector<block_type> s1_in0_data(simdWidth128), s1_in1_data(simdWidth128);
@@ -725,7 +726,7 @@ namespace aby3
                     }
                     break;
                 case GateType::And:
-                    *updateIter++ = out;
+                    *updateIter++ = static_cast<i32>(out);
                     z = getShares();
                     for (i32 k = 0; k < simdWidth128; k += 8)
                     {
@@ -817,7 +818,7 @@ namespace aby3
 
                     break;
                 case GateType::Nor:
-                    *updateIter++ = out;
+                    *updateIter++ = static_cast<i32>(out);
                     z = getShares();
                     for (i32 k = 0; k < simdWidth128; k += 8)
                     {
@@ -954,7 +955,7 @@ namespace aby3
                     writeIter += shareCountDiv8;
                     break;
                 case GateType::Or:
-                    *updateIter++ = out;
+                    *updateIter++ = static_cast<i32>(out);
                     z = getShares();
                     for (i32 k = 0; k < simdWidth128; k += 8)
                     {
@@ -1115,7 +1116,7 @@ namespace aby3
                 case GateType::na_And:
                     z = getShares();
 
-                    *updateIter++ = out;
+                    *updateIter++ = static_cast<i32>(out);
                     for (i32 k = 0; k < simdWidth128; ++k)
                     {
                         TODO("vectorize");
@@ -1159,7 +1160,9 @@ namespace aby3
                         mRecvFutr.emplace_back(comm.mPrev.asyncRecv(&*mRecvData.begin() + prevSendIdx, size));
 
                         prevSendIdx = nextSendIdx;
-                        nextSendIdx = std::min<i32>(nextSendIdx + bufferSize, sendBuff.size());
+                        nextSendIdx = std::min<i32>(
+							static_cast<i32>(nextSendIdx + bufferSize),
+							static_cast<i32>(sendBuff.size()));
                     }
                 }
 

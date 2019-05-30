@@ -27,6 +27,7 @@ oc::TestCollection aby3_tests([](oc::TestCollection& tc) {
     tc.add("Sh3_Encryptor_asyncIO_test              ", Sh3_Encryptor_asyncIO_test);
     tc.add("Sh3_Evaluator_mul_test                  ", Sh3_Evaluator_mul_test);
     tc.add("Sh3_Evaluator_asyncMul_test             ", Sh3_Evaluator_asyncMul_test);
+	tc.add("Sh3_Evaluator_truncationPai_test        ", Sh3_Evaluator_truncationPai_test);
 	tc.add("Sh3_Evaluator_asyncMul_fixed_test       ", Sh3_Evaluator_asyncMul_fixed_test);
 	tc.add("Sh3_Evaluator_asyncMul_matrixFixed_test ", Sh3_Evaluator_asyncMul_matrixFixed_test);
     tc.add("Sh3_f64_basics_test                     ", Sh3_f64_basics_test);

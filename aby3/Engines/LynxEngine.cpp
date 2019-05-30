@@ -950,7 +950,7 @@ namespace Lynx
             cd.addTempWireBundle(a[i]);
             lib.int_int_add_build_so(cd, a0[i], a1[i], a[i], t);
 
-            cd.addPrint("a[" + ToString(i) + "] = ");
+            cd.addPrint("a[" + std::to_string(i) + "] = ");
             cd.addPrint(a[i]);
             cd.addPrint("\n");
         }

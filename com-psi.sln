@@ -1,50 +1,43 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2036
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28803.352
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "aby3", "aby3\aby3.vcxproj", "{FD60CAE8-ABAB-433C-BC50-D867DE0234B2}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "aby3_tests", "aby3_tests\aby3_tests.vcxproj", "{E2622D5B-73B4-4EF0-B9AF-15CCA97D9729}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC941}") = "aby3_tests", "aby3_tests\aby3_tests.vcxproj", "{E2622D5B-73B4-4EF0-B9AF-15CCA97D9728}"
 	ProjectSection(ProjectDependencies) = postProject
-		{FD60CAE8-ABAB-433C-BC50-D867DE0234B2} = {FD60CAE8-ABAB-433C-BC50-D867DE0234B2}
+		{FD60CAE8-ABAB-433C-BC50-D867DE0234B1} = {FD60CAE8-ABAB-433C-BC50-D867DE0234B1}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "frontend", "frontend\frontend.vcxproj", "{2E41409B-3E10-418E-98E1-FA14D521EBE8}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC941}") = "frontend", "frontend\frontend.vcxproj", "{2E41409B-3E10-418E-98E1-FA14D521EBE8}"
 	ProjectSection(ProjectDependencies) = postProject
 		{A9913C31-C04E-4866-B55A-6FB2EBEB4DA2} = {A9913C31-C04E-4866-B55A-6FB2EBEB4DA2}
 		{FA9F5640-AA66-4D41-AFC6-50282C31C866} = {FA9F5640-AA66-4D41-AFC6-50282C31C866}
-		{E2622D5B-73B4-4EF0-B9AF-15CCA97D9729} = {E2622D5B-73B4-4EF0-B9AF-15CCA97D9729}
-		{FD60CAE8-ABAB-433C-BC50-D867DE0234B2} = {FD60CAE8-ABAB-433C-BC50-D867DE0234B2}
+		{E2622D5B-73B4-4EF0-B9AF-15CCA97D9728} = {E2622D5B-73B4-4EF0-B9AF-15CCA97D9728}
+		{FD60CAE8-ABAB-433C-BC50-D867DE0234B1} = {FD60CAE8-ABAB-433C-BC50-D867DE0234B1}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "com-psi", "com-psi\com-psi.vcxproj", "{FA9F5640-AA66-4D41-AFC6-50282C31C866}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC941}") = "com-psi", "com-psi\com-psi.vcxproj", "{FA9F5640-AA66-4D41-AFC6-50282C31C866}"
 	ProjectSection(ProjectDependencies) = postProject
-		{FD60CAE8-ABAB-433C-BC50-D867DE0234B2} = {FD60CAE8-ABAB-433C-BC50-D867DE0234B2}
+		{FD60CAE8-ABAB-433C-BC50-D867DE0234B1} = {FD60CAE8-ABAB-433C-BC50-D867DE0234B1}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "com-psi_tests", "com-psi_tests\com-psi_tests.vcxproj", "{A9913C31-C04E-4866-B55A-6FB2EBEB4DA2}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC941}") = "com-psi_tests", "com-psi_tests\com-psi_tests.vcxproj", "{A9913C31-C04E-4866-B55A-6FB2EBEB4DA2}"
 	ProjectSection(ProjectDependencies) = postProject
 		{FA9F5640-AA66-4D41-AFC6-50282C31C866} = {FA9F5640-AA66-4D41-AFC6-50282C31C866}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC941}") = "aby3", "aby3\aby3.vcxproj", "{FD60CAE8-ABAB-433C-BC50-D867DE0234B1}"
+EndProject
 Global
-	GlobalSection(Performance) = preSolution
-		HasPerformanceSessions = true
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{FD60CAE8-ABAB-433C-BC50-D867DE0234B2}.Debug|x64.ActiveCfg = Debug|x64
-		{FD60CAE8-ABAB-433C-BC50-D867DE0234B2}.Debug|x64.Build.0 = Debug|x64
-		{FD60CAE8-ABAB-433C-BC50-D867DE0234B2}.Release|x64.ActiveCfg = Release|x64
-		{FD60CAE8-ABAB-433C-BC50-D867DE0234B2}.Release|x64.Build.0 = Release|x64
-		{E2622D5B-73B4-4EF0-B9AF-15CCA97D9729}.Debug|x64.ActiveCfg = Debug|x64
-		{E2622D5B-73B4-4EF0-B9AF-15CCA97D9729}.Debug|x64.Build.0 = Debug|x64
-		{E2622D5B-73B4-4EF0-B9AF-15CCA97D9729}.Release|x64.ActiveCfg = Release|x64
-		{E2622D5B-73B4-4EF0-B9AF-15CCA97D9729}.Release|x64.Build.0 = Release|x64
+		{E2622D5B-73B4-4EF0-B9AF-15CCA97D9728}.Debug|x64.ActiveCfg = Debug|x64
+		{E2622D5B-73B4-4EF0-B9AF-15CCA97D9728}.Debug|x64.Build.0 = Debug|x64
+		{E2622D5B-73B4-4EF0-B9AF-15CCA97D9728}.Release|x64.ActiveCfg = Release|x64
+		{E2622D5B-73B4-4EF0-B9AF-15CCA97D9728}.Release|x64.Build.0 = Release|x64
 		{2E41409B-3E10-418E-98E1-FA14D521EBE8}.Debug|x64.ActiveCfg = Debug|x64
 		{2E41409B-3E10-418E-98E1-FA14D521EBE8}.Debug|x64.Build.0 = Debug|x64
 		{2E41409B-3E10-418E-98E1-FA14D521EBE8}.Release|x64.ActiveCfg = Release|x64
@@ -57,12 +50,19 @@ Global
 		{A9913C31-C04E-4866-B55A-6FB2EBEB4DA2}.Debug|x64.Build.0 = Debug|x64
 		{A9913C31-C04E-4866-B55A-6FB2EBEB4DA2}.Release|x64.ActiveCfg = Release|x64
 		{A9913C31-C04E-4866-B55A-6FB2EBEB4DA2}.Release|x64.Build.0 = Release|x64
+		{FD60CAE8-ABAB-433C-BC50-D867DE0234B1}.Debug|x64.ActiveCfg = Debug|x64
+		{FD60CAE8-ABAB-433C-BC50-D867DE0234B1}.Debug|x64.Build.0 = Debug|x64
+		{FD60CAE8-ABAB-433C-BC50-D867DE0234B1}.Release|x64.ActiveCfg = Release|x64
+		{FD60CAE8-ABAB-433C-BC50-D867DE0234B1}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C508BA5C-9F48-4BC1-A3C0-14625E51D6FB}
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true

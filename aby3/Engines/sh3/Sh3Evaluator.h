@@ -10,10 +10,10 @@ namespace aby3
     struct TruncationPair
     {
         // the share that should be added before the value being trucnated is revealed.
-        Sh3::i64Matrix mLongShare;
+        Sh3::i64Matrix mR;
 
         // the share that thsould be subtracted after the value has been truncated.
-        Sh3::si64Matrix mShortShare;
+        Sh3::si64Matrix mRTrunc;
     };
 
 

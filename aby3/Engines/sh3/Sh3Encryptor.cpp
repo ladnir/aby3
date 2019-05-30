@@ -334,7 +334,7 @@ namespace aby3
 
     Sh3Task Sh3Encryptor::reveal(Sh3Task dep, u64 partyIdx, const Sh3::si64& x)
     {
-        TODO("decide if we can move the if outside the call to then(...)");
+        //TODO("decide if we can move the if outside the call to then(...)");
         bool send = ((mPartyIdx + 2) % 3) == partyIdx;
         return dep.then([send, &x](Sh3::CommPkg& comm, Sh3Task&) {
             if (send)
@@ -359,7 +359,7 @@ namespace aby3
 
     Sh3Task Sh3Encryptor::reveal(Sh3Task dep, u64 partyIdx, const Sh3::sb64& x)
     {
-        TODO("decide if we can move the if outside the call to then(...)");
+        //TODO("decide if we can move the if outside the call to then(...)");
         bool send = ((mPartyIdx + 2) % 3) == partyIdx;
         return dep.then([send, &x](Sh3::CommPkg& comm, Sh3Task&) {
             if (send)
@@ -385,7 +385,7 @@ namespace aby3
 
     Sh3Task Sh3Encryptor::reveal(Sh3Task dep, u64 partyIdx, const Sh3::si64Matrix& x)
     {
-        TODO("decide if we can move the if outside the call to then(...)");
+        //TODO("decide if we can move the if outside the call to then(...)");
         bool send = ((mPartyIdx + 2) % 3) == partyIdx;
         return dep.then([send, &x](Sh3::CommPkg& comm, Sh3Task& self) {
             if (send)
@@ -411,7 +411,7 @@ namespace aby3
     }
     Sh3Task Sh3Encryptor::reveal(Sh3Task dep, u64 partyIdx, const Sh3::sbMatrix& x)
     {
-        TODO("decide if we can move the if outside the call to then(...)");
+        //TODO("decide if we can move the if outside the call to then(...)");
         bool send = ((mPartyIdx + 2) % 3) == partyIdx;
         return dep.then([send, &x](Sh3::CommPkg& comm, Sh3Task& self) {
             if (send)
@@ -526,7 +526,7 @@ namespace aby3
 
     Sh3Task Sh3Encryptor::reveal(Sh3Task dep, u64 partyIdx, const Sh3::sPackedBin& A)
     {
-        TODO("decide if we can move the if outside the call to then(...)");
+        //TODO("decide if we can move the if outside the call to then(...)"); 
         bool send = (mPartyIdx + 2) % 3 == partyIdx;
         return dep.then([send, &A](Sh3::CommPkg& comm, Sh3Task& self) {
             if (send)

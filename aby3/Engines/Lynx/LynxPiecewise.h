@@ -43,7 +43,7 @@ namespace Lynx
 			double getDouble(const u64& decPlace)
 			{
 				if (mIsInteger)
-					return mInt;
+					return static_cast<double>(mInt);
 				else
 					return mDouble;
 			}
@@ -53,7 +53,7 @@ namespace Lynx
 				if (mIsInteger)
 					return mInt * (1ull << decPlace);
 				else
-					return mDouble * (1ull << decPlace);
+					return static_cast<Lynx::Engine::Word>(mDouble * (1ull << decPlace));
 			}
 
 			Lynx::Engine::Word getInteger()

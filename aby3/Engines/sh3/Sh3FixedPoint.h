@@ -17,87 +17,77 @@ namespace aby3
         //using f64 = fpml::fixed_point<i64, 63 - D, D>;
         struct monostate {};
 
-
-		template<typename T, Decimal D>
-		struct fp;
-
-		template<typename T, Decimal D>
-		struct fpRef
-		{
-			static const Decimal mDecimal = D;
-			T* mData;
-
-			const fp<T, D>& operator=(const fp<T, D>& v);
-
-			operator fp<T, D>() const
-			{
-				fp<T, D> v;
-				v = *this;
-				return v;
-			}
-
-
-			operator double() const
-			{
-				fp<T, D> v;
-				v = *this;
-				return static_cast<double>(v);
-			}
-		};
-
-
+		
 
         template<typename T, Decimal D>
         struct fp
         {
+			
+			//struct ref {
+			//	static const Decimal mDecimal = D;
+			//	T& mValue;
+
+			//	ref(const fp& v) :mValue((T&)v.mValue) {}
+			//	ref(T* v, monostate) :mValue(*v) {}
+			//	ref() = delete;
+			//	ref(const ref& r) = default;
+			//	ref(ref&& r) = default;
+
+
+			//	const ref operator=(const ref& r) { mValue = r.mValue; return r; }
+			//	const fp& operator=(const fp& v) { mValue = v.mValue; return v; }
+
+			//	fp promote() const { return fp(mValue, monostate{}); }
+			//	operator fp() const { return promote(); }
+			//	explicit operator double() const { return static_cast<double>(promote()); } 
+			//};
+
+
+
             static const Decimal mDecimal = D;
 
             T mValue = 0;
 
             fp() = default;
-            fp(const fp<T,D>&) = default;
-            fp(fp<T,D>&&) = default;
+            fp(const fp&) = default;
+            fp(fp&&) = default;
             fp(const double v) {
                 *this = v;
             }
 
-            fp<T,D> operator+(const fp<T, D>& rhs) const {
+
+
+
+            fp operator+(const fp& rhs) const {
                 return { mValue + rhs.mValue, monostate{} };
             }
 
-            fp<T, D> operator-(const fp<T, D>& rhs) const {
+            fp operator-(const fp& rhs) const {
                 return { mValue - rhs.mValue, monostate{} };
             }
-            fp<T, D> operator*(const fp<T,D>& rhs) const;
-            //fp<T,D> operator*(double val) const;
-            fp<T,D> operator>>(i64 shift) const { return { mValue >> shift, monostate{} }; }
-            fp<T,D> operator<<(i64 shift) const { return { mValue << shift, monostate{} }; }
+			fp operator*(const fp& rhs) const;
+            fp operator>>(i64 shift) const { return { mValue >> shift, monostate{} }; }
+            fp operator<<(i64 shift) const { return { mValue << shift, monostate{} }; }
 
 
-            template<typename T2>
-            fp<T,D>& operator=(const fp<T2,D>& v)
-            {
-                mValue = v.mValue;
+			fp& operator+=(const fp& rhs) {
+				mValue += rhs.mValue;
+				return *this;
+			}
 
-                return *this;
-            }
-
-            template<typename T2>
-            fp<T, D>& operator=(fp<T2, D>&& v)
-            {
-                mValue = v.mValue;
-
-                return *this;
-            }
-
-			const fp<T, D>& operator=(const fpRef<T, D>& v)
-			{
-				mValue = *v.mData;
+			fp& operator-=(const fp& rhs) {
+				mValue -= rhs.mValue;
+				return* this;
+			}
+			fp& operator*=(const fp& rhs) {
+				*this = *this * rhs;
 				return *this;
 			}
 
 
-			operator double() const
+			fp& operator=(const fp& v) = default;
+
+			explicit operator double() const
 			{
 				return mValue / double(T(1) << mDecimal);
 			}
@@ -107,11 +97,11 @@ namespace aby3
                 mValue = T(v * (T(1) << D));
             }
 
-            bool operator==(const fp<T,D>& v) const
+            bool operator==(const fp& v) const
             {
                 return mValue == v.mValue;
             }
-            bool operator!=(const fp<T,D>& v) const
+            bool operator!=(const fp& v) const
             {
                 return !(*this == v);
             }
@@ -123,33 +113,56 @@ namespace aby3
         };
 
 
-		template<typename T, Decimal D>
-		const fp<T, D>& fpRef<T,D>::operator=(const fp<T, D>& v)
-		{
-			*mData = v.mValue;
-			return v;
-		}
 
 
         template<Decimal D>
         using f64 = fp<i64, D>;
 
-        template<typename T, Decimal D>
-        std::ostream& operator<<(std::ostream& o, const fp<T,D>& f)
-        {
-            o << (f.mValue >> f.mDecimal) << "."
-                << (u64(f.mValue) & ((1ull << f.mDecimal) - 1));
+		template<typename T, Decimal D>
+		std::ostream& operator<<(std::ostream& o, const fp<T, D>& f)
+		{
+			auto mask = ((1ull << f.mDecimal) - 1);
+			std::stringstream ss;
+			u64 v;
+			if (f.mValue >= 0)
+				v = f.mValue;
+			else
+			{
+				ss << '-';
+				v = -f.mValue;
+			}
 
-            return o;
+			ss << (v >> f.mDecimal) << ".";
+
+
+			v &= mask;
+			if (v)
+			{
+				while (v & mask)
+				{
+					v *= 10;
+					ss << (v >> f.mDecimal);
+					v &= mask;
+				}
+			}
+			else
+			{
+				ss << '0';
+			}
+
+			o << ss.str();
+			return o;
 		}
+
+		;
 
 
 		template<typename T, Decimal D>
-		//using fpMatrix = eMatrix<fp<T, D>>;
 		struct fpMatrix
 		{
+			using value_type = fp<T, D>;
 			static const Decimal mDecimal = D;
-			eMatrix<T> mData;
+			eMatrix<value_type> mData;
 
 			fpMatrix() = default;
 			fpMatrix(const fpMatrix<T, D>&) = default;
@@ -187,7 +200,14 @@ namespace aby3
 			}
 			fpMatrix<T, D> operator*(const fpMatrix<T, D>& rhs) const
 			{
-				return { mData * rhs.mData };
+				fpMatrix<T, D> ret;
+				eMatrix<i64>& view = ret.i64Cast();
+				const eMatrix<i64>& l = i64Cast();
+				const eMatrix<i64>& r = rhs.i64Cast();
+				view = l * r;
+				for (u64 i = 0; i < size(); ++i)
+					view(i) >>= mDecimal;
+				return ret;
 			}
 
 			fpMatrix<T, D>& operator+=(const fpMatrix<T, D>& rhs) 
@@ -203,34 +223,59 @@ namespace aby3
 
 			fpMatrix<T, D>& operator*=(const fpMatrix<T, D>& rhs)
 			{
-				mData *= rhs.mData;
+				auto& view = i64Cast();
+				view *= rhs.i64Cast();
+				for (u64 i = 0; i < size(); ++i)
+					view(i) >>= mDecimal;
 				return *this;
 			}
 
 
-			fpRef<T, D> operator()(u64 x, u64 y)
-			{ 
-				return { &mData(x, y) };
-			}
+			value_type& operator()(u64 x, u64 y) { return mData(x, y); }
+			value_type& operator()(u64 xy) { return mData(xy); }
+			const value_type& operator()(u64 x, u64 y) const { return mData(x, y); }
+			const value_type& operator()(u64 xy)const { return mData(xy); }
 
-			fpRef<T, D> operator()(u64 xy)
+
+			eMatrix<i64>& i64Cast()
 			{
-				return { &mData(xy) };
+				static_assert(sizeof(value_type) == sizeof(i64), "required for this operation");
+				return reinterpret_cast<eMatrix<i64>&>(mData);
 			}
-
-
-
-
-
+			const eMatrix<i64>& i64Cast() const
+			{
+				static_assert(sizeof(value_type) == sizeof(i64), "required for this operation");
+				return reinterpret_cast<const eMatrix<i64>&>(mData);
+			}
 		private:
-			fpMatrix(const eMatrix<T>&v)
+			fpMatrix(const eMatrix<value_type>&v)
 				:mData(v) {}
-			fpMatrix(eMatrix<T>&&v)
-				:mData(v) {}
+			fpMatrix(eMatrix<value_type>&&v)
+				:mData(std::forward<eMatrix<value_type>>(v)) {}
 		};
 
 		template<Decimal D>
 		using f64Matrix = fpMatrix<i64, D>;
+
+		template<typename T, Decimal D>
+		std::ostream& operator<<(std::ostream& o, const fpMatrix<T, D>& f)
+		{
+			o << '[';
+			for (u64 i = 0; i < f.rows(); ++i)
+			{
+				o << '(';
+				if (f.cols())
+					o << f(i, 0);
+				
+				for (u64 j = 1; j < f.cols(); ++j)
+					o << ", " << f(i, j);
+
+				o << ")\n";
+			}
+			o << ']';
+			return o;
+		}
+
 
 
         template<Decimal D>

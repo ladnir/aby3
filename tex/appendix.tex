@@ -1,7 +1,10 @@
+\iffullversion
+\else
+
 \section{Voter Query Details}\label{sec:voterDetails}
 
 Given the problem statement from \ref{sec:voter}, a naive solution is to construct a centralized database of all the registered voters and citizen records. It is then a relatively straightforward process to identify persons with inaccurate records, attempt to double register or are simply not register at all. However, the construction of such a centralized repository of information has long had strong opposition in the United States due to concerns of data privacy and  excessive government overreach. As a compromise many states have volunteered to join the Electronic Registration Information Center (ERIC)\cite{eric} which is a non-profit organization with the mission of assisting states to improve the accuracy of America’s voter rolls and increase access to voter registration for all eligible citizens. This organization acts as a semi-trusted third party which maintains a centralized database containing hashes of the relevant information, e.g. names, addresses, drivers license number and social security number. 
-
+\fi
 
 In particular, instead of storing this sensitive information in plaintext, all records are randomized using two cryptographically strong salted hash functions. Roughly speaking, before this sensitive information is sent to ERIC, each state is provided with the first salt value $salt_1$ and updates each value $v$ as $v := H(salt_1 || v)$. This hashed data is then sent to ERIC where the data is hashed a second time by ERIC which possesses the other salt value. The desired comparisons can then be applied to the hashed data inside ERIC's secure data center. When compared with existing alternative, this approach provides a moderate degree of protection. In particular, so long as the salt values remain inaccessible by the adversary, deanatomized any given record is likely non-trivial. However, a long series of works, e.g. \cite{deanon0,deanon1,deanon2,deanon3,deanon4}, have shown that a significant amount of information can be extracted with sophisticated statistical techniques. Moreover, should the adversary possess the salt values a straightforward dictionary attack can be applied.
 
