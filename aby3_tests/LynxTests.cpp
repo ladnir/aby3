@@ -247,7 +247,7 @@ void createSharing(
 
     for (u64 i = 0; i < values.size(); ++i)
     {
-        v(i) = values(i) * (1ull << dec);
+        v(i) = static_cast<i64>(values(i) * (1ull << dec));
     }
     createSharing(prng, v, s0, s1, s2);
 }
@@ -645,7 +645,7 @@ void Lynx_Piecewise_test()
             for (u64 i = 0; i < size; ++i)
             {
                 plain_input(i) = dist(prng);
-                word_input(i) = plain_input(i) * (1ull << dec);
+                word_input(i) = (i64)( plain_input(i) * (1ull << dec));
             }
             createSharing(prng, word_input, input0, input1, input2);
 
@@ -654,7 +654,7 @@ void Lynx_Piecewise_test()
             pw0.eval(plain_input, plain_output, false);
 
             for (u64 i = 0; i < size; ++i)
-                word_output(i) = plain_output(i) * (1ull << dec);
+                word_output(i) = (i64)( plain_output(i) * (1ull << dec));
 
 
             auto thrd0 = std::thread([&]() {pw0.eval(p0, input0, output0, t2 == 3); });
@@ -721,7 +721,7 @@ void Lynx_argmax_test()
     PRNG prng(ZeroBlock);
 
     auto max = std::numeric_limits<i64>::min();
-    auto argMax = 0;
+    auto argMax = 0ull;
 
     auto mask = (i64(1) << size) - 1;
 

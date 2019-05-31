@@ -135,7 +135,7 @@ void Sh3_Evaluator_asyncMul_test()
 }
 
 
-std::string prettyShare(int partyIdx, const Sh3::si64& v)
+std::string prettyShare(u64 partyIdx, const Sh3::si64& v)
 {
 	std::array<u64, 3> shares;
 	shares[partyIdx] = v[0];

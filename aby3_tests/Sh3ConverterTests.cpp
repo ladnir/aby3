@@ -328,13 +328,13 @@ void Sh3_trim_test()
             for (u64 j = 0; j < end; ++j)
             {
                 auto exp = j < shares;
-                if (*iter0 != exp)
+                if ((bool)*iter0 != exp)
                 {
                     std::cout << "\n " << std::string(j, ' ') << '^' << std::endl;;
                     pack.trim();
                     throw std::runtime_error(LOCATION);
                 }
-                if (*iter1 != exp)
+                if ((bool)*iter1 != exp)
                 {
                     pack.trim();
                     throw std::runtime_error(LOCATION);

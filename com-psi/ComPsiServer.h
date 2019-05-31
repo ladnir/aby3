@@ -110,7 +110,7 @@ namespace osuCrypto
         std::array<Matrix<u8>, 3> selectCuckooPos(MatrixView<u8> cuckooHashTable, u64 destRows);
         std::array<Matrix<u8>, 3> selectCuckooPos(MatrixView<u8> cuckooHashTable, u64 destRows,
             CuckooParam& cuckooParams, aby3::Sh3::i64Matrix& keys);
-        void selectCuckooPos(u32 destRows, u32 srcRows, u32 bytes);
+        void selectCuckooPos(u64 destRows, u64 srcRows, u64 bytes);
 
 
         aby3::Sh3::sPackedBin compare(

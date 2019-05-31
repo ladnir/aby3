@@ -18,7 +18,7 @@
 namespace osuCrypto
 {
     template<typename block_type>
-    unsigned rank_of_Matrix(const std::vector<block_type>& matrix);
+    u64 rank_of_Matrix(const std::vector<block_type>& matrix);
 
     template<typename block_type>
     std::vector<block_type> invert_Matrix(const std::vector<block_type> matrix);
@@ -39,7 +39,7 @@ namespace osuCrypto
             using keyblock = std::bitset<keysize>;
 
             // Size of the identity part in the Sbox layer
-            const unsigned identitysize = blocksize - 3 * numofboxes;
+            const u64 identitysize = blocksize - 3 * numofboxes;
             bool mInvertable;
 
             LowMC2(bool invertable, keyblock k = 0) {
@@ -58,7 +58,7 @@ namespace osuCrypto
 
                 //std::cout << "state[0]       " << c << std::endl;
 
-                for (unsigned r = 1; r <= rounds; ++r) {
+                for (u64 r = 1; r <= rounds; ++r) {
                     c = Substitution(c);
 
                     //std::cout << "state[" << r << "].sbox  " << c << std::endl;
@@ -84,7 +84,7 @@ namespace osuCrypto
                     throw RTE_LOC;
 
                 block c = message;
-                for (unsigned r = rounds; r > 0; --r) {
+                for (u64 r = rounds; r > 0; --r) {
                     c ^= roundkeys[r];
                     c ^= roundconstants[r - 1];
                     c = MultiplyWithGF2Matrix(invLinMatrices[r - 1], c);
@@ -136,7 +136,7 @@ namespace osuCrypto
                 //cir.addPrint("\n");
 
 
-                for (unsigned r = 0; r < rounds; ++r)
+                for (u64 r = 0; r < rounds; ++r)
                 {
                     // SBOX
                     for (int i = 0; i < numofboxes; ++i)
@@ -236,11 +236,11 @@ namespace osuCrypto
 
                 std::cout << "Linear layer matrices" << std::endl;
                 std::cout << "---------------------" << std::endl;
-                for (unsigned r = 1; r <= rounds; ++r) {
+                for (u64 r = 1; r <= rounds; ++r) {
                     std::cout << "Linear layer " << r << ":" << std::endl;
                     for (auto row : LinMatrices[r - 1]) {
                         std::cout << "[";
-                        for (unsigned i = 0; i < blocksize; ++i) {
+                        for (u64 i = 0; i < blocksize; ++i) {
                             std::cout << row[i];
                             if (i != blocksize - 1) {
                                 std::cout << ", ";
@@ -253,10 +253,10 @@ namespace osuCrypto
 
                 std::cout << "Round constants" << std::endl;
                 std::cout << "---------------------" << std::endl;
-                for (unsigned r = 1; r <= rounds; ++r) {
+                for (u64 r = 1; r <= rounds; ++r) {
                     std::cout << "Round constant " << r << ":" << std::endl;
                     std::cout << "[";
-                    for (unsigned i = 0; i < blocksize; ++i) {
+                    for (u64 i = 0; i < blocksize; ++i) {
                         std::cout << roundconstants[r - 1][i];
                         if (i != blocksize - 1) {
                             std::cout << ", ";
@@ -268,11 +268,11 @@ namespace osuCrypto
 
                 std::cout << "Round key matrices" << std::endl;
                 std::cout << "---------------------" << std::endl;
-                for (unsigned r = 0; r <= rounds; ++r) {
+                for (u64 r = 0; r <= rounds; ++r) {
                     std::cout << "Round key matrix " << r << ":" << std::endl;
                     for (auto row : KeyMatrices[r]) {
                         std::cout << "[";
-                        for (unsigned i = 0; i < keysize; ++i) {
+                        for (u64 i = 0; i < keysize; ++i) {
                             std::cout << row[i];
                             if (i != keysize - 1) {
                                 std::cout << ", ";
@@ -290,9 +290,9 @@ namespace osuCrypto
                 // LowMC2 private data members //
 
                 // The Sbox and its inverse    
-            const std::array<unsigned, 8> Sbox =
+            const std::array<u8, 8> Sbox =
             { 0x00, 0x01, 0x03, 0x06, 0x07, 0x04, 0x05, 0x02 };
-            const std::array<unsigned, 8> invSbox =
+            const std::array<u8, 8> invSbox =
             { 0x00, 0x01, 0x07, 0x02, 0x05, 0x06, 0x03, 0x04 };
 
             // Stores the binary matrices for each round
@@ -318,7 +318,7 @@ namespace osuCrypto
                 //Get the identity part of the message
                 temp ^= (message >> 3 * numofboxes);
                 //Get the rest through the Sboxes
-                for (unsigned i = 1; i <= numofboxes; ++i) {
+                for (u64 i = 1; i <= numofboxes; ++i) {
                     temp <<= 3;
                     temp ^= Sbox[((message >> 3 * (numofboxes - i))
                         & block(0x7)).to_ulong()];
@@ -333,7 +333,7 @@ namespace osuCrypto
                 //Get the identity part of the message
                 temp ^= (message >> 3 * numofboxes);
                 //Get the rest through the invSboxes
-                for (unsigned i = 1; i <= numofboxes; ++i) {
+                for (u64 i = 1; i <= numofboxes; ++i) {
                     temp <<= 3;
                     temp ^= invSbox[((message >> 3 * (numofboxes - i))
                         & block(0x7)).to_ulong()];
@@ -346,7 +346,7 @@ namespace osuCrypto
             block MultiplyWithGF2Matrix(const std::vector<block_type> matrix, const block_type message)
             {
                 block temp = 0;
-                for (unsigned i = 0; i < blocksize; ++i) {
+                for (u64 i = 0; i < blocksize; ++i) {
                     temp[i] = (message & matrix[i]).count() & 1;
                 }
                 return temp;
@@ -356,7 +356,7 @@ namespace osuCrypto
             void keyschedule()
             {
                 roundkeys.clear();
-                for (unsigned r = 0; r <= rounds; ++r) {
+                for (u64 r = 0; r <= rounds; ++r) {
                     roundkeys.push_back(MultiplyWithGF2Matrix(KeyMatrices[r], key));
                 }
                 return;
@@ -416,13 +416,13 @@ namespace osuCrypto
                 // Create LinMatrices and invLinMatrices
                 LinMatrices.clear();
                 invLinMatrices.clear();
-                for (unsigned r = 0; r < rounds; ++r) {
+                for (u64 r = 0; r < rounds; ++r) {
 
                     std::vector<block> mat;
 
                     if (invertable == false)
                     {
-                        for (unsigned i = 0; i < blocksize; ++i) {
+                        for (u64 i = 0; i < blocksize; ++i) {
                             mat.push_back(getrandblock(prng));
                         }
                         LinMatrices.push_back(mat);
@@ -440,7 +440,7 @@ namespace osuCrypto
                             // Fill matrix with random bits
                             do {
                                 mat.clear();
-                                for (unsigned i = 0; i < blocksize; ++i) {
+                                for (u64 i = 0; i < blocksize; ++i) {
                                     mat.push_back(getrandblock(prng));
                                 }
                                 // Repeat if matrix is not invertible
@@ -466,19 +466,19 @@ namespace osuCrypto
 
                 // Create roundconstants
                 roundconstants.clear();
-                for (unsigned r = 0; r < rounds; ++r) {
+                for (u64 r = 0; r < rounds; ++r) {
                     roundconstants.push_back(getrandblock(prng));
                 }
 
                 // Create KeyMatrices
                 KeyMatrices.clear();
-                for (unsigned r = 0; r <= rounds; ++r) {
+                for (u64 r = 0; r <= rounds; ++r) {
                     // Create matrix
                     std::vector<keyblock> mat;
 
                     if (invertable == false)
                     {
-                        for (unsigned i = 0; i < blocksize; ++i) {
+                        for (u64 i = 0; i < blocksize; ++i) {
                             mat.push_back(getrandkeyblock(prng));
                         }
                     }
@@ -494,7 +494,7 @@ namespace osuCrypto
                             // Fill matrix with random bits
                             do {
                                 mat.clear();
-                                for (unsigned i = 0; i < blocksize; ++i) {
+                                for (u64 i = 0; i < blocksize; ++i) {
                                     mat.push_back(getrandkeyblock(prng));
                                 }
                                 // Repeat if matrix is not of maximal rank
@@ -523,7 +523,7 @@ namespace osuCrypto
             block getrandblock(PRNG& prng)
             {
                 block tmp = 0;
-                for (unsigned i = 0; i < blocksize; ++i) tmp[i] = prng.get<bool>();
+                for (u64 i = 0; i < blocksize; ++i) tmp[i] = prng.get<bool>();
                 return tmp;
             }
 
@@ -531,7 +531,7 @@ namespace osuCrypto
             keyblock getrandkeyblock(PRNG& prng)
             {
                 keyblock tmp = 0;
-                for (unsigned i = 0; i < keysize; ++i) tmp[i] = prng.get<bool>();
+                for (u64 i = 0; i < keysize; ++i) tmp[i] = prng.get<bool>();
                 return tmp;
             }
 
@@ -547,7 +547,7 @@ namespace osuCrypto
             //    if (state.none()) {
             //        state.set(); //Initialize with all bits set
             //                     //Throw the first 160 bits away
-            //        for (unsigned i = 0; i < 160; ++i) {
+            //        for (u64 i = 0; i < 160; ++i) {
             //            //Update the state
             //            tmp = state[0] ^ state[13] ^ state[23]
             //                ^ state[38] ^ state[51] ^ state[62];
@@ -585,16 +585,16 @@ namespace osuCrypto
         auto blocksize = mat[0].size();
 
         std::vector<block_type> invmat(blocksize, 0); //To hold the inverted matrix
-        for (unsigned i = 0; i < blocksize; ++i) {
+        for (u64 i = 0; i < blocksize; ++i) {
             invmat[i][i] = 1;
         }
 
-        unsigned size = mat[0].size();
+        u64 size = mat[0].size();
         //Transform to upper triangular matrix
-        unsigned row = 0;
-        for (unsigned col = 0; col < size; ++col) {
+        u64 row = 0;
+        for (u64 col = 0; col < size; ++col) {
             if (!mat[row][col]) {
-                unsigned r = row + 1;
+                u64 r = row + 1;
                 while (r < mat.size() && !mat[r][col]) {
                     ++r;
                 }
@@ -610,7 +610,7 @@ namespace osuCrypto
                     invmat[r] = temp;
                 }
             }
-            for (unsigned i = row + 1; i < mat.size(); ++i) {
+            for (u64 i = row + 1; i < mat.size(); ++i) {
                 if (mat[i][col]) {
                     mat[i] ^= mat[row];
                     invmat[i] ^= invmat[row];
@@ -620,8 +620,8 @@ namespace osuCrypto
         }
 
         //Transform to identity matrix
-        for (unsigned col = size; col > 0; --col) {
-            for (unsigned r = 0; r < col - 1; ++r) {
+        for (u64 col = size; col > 0; --col) {
+            for (u64 r = 0; r < col - 1; ++r) {
                 if (mat[r][col - 1]) {
                     mat[r] ^= mat[col - 1];
                     invmat[r] ^= invmat[col - 1];
@@ -633,16 +633,16 @@ namespace osuCrypto
     }
 
     template<typename block_type>
-    unsigned rank_of_Matrix(const std::vector<block_type>& matrix)
+    u64 rank_of_Matrix(const std::vector<block_type>& matrix)
     {
         std::vector<block_type> mat = matrix;
 
-        unsigned size = mat[0].size();
+        auto size = mat[0].size();
         //Transform to upper triangular matrix
-        unsigned row = 0;
-        for (unsigned col = 1; col <= size; ++col) {
+        u64 row = 0;
+        for (u64 col = 1; col <= size; ++col) {
             if (!mat[row][size - col]) {
-                unsigned r = row;
+                u64 r = row;
                 while (r < mat.size() && !mat[r][size - col]) {
                     ++r;
                 }
@@ -655,7 +655,7 @@ namespace osuCrypto
                     mat[r] = temp;
                 }
             }
-            for (unsigned i = row + 1; i < mat.size(); ++i) {
+            for (u64 i = row + 1; i < mat.size(); ++i) {
                 if (mat[i][size - col]) mat[i] ^= mat[row];
             }
             ++row;

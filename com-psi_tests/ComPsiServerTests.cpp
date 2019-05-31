@@ -337,7 +337,7 @@ void ComPsi_compare_test()
 
 
 
-            auto selectBytes = 0;
+            auto selectBytes = 0ull;
             for (auto& c : rightCircuitInputs)
                 selectBytes += (c->getBitCount() + 7) / 8;
 

@@ -17,10 +17,10 @@ i64 extract(const Sh3::sPackedBin& A, u64 share, u64 packIdx, u64 wordIdx)
 
     u64 bitIdx = 64 * wordIdx;
     u64 offset = packIdx / 64;
-    u64 mask = 1 << (packIdx % 64);
+    u64 mask = 1ull << (packIdx % 64);
     for (u64 i = 0; i < 64; ++i)
     {
-        *iter = A.mShares[share](bitIdx, offset) & mask;
+        *iter = gsl::narrow<u8>(A.mShares[share](bitIdx, offset) & mask);
         ++bitIdx;
         ++iter;
     }

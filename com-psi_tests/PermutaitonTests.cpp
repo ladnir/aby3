@@ -363,7 +363,7 @@ void switch_select_test()
 
         for (u64 i = 0; i < destSize; ++i)
         {
-            prog.addSwitch(prng.get<u32>() % srcSize, i);
+            prog.addSwitch(prng.get<u32>() % srcSize, (u32)i);
             //std::cout << "switch[" << i << "] = " << prog.mSrcDests[i][0] << " -> " << prog.mSrcDests[i][1] << std::endl;
         }
 
@@ -484,7 +484,7 @@ void switch_duplicate_test()
 
         for (u64 i = 0; i < destSize; ++i)
         {
-            prog.addSwitch(prng.get<u32>() % srcSize, i);
+            prog.addSwitch(prng.get<u32>() % srcSize, (u32)i);
             //prog.addSwitch(0, i);
             //std::cout << "switch[" << i << "] = " << prog.mSrcDests[i][0] << " -> " << prog.mSrcDests[i][1] << std::endl;
         }
@@ -608,7 +608,7 @@ void switch_full_test()
 
         for (u64 i = 0; i < destSize; ++i)
         {
-            prog.addSwitch(prng.get<u32>() % srcSize, i);
+            prog.addSwitch(prng.get<u32>() % srcSize, (u32)i);
             //prog.addSwitch(0, i);
             //std::cout << "switch[" << i << "] = " << prog.mSrcDests[i][0] << " -> " << prog.mSrcDests[i][1] << std::endl;
         }

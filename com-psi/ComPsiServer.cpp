@@ -125,7 +125,7 @@ namespace osuCrypto
         mRt.mComm.mNext.send(a2[1].data(), a2[1].size());
         mRt.mComm.mNext.send(a2[2].data(), a2[2].size());
     }
-    std::string hexString(u8* ptr, u32 size)
+    std::string hexString(u8* ptr, u64 size)
     {
         std::stringstream ss;
         for (u64 i = 0; i < size; ++i)
@@ -730,7 +730,7 @@ namespace osuCrypto
 
         std::vector<u32> perm(cuckoo.mBins.size(), -1);
 
-        u32 next = keys.rows();
+        u32 next = static_cast<u32>(keys.rows());
         for (u32 i = 0; i < cuckoo.mBins.size(); ++i)
         {
             if (cuckoo.mBins[i].isEmpty() == false)
@@ -899,12 +899,15 @@ namespace osuCrypto
         return std::move(dest);
     }
 
-    void ComPsiServer::selectCuckooPos(u32 destRows, u32 srcRows, u32 bytes)
+    void ComPsiServer::selectCuckooPos(u64 destRows, u64 srcRows, u64 bytes)
     {
         OblvSwitchNet snet(std::to_string(mIdx));
         for (u64 h = 0; h < 3; ++h)
         {
-            snet.help(mRt.mComm.mPrev, mRt.mComm.mNext, mPrng, destRows, srcRows, bytes);
+            snet.help(mRt.mComm.mPrev, mRt.mComm.mNext, mPrng,
+				gsl::narrow<u32>(destRows), 
+				gsl::narrow<u32>(srcRows), 
+				gsl::narrow<u32>(bytes));
         }
     }
 
@@ -935,11 +938,13 @@ namespace osuCrypto
         //    throw std::runtime_error("");
 
         OblvSwitchNet snet(std::to_string(mIdx));
-
+		
         std::array<OblvSwitchNet::Program, 3> progs;
         for (u64 h = 0; h < 3; ++h)
         {
-            progs[h].init(cuckooHashTable.rows(), keys.rows());
+            progs[h].init(
+				gsl::narrow<u32>(cuckooHashTable.rows()), 
+				gsl::narrow<u32>(keys.rows()));
         }
 
         for (u64 i = 0; i < view.size(); ++i)
@@ -966,7 +971,7 @@ namespace osuCrypto
             {
 
 
-                progs[h].addSwitch(hx[h], i);
+                progs[h].addSwitch((u32)hx[h], (u32)i);
 
                 auto destPtr = &dest[h](i, 0);
                 auto srcPtr = &cuckooHashTable(hx[h], 0);
@@ -995,7 +1000,7 @@ namespace osuCrypto
         auto size = query.mLeftTable->rows();
 
         //auto bitCount = std::accumulate(outColumns.begin(), outColumns.end(), leftJoinCol.mCol.getBitCount(), [](auto iter) { return iter->->mCol.getBitCount();  });
-        auto byteCount = 0;
+        auto byteCount = 0ull;
         for (auto& c : rightCircuitInput)
             byteCount += c->getByteCount();
 

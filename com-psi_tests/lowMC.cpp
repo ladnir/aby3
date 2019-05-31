@@ -87,7 +87,7 @@ void lowMC_Circuit_test() {
 
     for (u64 i = 0; i < blocksize; ++i)
     {
-        if (outputs[0][i] != c2[i])
+        if ((bool)outputs[0][i] != c2[i])
         {
             std::cout << "failed " << i << std::endl;
 
@@ -228,7 +228,7 @@ void lowMC_FileCircuit_test() {
     //std::cout << "O " << outputs[0] << std::endl;
     for (u64 i = 0; i < blocksize; ++i)
     {
-        if (outputs[0][i] != c2[i])
+        if ((bool)outputs[0][i] != c2[i])
         {
             std::cout << "failed " << i << std::endl;
 
@@ -361,7 +361,7 @@ void lowMC_BinFileCircuit_test() {
     //std::cout << "O " << outputs[0] << std::endl;
     for (u64 i = 0; i < blocksize; ++i)
     {
-        if (outputs[0][i] != c2[i])
+        if ((bool)outputs[0][i] != c2[i])
         {
             std::cout << "failed " << i << std::endl;
 

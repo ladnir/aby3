@@ -173,7 +173,7 @@ void BetaCircuit_int_piecewise_Test()
 			if (exp == numThresholds && dd[t] <= 0)
 				exp = t;
 
-			i64 val = dd[t] * (1 << decimal);
+			i64 val = static_cast<i64>(dd[t] * (1 << decimal));
 
 			val -= b;
 

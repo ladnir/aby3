@@ -73,7 +73,7 @@ PlainEngine::Matrix PlainEngine::argMax(const Matrix & Y)
 			if (Y(i, j) > max)
 			{
 				max = Y(i, j);
-				ret(i) = j;
+				ret(i) = static_cast<double>(j);
 			}
 		}
 	}

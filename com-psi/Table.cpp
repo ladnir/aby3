@@ -9,11 +9,14 @@ namespace osuCrypto
 
         mMem.emplace_back();
         auto& mem = mMem.back();
-        mInputs.emplace_back(mMem.size() - 1, column, int(mInputs.size()));
+        mInputs.emplace_back(
+			gsl::narrow<int>(mMem.size()) - 1,
+			column, 
+			gsl::narrow<int>(mInputs.size()));
 
         mem.mType = column.mCol.mType;
-        mem.mInputIdx = mInputs.size() - 1;
-        mem.mIdx = mMem.size() - 1;
+        mem.mInputIdx = gsl::narrow<int>(mInputs.size()) - 1;
+        mem.mIdx = gsl::narrow<int>(mMem.size()) - 1;
 
         if (&column.mTable == mLeftTable)
             mLeftInputs.push_back(&mInputs.back());
@@ -82,12 +85,12 @@ namespace osuCrypto
         gate.op = op;
         gate.mIn1 = wire1;
         gate.mIn2 = wire2;
-        gate.mOut = mMem.size();
+        gate.mOut = gsl::narrow<int>(mMem.size());
 
         mGates.push_back(gate);
 
         mem.mGate = &mGates.back();
-        mem.mIdx = mMem.size();
+        mem.mIdx = gsl::narrow<int>(mMem.size());
 
         mMem.push_back(mem);
 
@@ -108,14 +111,14 @@ namespace osuCrypto
         selectDetails::Gate gate;
         gate.op = op;
         gate.mIn1 = wire1;
-        gate.mOut = mMem.size();
+        gate.mOut = gsl::narrow<int>(mMem.size());
         mGates.push_back(gate);
 
 
         selectDetails::Mem mem;
         mem.mType = mMem[wire1].mType;
         mem.mGate = &mGates.back();
-        mem.mIdx = mMem.size();
+        mem.mIdx = gsl::narrow<int>(mMem.size());
         mMem.push_back(mem);
 
         return mem.mIdx;
@@ -127,7 +130,7 @@ namespace osuCrypto
             throw std::runtime_error("call joinOn(...) first. " LOCATION);
 
         mOutputs.emplace_back(mMem[column.mMemIdx].mIdx, name, -1);
-        mMem[column.mMemIdx].mOutputIdx = mOutputs.size() - 1;
+        mMem[column.mMemIdx].mOutputIdx = gsl::narrow<int>(mOutputs.size()) - 1;
 
 
         auto maxPos = -1;
