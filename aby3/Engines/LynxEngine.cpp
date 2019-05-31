@@ -450,7 +450,7 @@ namespace Lynx
                 //std::cout << "b=(" << b.mShares[0](i) << ",  , " << b.mShares[1](i) << ")" << std::endl;
 
                 //ostreamLock(std::cout) << "s0[" << i << "] = " << bbb(i) * a.mShares[1](i) << std::endl;
-                c1[i] = b.mShares[1](i);
+                c1[i] = static_cast<u8>(b.mShares[1](i));
             }
             // share 0: from p0 to p1,p2
             mOtP02.send(mNext, s0);
@@ -487,7 +487,7 @@ namespace Lynx
                 //std::cout << "b=(   ," << b.mShares[0](i) << ",   )" << "  " << (a.mShares[0](i) + a.mShares[1](i)) << std::endl;
                 //ostreamLock(std::cout) << "s1[" << i << "] = " << bbb(i) * (a.mShares[0](i) + a.mShares[1](i)) << " = b *  (" <<a.mShares[0](i) <<" +  "<<a.mShares[1](i) <<")" << std::endl;
 
-                c0[i] = b.mShares[0](i);
+                c0[i] = static_cast<u8>(b.mShares[0](i));
             }
 
             // share 0: from p0 to p1,p2
@@ -516,8 +516,8 @@ namespace Lynx
             std::vector<Word> s0(a.size()), s1(a.size());
             for (u64 i = 0; i < a.size(); ++i)
             {
-                c0[i] = b.mShares[1](i);
-                c1[i] = b.mShares[0](i);
+                c0[i] = static_cast<u8>(b.mShares[1](i));
+                c1[i] = static_cast<u8>(b.mShares[0](i));
 
                 s0[i] = s1[i] = getShare();
             }
@@ -585,7 +585,7 @@ namespace Lynx
             for (u64 i = 0; i < b.size(); ++i)
             {
                 c.mShares[1](i) = getShare();
-                c0[i] = b.mShares[0](i);
+                c0[i] = static_cast<u8>(b.mShares[0](i));
             }
 
             // share 0: from p0 to p1,p2
@@ -605,7 +605,7 @@ namespace Lynx
             for (u64 i = 0; i < b.size(); ++i)
             {
                 c.mShares[0](i) = getShare();
-                c0[i] = b.mShares[1](i);
+                c0[i] = static_cast<u8>(b.mShares[1](i));
             }
 
             // share 0: from p0 to p1,p2

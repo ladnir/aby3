@@ -627,7 +627,7 @@ namespace aby3
             mShareAES[1].setKey(seed1);
             //mShareBacking.reset();
 			//mShareBacking.reset(new block_type[simdWidth128 + 1]);
-			mShareBuff.resize(simdWidth128 + 1);
+			mShareBuff.resize(simdWidth128);
 
 
             //// see if new returned a pointer with the correct alignment

@@ -723,9 +723,9 @@ namespace osuCrypto
             for (auto& node : level)
             {
                 *iter = node->mGate;
-                iter->mInput[0] = getInWire(*node, 0);
-                iter->mInput[1] = getInWire(*node, 1);
-                iter->mOutput = getOutWire(*node);
+                iter->mInput[0] = static_cast<BetaWire>(getInWire(*node, 0));
+                iter->mInput[1] = static_cast<BetaWire>(getInWire(*node, 1));
+                iter->mOutput = static_cast<BetaWire>(getOutWire(*node));
 
                 //std::cout << "   gate " << jj++ << " " << gateToString(node->mGate.mType)<<": " << std::endl;
                 //std::cout << "       in[0] " << node->mGate.mInput[0] << " -> " << iter->mInput[0] << std::endl;
@@ -737,7 +737,7 @@ namespace osuCrypto
         }
 
         // replace the gates with the sorted version
-        mWireCount = nextWire;
+        mWireCount = static_cast<BetaWire>(nextWire);
         mWireFlags.resize(mWireCount, BetaWireFlag::Wire);
         mGates = std::move(sortedGates);
 
@@ -1060,7 +1060,7 @@ namespace osuCrypto
         }
 
         read(count, in);
-        mWireCount = count;
+        mWireCount = static_cast<BetaWire>(count);
 
         read(count, in);
         mGates.resize(count);
@@ -1092,7 +1092,7 @@ namespace osuCrypto
             read(flag, in);
 
             std::get<0>(mPrints[i]) = gateIdx;
-            std::get<1>(mPrints[i]) = wireIdx;
+            std::get<1>(mPrints[i]) = static_cast<BetaWire>(wireIdx);
             std::get<2>(mPrints[i]) = msg;
             std::get<3>(mPrints[i]) = flag;
         }

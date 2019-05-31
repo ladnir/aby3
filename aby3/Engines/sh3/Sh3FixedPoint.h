@@ -326,7 +326,7 @@ namespace aby3
 		    std::array<eMatrix<i64>, 2> mShares;
 
 		    struct ConstRow { const sf64Matrix<D>& mMtx; const u64 mIdx; };
-		    struct Row { sf64Matrix<D>& mMtx; const u64 mIdx; const Row& operator=(const Row& row); const ConstRow& operator=(const ConstRow& row); };
+		    struct Row { sf64Matrix<D>& mMtx; const u64 mIdx;  const Row& operator=(const Row& row); const ConstRow& operator=(const ConstRow& row); };
 
 		    struct ConstCol { const sf64Matrix<D>& mMtx; const u64 mIdx; };
 		    struct Col { sf64Matrix<D>& mMtx; const u64 mIdx; const Col& operator=(const Col& col); const ConstCol& operator=(const ConstCol& row); };
@@ -431,5 +431,40 @@ namespace aby3
 
 		};
 
+
+		template<Decimal D>
+		inline const typename sf64Matrix<D>::Row& sf64Matrix<D>::Row::operator=(const Row& row)
+		{
+			mMtx.mShares[0].row(mIdx) = row.mMtx.mShares[0].row(row.mIdx);
+			mMtx.mShares[1].row(mIdx) = row.mMtx.mShares[1].row(row.mIdx);
+
+			return row;
+		}
+
+		template<Decimal D>
+		inline const typename sf64Matrix<D>::ConstRow& sf64Matrix<D>::Row::operator=(const ConstRow& row)
+		{
+			mMtx.mShares[0].row(mIdx) = row.mMtx.mShares[0].row(row.mIdx);
+			mMtx.mShares[1].row(mIdx) = row.mMtx.mShares[1].row(row.mIdx);
+			return row;
+		}
+
+
+		template<Decimal D>
+		inline const typename sf64Matrix<D>::Col& sf64Matrix<D>::Col::operator=(const Col& row)
+		{
+			mMtx.mShares[0].col(mIdx) = row.mMtx.mShares[0].col(row.mIdx);
+			mMtx.mShares[1].col(mIdx) = row.mMtx.mShares[1].col(row.mIdx);
+
+			return row;
+		}
+
+		template<Decimal D>
+		inline const typename sf64Matrix<D>::ConstCol& sf64Matrix<D>::Col::operator=(const ConstCol& row)
+		{
+			mMtx.mShares[0].col(mIdx) = row.mMtx.mShares[0].col(row.mIdx);
+			mMtx.mShares[1].col(mIdx) = row.mMtx.mShares[1].col(row.mIdx);
+			return row;
+		}
     }
 }

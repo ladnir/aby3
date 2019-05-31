@@ -108,8 +108,8 @@ namespace aby3
 
 			shares[0].resize(xSize, ySize);
 			shares[1].resize(xSize, ySize);
-			//prng.get(shares[0].data(), shares[0].size()); // share 0
-			//prng.get(shares[1].data(), shares[1].size()); // share 1
+			prng.get(shares[0].data(), shares[0].size()); // share 0
+			prng.get(shares[1].data(), shares[1].size()); // share 1
 			shares[2] = -shares[0] - shares[1];// share 2 = -share 0 -share 1
 
 			return shares;

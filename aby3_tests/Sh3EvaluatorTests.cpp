@@ -348,8 +348,12 @@ void Sh3_Evaluator_truncationPai_test(const oc::CLP & cmd)
 
 		for (u64 i = 0; i < small.size(); ++i)
 		{
-			if (small(i) != large(i) >> dec)
+			auto exp = large(i) >> dec;
+			if (small(i) != exp)
+			{
+				std::cout << small(i) << " " << exp << std::endl;
 				throw RTE_LOC;
+			}
 		}
 
 	}
