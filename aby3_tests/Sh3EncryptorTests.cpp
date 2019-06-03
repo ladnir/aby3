@@ -7,9 +7,8 @@
 
 using namespace aby3;
 using namespace oc;
-using namespace aby3::Sh3;
 
-i64 extract(const Sh3::sPackedBin& A, u64 share, u64 packIdx, u64 wordIdx)
+i64 extract(const sPackedBin& A, u64 share, u64 packIdx, u64 wordIdx)
 {
 
     i64 v = 0;
@@ -105,11 +104,11 @@ void Sh3_Encryptor_IO_test()
         }
 
 
-        Sh3::i64Matrix m(trials, trials), mm(trials, trials);
+        i64Matrix m(trials, trials), mm(trials, trials);
         for (u64 i = 0; i < m.size(); ++i)
             m(i) = i;
 
-        Sh3::si64Matrix mShr(trials, trials);
+        si64Matrix mShr(trials, trials);
         e.localIntMatrix(c, m, mShr);
         e.reveal(c, mShr, mm);
 
@@ -119,7 +118,7 @@ void Sh3_Encryptor_IO_test()
             failed = true;
         }
 
-        Sh3::sbMatrix bShr(trials, trials * 64);
+        sbMatrix bShr(trials, trials * 64);
         e.localBinMatrix(c, m, bShr);
         e.reveal(c, bShr, mm);
 
@@ -131,7 +130,7 @@ void Sh3_Encryptor_IO_test()
 
         //m.setZero();
 
-        Sh3::sPackedBin pShr(trials, trials * sizeof(i64) * 8);// , pShr1(trials, trials * sizeof(i64) * 8), pShr2(trials, trials * sizeof(i64) * 8);
+        sPackedBin pShr(trials, trials * sizeof(i64) * 8);// , pShr1(trials, trials * sizeof(i64) * 8), pShr2(trials, trials * sizeof(i64) * 8);
         e.localPackedBinary(c, m, pShr);
         e.reveal(c, pShr, mm);
 
@@ -191,15 +190,15 @@ void Sh3_Encryptor_IO_test()
 
 
 
-        Sh3::si64Matrix mShr(trials, trials);
+        si64Matrix mShr(trials, trials);
         e.remoteIntMatrix(c, mShr);
         e.reveal(c, 0, mShr);
 
-        Sh3::sbMatrix bShr(trials, trials * 64);
+        sbMatrix bShr(trials, trials * 64);
         e.remoteBinMatrix(c, bShr);
         e.reveal(c, 0, bShr);
         
-        Sh3::sPackedBin pShr(trials, trials * sizeof(i64) * 8);
+        sPackedBin pShr(trials, trials * sizeof(i64) * 8);
         e.remotePackedBinary(c, pShr);
         e.reveal(c, 0, pShr);
 
@@ -315,11 +314,11 @@ void Sh3_Encryptor_asyncIO_test()
         }
 
 
-        Sh3::i64Matrix m(trials, trials), mm(trials, trials);
+        i64Matrix m(trials, trials), mm(trials, trials);
         for (u64 i = 0; i < m.size(); ++i)
             m(i) = i;
 
-        Sh3::si64Matrix mShr(trials, trials);
+        si64Matrix mShr(trials, trials);
         Sh3Task task = rt.noDependencies();
         task = e.localIntMatrix(task, m, mShr);
         e.reveal(task, mShr, mm).get();
@@ -330,7 +329,7 @@ void Sh3_Encryptor_asyncIO_test()
             failed = true;
         }
 
-        Sh3::sbMatrix bShr(trials, trials * 64);
+        sbMatrix bShr(trials, trials * 64);
         task = e.localBinMatrix(task, m, bShr);
         e.reveal(task, bShr, mm).get();
 
@@ -340,7 +339,7 @@ void Sh3_Encryptor_asyncIO_test()
             failed = true;
         }
 
-        Sh3::sPackedBin pShr(trials, trials * sizeof(i64) * 8);
+        sPackedBin pShr(trials, trials * sizeof(i64) * 8);
         task = e.localPackedBinary(task, m, pShr);
         e.reveal(task, pShr, mm).get();
 
@@ -391,16 +390,16 @@ void Sh3_Encryptor_asyncIO_test()
 
 
 
-        Sh3::si64Matrix mShr(trials, trials);
+        si64Matrix mShr(trials, trials);
         Sh3Task task = rt.noDependencies();
         e.remoteIntMatrix(task, mShr);
         e.reveal(task, 0, mShr);
 
-        Sh3::sbMatrix bShr(trials, trials * 64);
+        sbMatrix bShr(trials, trials * 64);
         e.remoteBinMatrix(task, bShr);
         e.reveal(task, 0, bShr);
 
-        Sh3::sPackedBin pShr(trials, trials * sizeof(i64) * 8);
+        sPackedBin pShr(trials, trials * sizeof(i64) * 8);
         e.remotePackedBinary(task, pShr);
         e.reveal(task, 0, pShr).get();
 

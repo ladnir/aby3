@@ -15,7 +15,7 @@ namespace osuCrypto
 
         //mComm = { prev.addChannel(), next.addChannel() };
 
-        aby3::Sh3::CommPkg comm{ prev.addChannel(), next.addChannel() };
+        aby3::CommPkg comm{ prev.addChannel(), next.addChannel() };
         mRt.init(idx, comm);
 
         mPrng.SetSeed(ZeroBlock);
@@ -82,7 +82,7 @@ namespace osuCrypto
 			mRt.mComm.mNext.asyncSendCopy(t.mColumns[i].mName);
 			mRt.mComm.mPrev.asyncSendCopy(t.mColumns[i].mName);
 
-            aby3::Sh3::sbMatrix& a1 = ret.mColumns[i];
+            aby3::sbMatrix& a1 = ret.mColumns[i];
 
             mEnc.localBinMatrix(mRt.mComm, t.mColumns[i].mData, a1);
         }
@@ -136,7 +136,7 @@ namespace osuCrypto
         return ss.str();
     }
 
-    void ComPsiServer::p1CheckSelect(Matrix<u8> cuckooTable, span<Matrix<u8>> a2, aby3::Sh3::i64Matrix& keys)
+    void ComPsiServer::p1CheckSelect(Matrix<u8> cuckooTable, span<Matrix<u8>> a2, aby3::i64Matrix& keys)
     {
 
         Matrix<u8> c2(cuckooTable.rows(), cuckooTable.cols());
@@ -330,7 +330,7 @@ namespace osuCrypto
             rightTable[query.mRightCol->mName]
         };
         std::array<u64, 2> reveals{ 1,0 };
-        aby3::Sh3::i64Matrix keys = computeKeys(AB, reveals);
+        aby3::i64Matrix keys = computeKeys(AB, reveals);
         setTimePoint("intersect_compute_keys");
 
 
@@ -341,7 +341,7 @@ namespace osuCrypto
 
         // now perform the comparison between the entry from the left table with the three possible matched 
         // which were selected out of the cuckoo table.
-        aby3::Sh3::sPackedBin intersectionFlags =
+        aby3::sPackedBin intersectionFlags =
             compare(leftCircuitInput, rightCircuitInput, circuitOutput, query, circuitInputShare);
 
         setTimePoint("intersect_compare");
@@ -362,7 +362,7 @@ namespace osuCrypto
         }
         else
         {
-            aby3::Sh3::PackedBin plainFlags(leftTable.rows(), 1);
+            aby3::PackedBin plainFlags(leftTable.rows(), 1);
             mEnc.revealAll(mRt.noDependencies(), intersectionFlags, plainFlags).get();
             setTimePoint("intersect_done");
             BitIterator iter((u8*)plainFlags.mData.data(), 0);
@@ -465,7 +465,7 @@ namespace osuCrypto
 
         std::array<SharedTable::ColRef, 2> AB{ leftJoinCol,rightJoinCol };
         std::array<u64, 2> reveals{ 1,0 };
-        aby3::Sh3::i64Matrix keys = computeKeys(AB, reveals);
+        aby3::i64Matrix keys = computeKeys(AB, reveals);
         setTimePoint("union_compute_keys");
 
         // construct a cuckoo table for the right table, then use the keys from left table to select out of the cuckoo table to 
@@ -475,12 +475,12 @@ namespace osuCrypto
 
         // now perform the comparison between the entry from the left table with the three possible matched 
         // which were selected out of the cuckoo table.
-        aby3::Sh3::sPackedBin intersectionFlags =
+        aby3::sPackedBin intersectionFlags =
             unionCompare(leftJoinCol, rightJoinCol, circuitInputShare);
 
         setTimePoint("union_compare");
 
-        aby3::Sh3::PackedBin plainFlags(leftTable.rows(), 1);
+        aby3::PackedBin plainFlags(leftTable.rows(), 1);
         mEnc.revealAll(mRt.noDependencies(), intersectionFlags, plainFlags).get();
         setTimePoint("union_done");
         BitIterator iter((u8*)plainFlags.mData.data(), 0);
@@ -533,7 +533,7 @@ namespace osuCrypto
 
 
     std::array<Matrix<u8>, 3> ComPsiServer::mapRightTableToLeft(
-        aby3::Sh3::i64Matrix& keys,
+        aby3::i64Matrix& keys,
         span<SharedColumn*> circuitInputCols,
         SharedTable& leftTable,
         SharedTable& rightTable)
@@ -677,7 +677,7 @@ namespace osuCrypto
 
 
 
-    Matrix<u8> ComPsiServer::cuckooHash(span<SharedColumn*> selects, CuckooParam& params, aby3::Sh3::i64Matrix& keys)
+    Matrix<u8> ComPsiServer::cuckooHash(span<SharedColumn*> selects, CuckooParam& params, aby3::i64Matrix& keys)
     {
         if (mIdx != 0)
             throw std::runtime_error(LOCATION);
@@ -915,7 +915,7 @@ namespace osuCrypto
         MatrixView<u8> cuckooHashTable,
         u64 destRows,
         CuckooParam& cuckooParams,
-        aby3::Sh3::i64Matrix & keys)
+        aby3::i64Matrix & keys)
     {
         if (mIdx != 1)
             throw std::runtime_error("");
@@ -990,7 +990,7 @@ namespace osuCrypto
         return std::move(dest);
     }
 
-    aby3::Sh3::sPackedBin ComPsiServer::compare(
+    aby3::sPackedBin ComPsiServer::compare(
         span<SharedColumn*> leftCircuitInput,
         span<SharedColumn*> rightCircuitInput,
         span<SharedColumn*> circuitOutput,
@@ -1004,7 +1004,7 @@ namespace osuCrypto
         for (auto& c : rightCircuitInput)
             byteCount += c->getByteCount();
 
-        std::array<aby3::Sh3::sPackedBin, 3> A;
+        std::array<aby3::sPackedBin, 3> A;
         A[0].reset(size, byteCount * 8);
         A[1].reset(size, byteCount * 8);
         A[2].reset(size, byteCount * 8);
@@ -1066,7 +1066,7 @@ namespace osuCrypto
 
         eval.asyncEvaluate(mRt.noDependencies()).get();
 
-        aby3::Sh3::sPackedBin outFlags(size, 1);
+        aby3::sPackedBin outFlags(size, 1);
         eval.getOutput(0, outFlags);
 
         for (u64 i = 0; i < circuitOutput.size(); ++i)
@@ -1077,7 +1077,7 @@ namespace osuCrypto
 
 
 
-        //    aby3::Sh3::i64Matrix bb(rightJoinCol.mCol.rows(), rightJoinCol.mCol.i64Cols());
+        //    aby3::i64Matrix bb(rightJoinCol.mCol.rows(), rightJoinCol.mCol.i64Cols());
         //    mEnc.revealAll(mComm, rightJoinCol.mCol, bb);
         //    std::array<Matrix<u8>, 3> aa, select;
         //    aa[0].resize(inShares[0].rows(), inShares[0].cols());
@@ -1161,9 +1161,9 @@ namespace osuCrypto
         //        }
         //    }
 
-        //    aby3::Sh3::sPackedBin r0(outFlags.shareCount(), outFlags.bitCount());
-        //    aby3::Sh3::sPackedBin r1(outFlags.shareCount(), outFlags.bitCount());
-        //    aby3::Sh3::sPackedBin r2(outFlags.shareCount(), outFlags.bitCount());
+        //    aby3::sPackedBin r0(outFlags.shareCount(), outFlags.bitCount());
+        //    aby3::sPackedBin r1(outFlags.shareCount(), outFlags.bitCount());
+        //    aby3::sPackedBin r2(outFlags.shareCount(), outFlags.bitCount());
         //    r0.mShares[0].setZero();
         //    r0.mShares[1].setZero();
         //    r1.mShares[0].setZero();
@@ -1174,10 +1174,10 @@ namespace osuCrypto
         //    eval.getOutput(cir.mOutputs.size() - 2, r1);
         //    eval.getOutput(cir.mOutputs.size() - 1, r2);
 
-        //    aby3::Sh3::PackedBin iflag(r0.shareCount(), r0.bitCount());
-        //    aby3::Sh3::PackedBin rr0(r0.shareCount(), r0.bitCount());
-        //    aby3::Sh3::PackedBin rr1(r1.shareCount(), r1.bitCount());
-        //    aby3::Sh3::PackedBin rr2(r2.shareCount(), r2.bitCount());
+        //    aby3::PackedBin iflag(r0.shareCount(), r0.bitCount());
+        //    aby3::PackedBin rr0(r0.shareCount(), r0.bitCount());
+        //    aby3::PackedBin rr1(r1.shareCount(), r1.bitCount());
+        //    aby3::PackedBin rr2(r2.shareCount(), r2.bitCount());
 
         //    mEnc.revealAll(mRt.noDependencies(), outFlags, iflag);
         //    mEnc.revealAll(mRt.noDependencies(), r0, rr0);
@@ -1228,7 +1228,7 @@ namespace osuCrypto
         return std::move(outFlags);
     }
 
-    aby3::Sh3::sPackedBin ComPsiServer::unionCompare(
+    aby3::sPackedBin ComPsiServer::unionCompare(
         SharedTable::ColRef leftJoinCol,
         SharedTable::ColRef rightJoinCol,
         span<Matrix<u8>> inShares)
@@ -1239,7 +1239,7 @@ namespace osuCrypto
         //auto bitCount = std::accumulate(outColumns.begin(), outColumns.end(), leftJoinCol.mCol.getBitCount(), [](auto iter) { return iter->->mCol.getBitCount();  });
         auto byteCount = leftJoinCol.mCol.getByteCount();
 
-        std::array<aby3::Sh3::sPackedBin, 3> A;
+        std::array<aby3::sPackedBin, 3> A;
         A[0].reset(size, byteCount * 8);
         A[1].reset(size, byteCount * 8);
         A[2].reset(size, byteCount * 8);
@@ -1285,21 +1285,21 @@ namespace osuCrypto
 
         eval.asyncEvaluate(mRt.noDependencies()).get();
 
-        aby3::Sh3::sPackedBin outFlags(size, 1);
+        aby3::sPackedBin outFlags(size, 1);
         eval.getOutput(0, outFlags);
 
         return std::move(outFlags);
     }
 
-    aby3::Sh3::i64Matrix ComPsiServer::computeKeys(span<SharedTable::ColRef> cols, span<u64> reveals)
+    aby3::i64Matrix ComPsiServer::computeKeys(span<SharedTable::ColRef> cols, span<u64> reveals)
     {
-        aby3::Sh3::i64Matrix ret;
+        aby3::i64Matrix ret;
         std::vector<aby3::Sh3BinaryEvaluator> binEvals(cols.size());
 
         auto blockSize = mLowMCCir.mInputs[0].size();
         auto rounds = mLowMCCir.mInputs.size() - 1;
 
-        aby3::Sh3::sbMatrix oprfRoundKey(1, blockSize);// , temp;
+        aby3::sbMatrix oprfRoundKey(1, blockSize);// , temp;
         for (u64 i = 0; i < cols.size(); ++i)
         {
             //auto shareCount = tables[i]->mKeys.shareCount();
@@ -1345,7 +1345,7 @@ namespace osuCrypto
         mRt.runAll();
 
 
-        std::vector<aby3::Sh3::sPackedBin> temps(cols.size());
+        std::vector<aby3::sPackedBin> temps(cols.size());
 
         for (u64 i = 0; i < cols.size(); ++i)
         {

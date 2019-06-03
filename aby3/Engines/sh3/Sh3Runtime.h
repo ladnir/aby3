@@ -14,7 +14,7 @@ namespace aby3
     {
     public:
 
-        using RoundFunc = fu2::unique_function<void(Sh3::CommPkg& comm, Sh3Task& self)>;
+        using RoundFunc = fu2::unique_function<void(CommPkg& comm, Sh3Task& self)>;
         using ContinuationFunc = fu2::unique_function<void(Sh3Task& self)>;
 
         // returns the associated runtime.
@@ -209,15 +209,15 @@ namespace aby3
         Sh3Runtime() = default;
         Sh3Runtime(const Sh3Runtime&) = default;
         Sh3Runtime(Sh3Runtime&&) = default;
-        Sh3Runtime(u64 partyIdx, Sh3::CommPkg& comm)
+        Sh3Runtime(u64 partyIdx, CommPkg& comm)
         {
             init(partyIdx, comm);
         }
 
         u64 mPartyIdx = -1;
-        Sh3::CommPkg mComm;
+        CommPkg mComm;
 
-        void init(u64 partyIdx, Sh3::CommPkg& comm)
+        void init(u64 partyIdx, CommPkg& comm)
         {
             mPartyIdx = partyIdx;
             mComm = comm;

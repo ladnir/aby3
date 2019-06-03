@@ -1,6 +1,6 @@
 #include "Sh3Types.h"
 
-bool aby3::Sh3::details::areEqualImpl(
+bool aby3::details::areEqualImpl(
     const std::array<oc::MatrixView<u8>, 2>& a,
     const std::array<oc::MatrixView<u8>, 2>& b,
     u64 bitCount)
@@ -34,7 +34,7 @@ bool aby3::Sh3::details::areEqualImpl(
     return true;
 }
 
-void aby3::Sh3::details::trimImpl(oc::MatrixView<u8> a, u64 bits)
+void aby3::details::trimImpl(oc::MatrixView<u8> a, u64 bits)
 {
     if (bits > a.stride() * 8)
         throw std::runtime_error(LOCATION);

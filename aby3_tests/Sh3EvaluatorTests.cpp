@@ -10,9 +10,8 @@
 
 using namespace aby3;
 using namespace oc;
-using namespace aby3::Sh3;
 
-void rand(Sh3::i64Matrix& A, PRNG& prng)
+void rand(i64Matrix& A, PRNG& prng)
 {
 	prng.get(A.data(), A.size());
 }
@@ -58,10 +57,10 @@ void Sh3_Evaluator_asyncMul_test()
 
 		for (u64 i = 0; i < trials; ++i)
 		{
-			Sh3::i64Matrix a(trials, trials), b(trials, trials), c(trials, trials), cc(trials, trials);
+			i64Matrix a(trials, trials), b(trials, trials), c(trials, trials), cc(trials, trials);
 			rand(a, prng);
 			rand(b, prng);
-			Sh3::si64Matrix A(trials, trials), B(trials, trials), C(trials, trials);
+			si64Matrix A(trials, trials), B(trials, trials), C(trials, trials);
 
 			enc.localIntMatrix(comm, a, A);
 			enc.localIntMatrix(comm, b, B);
@@ -71,7 +70,7 @@ void Sh3_Evaluator_asyncMul_test()
 			for (u64 j = 0; j < trials; ++j)
 			{
 				task = eval.asyncMul(task, A, B, C);
-				task = task.then([&](Sh3::CommPkg & comm, Sh3Task & self) {
+				task = task.then([&](CommPkg & comm, Sh3Task & self) {
 					A = C + A;
 					});
 			}
@@ -105,7 +104,7 @@ void Sh3_Evaluator_asyncMul_test()
 
 		for (u64 i = 0; i < trials; ++i)
 		{
-			Sh3::si64Matrix A(trials, trials), B(trials, trials), C(trials, trials);
+			si64Matrix A(trials, trials), B(trials, trials), C(trials, trials);
 			enc.remoteIntMatrix(comm, A);
 			enc.remoteIntMatrix(comm, B);
 
@@ -113,7 +112,7 @@ void Sh3_Evaluator_asyncMul_test()
 			for (u64 j = 0; j < trials; ++j)
 			{
 				task = eval.asyncMul(task, A, B, C);
-				task = task.then([&](Sh3::CommPkg & comm, Sh3Task & self) {
+				task = task.then([&](CommPkg & comm, Sh3Task & self) {
 					A = C + A;
 					});
 			}
@@ -135,7 +134,7 @@ void Sh3_Evaluator_asyncMul_test()
 }
 
 
-std::string prettyShare(u64 partyIdx, const Sh3::si64& v)
+std::string prettyShare(u64 partyIdx, const si64& v)
 {
 	std::array<u64, 3> shares;
 	shares[partyIdx] = v[0];
@@ -205,9 +204,9 @@ void Sh3_Evaluator_asyncMul_fixed_test()
 			//std::cout << a.mValue << " * " << b.mValue << " -> " << (a * b).mValue << std::endl;
 			//std::cout << a << " * " << b << " -> " << (a * b) << std::endl;
 
-			Sh3::sf64<D8> A; enc.localFixed(rt, a, A);
-			Sh3::sf64<D8> B; enc.localFixed(rt, b, B).get();
-			Sh3::sf64<D8> C;
+			sf64<D8> A; enc.localFixed(rt, a, A);
+			sf64<D8> B; enc.localFixed(rt, b, B).get();
+			sf64<D8> C;
 			/*
 						ostreamLock(std::cout) <<"p" << rt.mPartyIdx <<": " << "a   " << prettyShare(rt.mPartyIdx, A.mShare) << " ~ " << a<< std::endl;
 						ostreamLock(std::cout) <<"p" << rt.mPartyIdx <<": " << "b   " << prettyShare(rt.mPartyIdx, B.mShare) << " ~ " << b<< std::endl;
@@ -216,7 +215,7 @@ void Sh3_Evaluator_asyncMul_fixed_test()
 			//for (u64 j = 0; j < trials; ++j)
 			{
 				task = eval.asyncMul(task, A, B, C);
-				//task = task.then([&](Sh3::CommPkg& comm, Sh3Task& self) {
+				//task = task.then([&](CommPkg& comm, Sh3Task& self) {
 				//    A = C + A;
 				//});
 			}
@@ -265,9 +264,9 @@ void Sh3_Evaluator_asyncMul_fixed_test()
 		for (u64 i = 0; i < trials; ++i)
 		{
 
-			Sh3::sf64<D8> A; enc.remoteFixed(rt, A);
-			Sh3::sf64<D8> B; enc.remoteFixed(rt, B).get();
-			Sh3::sf64<D8> C;
+			sf64<D8> A; enc.remoteFixed(rt, A);
+			sf64<D8> B; enc.remoteFixed(rt, B).get();
+			sf64<D8> C;
 
 			//ostreamLock(std::cout) <<"p" << rt.mPartyIdx <<": " << "a   " << prettyShare(rt.mPartyIdx, A.mShare) << std::endl;
 			//ostreamLock(std::cout) <<"p" << rt.mPartyIdx <<": " << "b   " << prettyShare(rt.mPartyIdx, B.mShare) << std::endl;
@@ -276,7 +275,7 @@ void Sh3_Evaluator_asyncMul_fixed_test()
 			//for (u64 j = 0; j < trials; ++j)
 			{
 				task = eval.asyncMul(task, A, B, C);
-				//task = task.then([&](Sh3::CommPkg& comm, Sh3Task& self) {
+				//task = task.then([&](CommPkg& comm, Sh3Task& self) {
 				//    A = C + A;
 				//});
 
@@ -409,9 +408,9 @@ void Sh3_Evaluator_asyncMul_matrixFixed_test(const oc::CLP & cmd)
 			f64Matrix<D8> b(size, size);
 			f64Matrix<D8> c;
 
-			Sh3::sf64Matrix<D8> A(size, size);
-			Sh3::sf64Matrix<D8> B(size, size);
-			Sh3::sf64Matrix<D8> C;
+			sf64Matrix<D8> A(size, size);
+			sf64Matrix<D8> B(size, size);
+			sf64Matrix<D8> C;
 			for (u64 i = 0; i < a.size(); ++i) a(i) = (prng.get<u32>() >> 8) / 100.0;
 			for (u64 i = 0; i < b.size(); ++i) b(i) = (prng.get<u32>() >> 8) / 100.0;
 			c = a * b;
@@ -547,10 +546,10 @@ void Sh3_Evaluator_mul_test()
 
 		for (u64 i = 0; i < trials; ++i)
 		{
-			Sh3::i64Matrix a(trials, trials), b(trials, trials), c(trials, trials), cc(trials, trials);
+			i64Matrix a(trials, trials), b(trials, trials), c(trials, trials), cc(trials, trials);
 			rand(a, prng);
 			rand(b, prng);
-			Sh3::si64Matrix A(trials, trials), B(trials, trials), C(trials, trials);
+			si64Matrix A(trials, trials), B(trials, trials), C(trials, trials);
 
 			enc.localIntMatrix(comm, a, A);
 			enc.localIntMatrix(comm, b, B);
@@ -579,7 +578,7 @@ void Sh3_Evaluator_mul_test()
 
 		for (u64 i = 0; i < trials; ++i)
 		{
-			Sh3::si64Matrix A(trials, trials), B(trials, trials), C(trials, trials);
+			si64Matrix A(trials, trials), B(trials, trials), C(trials, trials);
 			enc.remoteIntMatrix(comm, A);
 			enc.remoteIntMatrix(comm, B);
 

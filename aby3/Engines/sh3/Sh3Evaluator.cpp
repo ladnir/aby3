@@ -8,10 +8,10 @@ namespace aby3
 
 
 	void Sh3Evaluator::mul(
-		Sh3::CommPkg& comm,
-		const Sh3::si64Matrix & A,
-		const Sh3::si64Matrix & B,
-		Sh3::si64Matrix& C)
+		CommPkg& comm,
+		const si64Matrix & A,
+		const si64Matrix & B,
+		si64Matrix& C)
 	{
 		C.mShares[0]
 			= A.mShares[0] * B.mShares[0]
@@ -29,11 +29,11 @@ namespace aby3
 		comm.mPrev.recv(C.mShares[1].data(), C.mShares[1].size());
 	}
 
-	//Sh3::CompletionHandle Sh3Evaluator::asyncMul(
-	//    Sh3::CommPkg& comm, 
-	//    const Sh3::si64Matrix & A, 
-	//    const Sh3::si64Matrix & B, 
-	//    Sh3::si64Matrix & C)
+	//CompletionHandle Sh3Evaluator::asyncMul(
+	//    CommPkg& comm, 
+	//    const si64Matrix & A, 
+	//    const si64Matrix & B, 
+	//    si64Matrix & C)
 	//{
 	//    C.mShares[0]
 	//        = A.mShares[0] * B.mShares[0]
@@ -53,9 +53,9 @@ namespace aby3
 	//    return { [fu = std::move(fu)](){ fu.get(); } };
 	//}
 
-	Sh3Task Sh3Evaluator::asyncMul(Sh3Task & dependency, const Sh3::si64Matrix & A, const Sh3::si64Matrix & B, Sh3::si64Matrix & C)
+	Sh3Task Sh3Evaluator::asyncMul(Sh3Task & dependency, const si64Matrix & A, const si64Matrix & B, si64Matrix & C)
 	{
-		return dependency.then([&](Sh3::CommPkg& comm, Sh3Task self)
+		return dependency.then([&](CommPkg& comm, Sh3Task self)
 		{
 			C.mShares[0]
 				= A.mShares[0] * B.mShares[0]
@@ -72,7 +72,7 @@ namespace aby3
 			comm.mNext.asyncSendCopy(C.mShares[0].data(), C.mShares[0].size());
 			auto fu = comm.mPrev.asyncRecv(C.mShares[1].data(), C.mShares[1].size()).share();
 
-			self.nextRound([fu = std::move(fu)](Sh3::CommPkg& comm, Sh3Task& self){
+			self.nextRound([fu = std::move(fu)](CommPkg& comm, Sh3Task& self){
 				fu.get();
 			});
 		});
@@ -99,12 +99,12 @@ namespace aby3
 
 	
 
-	TruncationPair Sh3Evaluator::getTruncationTuple(u64 xSize, u64 ySize, Sh3::Decimal d)
+	TruncationPair Sh3Evaluator::getTruncationTuple(u64 xSize, u64 ySize, Decimal d)
 	{
 		TruncationPair pair;
 		auto zeroSharing = [](PRNG & prng, u64 xSize, u64 ySize)
 		{
-			std::array<Sh3::i64Matrix, 3> shares;
+			std::array<i64Matrix, 3> shares;
 
 			shares[0].resize(xSize, ySize);
 			shares[1].resize(xSize, ySize);
@@ -117,7 +117,7 @@ namespace aby3
 
 		oc::PRNG prng(oc::toBlock(mTruncationIdx++));
 
-		Sh3::i64Matrix r(xSize, ySize);
+		i64Matrix r(xSize, ySize);
 		prng.get(r.data(), xSize* ySize);
 
 		auto shares = zeroSharing(prng, xSize, ySize);
@@ -156,14 +156,14 @@ namespace aby3
 		return pair;
 	}
 
-	template<Sh3::Decimal D>
+	template<Decimal D>
 	Sh3Task aby3::Sh3Evaluator::asyncMul(
 		Sh3Task & dependency,
-		const Sh3::sf64<D>& A,
-		const Sh3::sf64<D>& B,
-		Sh3::sf64<D>& C)
+		const sf64<D>& A,
+		const sf64<D>& B,
+		sf64<D>& C)
 	{
-		return dependency.then([&](Sh3::CommPkg& comm, Sh3Task& self) -> void
+		return dependency.then([&](CommPkg& comm, Sh3Task& self) -> void
 		{
 
 			auto truncationTuple = getTruncationTuple(1,1, C.mDecimal);
@@ -218,7 +218,7 @@ namespace aby3
 
 				// set the completion handle complete the computation
 				self.nextRound([fu0, fu1, shares = std::move(shares), &C, this]
-				(Sh3::CommPkg& comm, Sh3Task self) mutable
+				(CommPkg& comm, Sh3Task self) mutable
 				{
 					fu0.get();
 					fu1.get();
@@ -241,33 +241,33 @@ namespace aby3
 	template
 		Sh3Task aby3::Sh3Evaluator::asyncMul(
 			Sh3Task & dependency,
-			const Sh3::sf64<Sh3::Decimal::D8>& A,
-			const Sh3::sf64<Sh3::Decimal::D8>& B,
-			Sh3::sf64<Sh3::Decimal::D8>& C);
+			const sf64<Decimal::D8>& A,
+			const sf64<Decimal::D8>& B,
+			sf64<Decimal::D8>& C);
 	//#define INSTANTIATE_ASYNC_MUL_FIXED(D) \
 	//    template \
 	//    Sh3Task aby3::Sh3Evaluator::asyncMul( \
 	//        Sh3Task & dependency, \
-	//        const Sh3::sf64<D>& A,\
-	//        const Sh3::sf64<D>& B,\
-	//        Sh3::sf64<D>& C);
+	//        const sf64<D>& A,\
+	//        const sf64<D>& B,\
+	//        sf64<D>& C);
 	//
-	//    INSTANTIATE_ASYNC_MUL_FIXED(Sh3::Decimal::D8);
-	//    INSTANTIATE_ASYNC_MUL_FIXED(Sh3::Decimal::D16);
-	//    INSTANTIATE_ASYNC_MUL_FIXED(Sh3::Decimal::D32);
+	//    INSTANTIATE_ASYNC_MUL_FIXED(Decimal::D8);
+	//    INSTANTIATE_ASYNC_MUL_FIXED(Decimal::D16);
+	//    INSTANTIATE_ASYNC_MUL_FIXED(Decimal::D32);
 
 
 
-	template<Sh3::Decimal D>
+	template<Decimal D>
 	Sh3Task aby3::Sh3Evaluator::asyncMul(
 		Sh3Task & dependency,
-		const Sh3::sf64Matrix<D>& A,
-		const Sh3::sf64Matrix<D>& B,
-		Sh3::sf64Matrix<D>& C)
+		const sf64Matrix<D>& A,
+		const sf64Matrix<D>& B,
+		sf64Matrix<D>& C)
 	{
-		return dependency.then([&](Sh3::CommPkg& comm, Sh3Task& self) -> void
+		return dependency.then([&](CommPkg& comm, Sh3Task& self) -> void
 		{
-			Sh3::i64Matrix abMinusR
+			i64Matrix abMinusR
 				= A.mShares[0] * B.mShares[0]
 				+ A.mShares[0] * B.mShares[1]
 				+ A.mShares[1] * B.mShares[0];
@@ -296,9 +296,9 @@ namespace aby3
 			{
 				// these will hold the three shares of r-xy
 				//std::unique_ptr<std::array<i64, 3>> shares(new std::array<i64, 3>);
-				auto shares = std::make_unique<std::array<Sh3::i64Matrix, 3>>();
+				auto shares = std::make_unique<std::array<i64Matrix, 3>>();
 				
-				//Sh3::i64Matrix& rr = (*shares)[0]);
+				//i64Matrix& rr = (*shares)[0]);
 
 				(*shares)[0].resize(abMinusR.rows(), abMinusR.cols());
 				(*shares)[1].resize(abMinusR.rows(), abMinusR.cols());
@@ -310,7 +310,7 @@ namespace aby3
 
 				// set the completion handle complete the computation
 				self.nextRound([fu0, fu1, shares = std::move(shares), &C, this]
-				(Sh3::CommPkg& comm, Sh3Task self) mutable
+				(CommPkg& comm, Sh3Task self) mutable
 				{
 					fu0.get();
 					fu1.get();
@@ -343,7 +343,7 @@ namespace aby3
 	template
 		Sh3Task aby3::Sh3Evaluator::asyncMul(
 			Sh3Task & dependency,
-			const Sh3::sf64Matrix<Sh3::Decimal::D8>& A,
-			const Sh3::sf64Matrix<Sh3::Decimal::D8>& B,
-			Sh3::sf64Matrix<Sh3::Decimal::D8>& C);
+			const sf64Matrix<Decimal::D8>& A,
+			const sf64Matrix<Decimal::D8>& B,
+			sf64Matrix<Decimal::D8>& C);
 }

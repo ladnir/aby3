@@ -7,7 +7,7 @@ namespace aby3
 
 
 
-    void Sh3Converter::toPackedBin(const Sh3::sbMatrix & in, Sh3::sPackedBin & dest)
+    void Sh3Converter::toPackedBin(const sbMatrix & in, sPackedBin & dest)
     {
         dest.reset(in.rows(), in.bitCount());
 
@@ -30,7 +30,7 @@ namespace aby3
         }
     }
 
-    void Sh3Converter::toBinaryMatrix(const Sh3::sPackedBin & in, Sh3::sbMatrix & dest)
+    void Sh3Converter::toBinaryMatrix(const sPackedBin & in, sbMatrix & dest)
     {
         dest.resize(in.shareCount(), in.bitCount());
 

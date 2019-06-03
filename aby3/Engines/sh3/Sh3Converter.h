@@ -9,8 +9,8 @@ namespace aby3
     class Sh3Converter
     {
     public:
-        void toPackedBin(const Sh3::sbMatrix& in, Sh3::sPackedBin& dest);
+        void toPackedBin(const sbMatrix& in, sPackedBin& dest);
 
-        void toBinaryMatrix(const Sh3::sPackedBin& in, Sh3::sbMatrix& dest);
+        void toBinaryMatrix(const sPackedBin& in, sbMatrix& dest);
     };
 }

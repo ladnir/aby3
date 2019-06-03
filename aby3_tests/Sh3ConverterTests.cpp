@@ -7,7 +7,7 @@
 using namespace aby3;
 using namespace oc;
 
-std::array<u8, 2> getBitShare(u64 row, u64 bitIdx, const Sh3::sbMatrix& x)
+std::array<u8, 2> getBitShare(u64 row, u64 bitIdx, const sbMatrix& x)
 {
     std::array<u8, 2> ret;
 
@@ -22,7 +22,7 @@ std::array<u8, 2> getBitShare(u64 row, u64 bitIdx, const Sh3::sbMatrix& x)
     return ret;
 }
 
-std::array<u8, 2> getBitShare(u64 row, u64 bitIdx, const Sh3::sPackedBin& x)
+std::array<u8, 2> getBitShare(u64 row, u64 bitIdx, const sPackedBin& x)
 {
 
     std::array<u8, 2> ret;
@@ -45,7 +45,7 @@ std::array<u8, 2> getBitShare(u64 row, u64 bitIdx, const Sh3::sPackedBin& x)
 //    return (1ull << bits) -1;
 //}
 
-//bool eq(const Sh3::sPackedBin& a, const Sh3::sPackedBin& b)
+//bool eq(const sPackedBin& a, const sPackedBin& b)
 //{
 //    return a.shareCount() == b.shareCount()
 //        && a.bitCount() == b.bitCount()
@@ -54,7 +54,7 @@ std::array<u8, 2> getBitShare(u64 row, u64 bitIdx, const Sh3::sPackedBin& x)
 //
 ////
 //
-//void trim(Sh3::sPackedBin& a)
+//void trim(sPackedBin& a)
 //{
 //    auto shares = a.mShareCount;
 //    auto packLast = (shares + 63) / 64 - 1;
@@ -67,7 +67,7 @@ std::array<u8, 2> getBitShare(u64 row, u64 bitIdx, const Sh3::sPackedBin& x)
 //}
 //
 //
-//void trim(Sh3::sbMatrix& a)
+//void trim(sbMatrix& a)
 //{
 //    auto bits = a.bitCount();
 //    auto mtxLast = (bits + 63) / 64 - 1;
@@ -79,7 +79,7 @@ std::array<u8, 2> getBitShare(u64 row, u64 bitIdx, const Sh3::sPackedBin& x)
 //    }
 //}
 
-void printBits(Sh3::eMatrix<i64>& a, u64 bits)
+void printBits(eMatrix<i64>& a, u64 bits)
 {
     std::string b(bits, '0');
     //b.back() = '\n';
@@ -174,8 +174,8 @@ void Sh3_convert_b64Matrix_PackedBin_test()
         auto bits = prng.get<u64>() % mod + 1;
         Sh3Encryptor enc;
 
-        Sh3::sbMatrix mtx(shares, bits), mtxDest;
-        Sh3::sPackedBin pack(shares, bits), packDest;
+        sbMatrix mtx(shares, bits), mtxDest;
+        sPackedBin pack(shares, bits), packDest;
 
         enc.init(0, ZeroBlock, OneBlock);
         enc.rand(mtx);
@@ -292,8 +292,8 @@ void Sh3_trim_test()
         auto shares = prng.get<u64>() % mod + 1;
         auto bits = prng.get<u64>() % mod + 1;
 
-        Sh3::sbMatrix mtx(shares, bits), mtxDest;
-        Sh3::sPackedBin pack(shares, bits), packDest;
+        sbMatrix mtx(shares, bits), mtxDest;
+        sPackedBin pack(shares, bits), packDest;
 
         memset(mtx.mShares[0].data(), ~0, mtx.mShares[0].size() * sizeof(i64));
         memset(mtx.mShares[1].data(), ~0, mtx.mShares[1].size() * sizeof(i64));

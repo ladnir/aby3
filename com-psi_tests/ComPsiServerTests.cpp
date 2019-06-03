@@ -55,7 +55,7 @@ void ComPsi_computeKeys_test()
     }
     bool failed = false;
 
-    aby3::Sh3::i64Matrix r0, r1;
+    aby3::i64Matrix r0, r1;
     auto t0 = std::thread([&]() {
         auto i = 0;
         setThreadName("t_" + std::to_string(i));
@@ -148,7 +148,7 @@ void ComPsi_cuckooHash_test()
     u32 bytes = 8;
 
     PRNG prng(OneBlock);
-    aby3::Sh3::i64Matrix hashs(rows, (keyBitCount + 63) / 64);
+    aby3::i64Matrix hashs(rows, (keyBitCount + 63) / 64);
     hashs.setZero();
 
     Table a(rows, {
@@ -315,7 +315,7 @@ void ComPsi_compare_test()
         C.mColumns[2].mShares[0].setZero();
         C.mColumns[2].mShares[1].setZero();
 
-        aby3::Sh3::PackedBin plainFlags(B.rows(), 1);
+        aby3::PackedBin plainFlags(B.rows(), 1);
 
         if (i < 2)
         {
@@ -379,7 +379,7 @@ void ComPsi_compare_test()
             BitIterator iter((u8*)plainFlags.mData.data(), 0);
 
             auto stride = C.mColumns[0].i64Cols();
-            aby3::Sh3::i64Matrix c0(C.rows(), stride), c1(C.rows(), 1), c2(C.rows(), 1);
+            aby3::i64Matrix c0(C.rows(), stride), c1(C.rows(), 1), c2(C.rows(), 1);
             srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), C.mColumns[0], c0).get();
             srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), C.mColumns[1], c1).get();
             srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), C.mColumns[2], c2).get();
@@ -440,7 +440,7 @@ void ComPsi_compare_test()
             auto intersectionFlags = srvs[i].compare(leftCircuitInputs, rightCircuitInputs, outCols, query, {});
             srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), intersectionFlags, plainFlags).get();
 
-            aby3::Sh3::i64Matrix c(C.rows(), C.mColumns[0].i64Cols()), c1(C.rows(), 1);
+            aby3::i64Matrix c(C.rows(), C.mColumns[0].i64Cols()), c1(C.rows(), 1);
             srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), C.mColumns[0], c).get();
             srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), C.mColumns[1], c1).get();
             srvs[i].mEnc.revealAll(srvs[i].mRt.noDependencies(), C.mColumns[2], c1).get();
@@ -553,10 +553,10 @@ void ComPsi_Intersect_test(u32 rows, u32 rows2)
             /* where  */ A["key"],/* = */ B["key"],
             /* select */ { A["key"], B["data"], B["data2"], A["data3"] });
 
-        aby3::Sh3::i64Matrix keys(C.mColumns[0].rows(), C.mColumns[0].i64Cols());
-        aby3::Sh3::i64Matrix data(C.mColumns[1].rows(), C.mColumns[1].i64Cols());
-        aby3::Sh3::i64Matrix data2(C.mColumns[2].rows(), C.mColumns[2].i64Cols());
-        aby3::Sh3::i64Matrix data3(C.mColumns[3].rows(), C.mColumns[3].i64Cols());
+        aby3::i64Matrix keys(C.mColumns[0].rows(), C.mColumns[0].i64Cols());
+        aby3::i64Matrix data(C.mColumns[1].rows(), C.mColumns[1].i64Cols());
+        aby3::i64Matrix data2(C.mColumns[2].rows(), C.mColumns[2].i64Cols());
+        aby3::i64Matrix data3(C.mColumns[3].rows(), C.mColumns[3].i64Cols());
         srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[0], keys);
         srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[1], data);
         srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[2], data2);
@@ -619,10 +619,10 @@ void ComPsi_Intersect_test(u32 rows, u32 rows2)
         auto B = srvs[i].remoteInput(0);
 
         auto C = srvs[i].join(A["key"], B["key"], { A["key"], B["data"], B["data2"], A["data3"] });
-        aby3::Sh3::i64Matrix keys(C.mColumns[0].rows(), C.mColumns[0].i64Cols());
-        aby3::Sh3::i64Matrix data(C.mColumns[1].rows(), C.mColumns[1].i64Cols());
-        aby3::Sh3::i64Matrix data2(C.mColumns[2].rows(), C.mColumns[2].i64Cols());
-        aby3::Sh3::i64Matrix data3(C.mColumns[3].rows(), C.mColumns[3].i64Cols());
+        aby3::i64Matrix keys(C.mColumns[0].rows(), C.mColumns[0].i64Cols());
+        aby3::i64Matrix data(C.mColumns[1].rows(), C.mColumns[1].i64Cols());
+        aby3::i64Matrix data2(C.mColumns[2].rows(), C.mColumns[2].i64Cols());
+        aby3::i64Matrix data3(C.mColumns[3].rows(), C.mColumns[3].i64Cols());
         srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[0], keys);
         srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[1], data);
         srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[2], data2);
@@ -736,10 +736,10 @@ void ComPsi_leftUnion_test()
             /* select */ { A["key"], A["data"] },
             /* and    */ { B["key"], B["data"] });
 
-        aby3::Sh3::i64Matrix keys(C.mColumns[0].rows(), C.mColumns[0].i64Cols());
-        aby3::Sh3::i64Matrix data(C.mColumns[1].rows(), C.mColumns[1].i64Cols());
-        //aby3::Sh3::i64Matrix data2(C.mColumns[2].rows(), C.mColumns[2].i64Cols());
-        //aby3::Sh3::i64Matrix data3(C.mColumns[3].rows(), C.mColumns[3].i64Cols());
+        aby3::i64Matrix keys(C.mColumns[0].rows(), C.mColumns[0].i64Cols());
+        aby3::i64Matrix data(C.mColumns[1].rows(), C.mColumns[1].i64Cols());
+        //aby3::i64Matrix data2(C.mColumns[2].rows(), C.mColumns[2].i64Cols());
+        //aby3::i64Matrix data3(C.mColumns[3].rows(), C.mColumns[3].i64Cols());
         srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[0], keys);
         srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[1], data);
         //srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[2], data2);
@@ -806,10 +806,10 @@ void ComPsi_leftUnion_test()
         auto B = srvs[i].remoteInput(0);
 
         auto C = srvs[i].rightUnion(A["key"], B["key"], { A["key"], A["data"] }, { B["key"], B["data"] });
-        aby3::Sh3::i64Matrix keys(C.mColumns[0].rows(), C.mColumns[0].i64Cols());
-        aby3::Sh3::i64Matrix data(C.mColumns[1].rows(), C.mColumns[1].i64Cols());
-        //aby3::Sh3::i64Matrix data2(C.mColumns[2].rows(), C.mColumns[2].i64Cols());
-        //aby3::Sh3::i64Matrix data3(C.mColumns[3].rows(), C.mColumns[3].i64Cols());
+        aby3::i64Matrix keys(C.mColumns[0].rows(), C.mColumns[0].i64Cols());
+        aby3::i64Matrix data(C.mColumns[1].rows(), C.mColumns[1].i64Cols());
+        //aby3::i64Matrix data2(C.mColumns[2].rows(), C.mColumns[2].i64Cols());
+        //aby3::i64Matrix data3(C.mColumns[3].rows(), C.mColumns[3].i64Cols());
         srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[0], keys);
         srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[1], data);
         //srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[2], data2);

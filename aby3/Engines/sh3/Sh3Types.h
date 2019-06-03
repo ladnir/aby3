@@ -7,8 +7,7 @@
 
 namespace aby3
 {
-    namespace Sh3
-    {
+
 
         struct CommPkg {
             oc::Channel mPrev, mNext;
@@ -600,6 +599,6 @@ namespace aby3
             return col;
         }
 
-    }
+    
 
 }

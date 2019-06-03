@@ -14,7 +14,7 @@
 
 namespace osuCrypto
 {
-    using CommPkg = aby3::Sh3::CommPkg;
+    using CommPkg = aby3::CommPkg;
 
 
     class ComPsiServer :public TimerAdapter
@@ -97,35 +97,35 @@ namespace osuCrypto
 
 
         std::array<Matrix<u8>, 3> mapRightTableToLeft(
-            aby3::Sh3::i64Matrix& keys,
+            aby3::i64Matrix& keys,
             span<SharedColumn*> circuitInputCols,
             SharedTable& leftTable,
             SharedTable& rightTable);
 
         Matrix<u8> cuckooHashRecv(span<SharedColumn*> selects);
         void cuckooHashSend(span<SharedColumn*> selects, CuckooParam& cuckooParams);
-        Matrix<u8> cuckooHash(span<SharedColumn*> selects, CuckooParam& params, aby3::Sh3::i64Matrix& keys);
+        Matrix<u8> cuckooHash(span<SharedColumn*> selects, CuckooParam& params, aby3::i64Matrix& keys);
 
 
         std::array<Matrix<u8>, 3> selectCuckooPos(MatrixView<u8> cuckooHashTable, u64 destRows);
         std::array<Matrix<u8>, 3> selectCuckooPos(MatrixView<u8> cuckooHashTable, u64 destRows,
-            CuckooParam& cuckooParams, aby3::Sh3::i64Matrix& keys);
+            CuckooParam& cuckooParams, aby3::i64Matrix& keys);
         void selectCuckooPos(u64 destRows, u64 srcRows, u64 bytes);
 
 
-        aby3::Sh3::sPackedBin compare(
+        aby3::sPackedBin compare(
             span<SharedColumn*> leftCircuitInput,
             span<SharedColumn*> rightCircuitInput,
             span<SharedColumn*> circuitOutput,
             const SelectQuery& query,
             span<Matrix<u8>> leftInData);
 
-        aby3::Sh3::sPackedBin unionCompare(
+        aby3::sPackedBin unionCompare(
             SharedTable::ColRef leftJoinCol,
             SharedTable::ColRef rightJoinCol,
             span<Matrix<u8>> leftInData);
 
-        aby3::Sh3::i64Matrix computeKeys(span<SharedTable::ColRef> tables, span<u64> reveals);
+        aby3::i64Matrix computeKeys(span<SharedTable::ColRef> tables, span<u64> reveals);
 
 
         BetaCircuit getQueryCircuit(
@@ -144,7 +144,7 @@ namespace osuCrypto
 
 
         void p0CheckSelect(MatrixView<u8> cuckoo, span<Matrix<u8>> a2);
-        void p1CheckSelect(Matrix<u8> cuckoo, span<Matrix<u8>> a2, aby3::Sh3::i64Matrix& keys);
+        void p1CheckSelect(Matrix<u8> cuckoo, span<Matrix<u8>> a2, aby3::i64Matrix& keys);
     };
 
 }

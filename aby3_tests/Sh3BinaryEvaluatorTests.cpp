@@ -9,7 +9,6 @@
 
 using namespace oc;
 using namespace aby3;
-using namespace Sh3;
 
 //
 //void createBinarySharing(
@@ -42,7 +41,7 @@ using namespace Sh3;
 //    s2.mShares[1] = s1.mShares[0];
 //}
 
-//Lynx::Matrix toLynx(const Sh3::sbMatrix& A)
+//Lynx::Matrix toLynx(const sbMatrix& A)
 //{
 //    Lynx::Matrix r(A.rows(), A.i64Cols());
 //    r.mShares[0] = A.mShares[0];
@@ -102,7 +101,7 @@ using namespace Sh3;
 //    }
 //}
 
-i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, bool debug, u64 valMask = ~0ull)
+void Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, bool debug, u64 valMask = ~0ull)
 {
 
     IOService ios;
@@ -144,8 +143,8 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
 
     auto t0 = std::thread([&]() {
         auto i = 0;
-        Sh3::i64Matrix a(width, 1), b(width, 1), c(width, 1), ar(1, 1);
-        Sh3::i64Matrix aa(width, 1), bb(width, 1);
+        i64Matrix a(width, 1), b(width, 1), c(width, 1), ar(1, 1);
+        i64Matrix aa(width, 1), bb(width, 1);
 
         PRNG prng(ZeroBlock);
         for (u64 i = 0; i < a.size(); ++i)
@@ -157,8 +156,8 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
 
         Sh3Runtime rt(i, comms[i]);
 
-        Sh3::sbMatrix A(width, aSize), B(width, bSize), C(width, cSize);
-        Sh3::sbMatrix Ar(1, aSize);
+        sbMatrix A(width, aSize), B(width, bSize), C(width, cSize);
+        sbMatrix Ar(1, aSize);
 
         Sh3Encryptor enc;
         enc.init(i, toBlock(i), toBlock(i + 1));
@@ -225,7 +224,7 @@ i64 Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, 
 
         Sh3Runtime rt(i, comms[i]);
 
-        Sh3::sbMatrix A(width, aSize), B(width, bSize), C(width, cSize), Ar(1, aSize);
+        sbMatrix A(width, aSize), B(width, bSize), C(width, cSize), Ar(1, aSize);
 
         Sh3Encryptor enc;
         enc.init(i, toBlock(i), toBlock((i + 1) % 3));

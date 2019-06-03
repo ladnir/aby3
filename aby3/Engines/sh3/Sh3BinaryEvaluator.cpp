@@ -79,7 +79,7 @@ namespace aby3
 #endif
     }
 
-    void Sh3BinaryEvaluator::setReplicatedInput(u64 idx, const Sh3::sbMatrix & in)
+    void Sh3BinaryEvaluator::setReplicatedInput(u64 idx, const sbMatrix & in)
     {
         mLevel = 0;
         auto& inWires = mCir->mInputs[idx].mWires;
@@ -141,7 +141,7 @@ namespace aby3
 #endif
     }
 
-    void Sh3BinaryEvaluator::setInput(u64 idx, const Sh3::sbMatrix  & in)
+    void Sh3BinaryEvaluator::setInput(u64 idx, const sbMatrix  & in)
     {
         mLevel = 0;
         auto& inWires = mCir->mInputs[idx].mWires;
@@ -217,7 +217,7 @@ namespace aby3
         if (mDebug)
         {
             //Sh3Converter convt;
-            //Sh3::sPackedBin pack;
+            //sPackedBin pack;
             //convt.toPackedBin(in, pack);
             //pack.trim();
             //mMem.trim();
@@ -289,7 +289,7 @@ namespace aby3
 
     }
 
-    void Sh3BinaryEvaluator::setInput(u64 idx, const Sh3::sPackedBin & in)
+    void Sh3BinaryEvaluator::setInput(u64 idx, const sPackedBin & in)
     {
         //auto simdWidth = mMem.simdWidth();
 
@@ -465,15 +465,15 @@ namespace aby3
     Sh3Task Sh3BinaryEvaluator::asyncEvaluate(
         Sh3Task dep,
         oc::BetaCircuit * cir,
-        std::vector<const Sh3::sbMatrix*> inputs,
-        std::vector<Sh3::sbMatrix*> outputs)
+        std::vector<const sbMatrix*> inputs,
+        std::vector<sbMatrix*> outputs)
     {
         if (cir->mInputs.size() != inputs.size())
             throw std::runtime_error(LOCATION);
         if (cir->mOutputs.size() != outputs.size())
             throw std::runtime_error(LOCATION);
 
-        return dep.then([this, cir, inputs = std::move(inputs)](Sh3::CommPkg& comm, Sh3Task& self)
+        return dep.then([this, cir, inputs = std::move(inputs)](CommPkg& comm, Sh3Task& self)
         {
             auto width = inputs[0]->rows();
             setCir(cir, width);
@@ -509,7 +509,7 @@ namespace aby3
         distributeInputs();
 #endif
 
-        return dependency.then([this](Sh3::CommPkg& comm, Sh3Task& self)
+        return dependency.then([this](CommPkg& comm, Sh3Task& self)
         {
             roundCallback(comm, self);
         });
@@ -562,7 +562,7 @@ namespace aby3
         return ss.str();
     }
 
-    void Sh3BinaryEvaluator::roundCallback(Sh3::CommPkg& comm, Sh3Task task)
+    void Sh3BinaryEvaluator::roundCallback(CommPkg& comm, Sh3Task task)
     {
 
 
@@ -1293,7 +1293,7 @@ namespace aby3
 
         if (hasMoreRounds())
         {
-            task.nextRound([this](Sh3::CommPkg& comm, Sh3Task& task)
+            task.nextRound([this](CommPkg& comm, Sh3Task& task)
             {
                 roundCallback(comm, task);
             }
@@ -1301,7 +1301,7 @@ namespace aby3
         }
     }
 
-    void Sh3BinaryEvaluator::getOutput(u64 i, Sh3::sbMatrix & out)
+    void Sh3BinaryEvaluator::getOutput(u64 i, sbMatrix & out)
     {
         if (mCir->mOutputs.size() <= i) throw std::runtime_error(LOCATION);
 
@@ -1310,13 +1310,13 @@ namespace aby3
         getOutput(outWires, out);
     }
 
-    void Sh3BinaryEvaluator::getOutput(u64 idx, Sh3::sPackedBin & out)
+    void Sh3BinaryEvaluator::getOutput(u64 idx, sPackedBin & out)
     {
         const auto& outWires = mCir->mOutputs[idx].mWires;
         getOutput(outWires, out);
     }
 
-    void Sh3BinaryEvaluator::getOutput(const std::vector<oc::BetaWire>& outWires, Sh3::sPackedBin & out)
+    void Sh3BinaryEvaluator::getOutput(const std::vector<oc::BetaWire>& outWires, sPackedBin & out)
     {
 
         out.reset(mMem.shareCount(), outWires.size());
@@ -1382,7 +1382,7 @@ namespace aby3
         }
     }
 
-    void Sh3BinaryEvaluator::getOutput(const std::vector<BetaWire>& outWires, Sh3::sbMatrix & out)
+    void Sh3BinaryEvaluator::getOutput(const std::vector<BetaWire>& outWires, sbMatrix & out)
     {
 
         using Word = i64;

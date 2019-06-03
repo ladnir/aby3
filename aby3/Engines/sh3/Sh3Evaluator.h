@@ -10,10 +10,10 @@ namespace aby3
     struct TruncationPair
     {
         // the share that should be added before the value being trucnated is revealed.
-        Sh3::i64Matrix mR;
+        i64Matrix mR;
 
         // the share that thsould be subtracted after the value has been truncated.
-        Sh3::si64Matrix mRTrunc;
+        si64Matrix mRTrunc;
     };
 
 
@@ -22,42 +22,42 @@ namespace aby3
     public:
 
         void init(u64 partyIdx, block prevSeed, block nextSeed, u64 buffSize = 256) { mShareGen.init(prevSeed, nextSeed, buffSize); mPartyIdx = partyIdx; }
-        void init(u64 partyIdx, Sh3::CommPkg& comm, block& seed, u64 buffSize = 256) { mShareGen.init(comm, seed, buffSize); mPartyIdx = partyIdx; }
+        void init(u64 partyIdx, CommPkg& comm, block& seed, u64 buffSize = 256) { mShareGen.init(comm, seed, buffSize); mPartyIdx = partyIdx; }
 
 
         void mul(
-            Sh3::CommPkg& comm,
-            const Sh3::si64Matrix & A,
-            const Sh3::si64Matrix & B,
-            Sh3::si64Matrix& C);
+            CommPkg& comm,
+            const si64Matrix & A,
+            const si64Matrix & B,
+            si64Matrix& C);
 
-        //Sh3::CompletionHandle asyncMul(
-        //    Sh3::CommPkg& comm,
-        //    const Sh3::si64Matrix& A,
-        //    const Sh3::si64Matrix& B,
-        //    Sh3::si64Matrix& C);
+        //CompletionHandle asyncMul(
+        //    CommPkg& comm,
+        //    const si64Matrix& A,
+        //    const si64Matrix& B,
+        //    si64Matrix& C);
 
         Sh3Task asyncMul(
             Sh3Task& dependency,
-            const Sh3::si64Matrix& A,
-            const Sh3::si64Matrix& B,
-            Sh3::si64Matrix& C);
+            const si64Matrix& A,
+            const si64Matrix& B,
+            si64Matrix& C);
 
 
 
-        template<Sh3::Decimal D>
+        template<Decimal D>
         Sh3Task asyncMul(
             Sh3Task& dependency,
-            const Sh3::sf64<D>& A,
-            const Sh3::sf64<D>& B,
-            Sh3::sf64<D>& C);
+            const sf64<D>& A,
+            const sf64<D>& B,
+            sf64<D>& C);
 
-		template<Sh3::Decimal D>
+		template<Decimal D>
 		Sh3Task asyncMul(
             Sh3Task& dependency,
-            const Sh3::sf64Matrix<D>& A,
-            const Sh3::sf64Matrix<D>& B,
-            Sh3::sf64Matrix<D>& C);
+            const sf64Matrix<D>& A,
+            const sf64Matrix<D>& B,
+            sf64Matrix<D>& C);
 
         //Matrix mulTruncate(
         //    const Matrix& A,
@@ -85,7 +85,7 @@ namespace aby3
 
 
 
-        TruncationPair getTruncationTuple(u64 xSize, u64 ySize, Sh3::Decimal d);
+        TruncationPair getTruncationTuple(u64 xSize, u64 ySize, Decimal d);
 
         u64 mPartyIdx = -1, mTruncationIdx = 0;
         Sh3ShareGen mShareGen;

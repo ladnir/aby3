@@ -85,10 +85,10 @@ namespace osuCrypto
 
 
 
-        aby3::Sh3::i64Matrix mData;
+        aby3::i64Matrix mData;
     };
 
-    class SharedColumn : public ColumnBase, public aby3::Sh3::sbMatrix
+    class SharedColumn : public ColumnBase, public aby3::sbMatrix
     {
     public:
 

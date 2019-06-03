@@ -19,7 +19,7 @@ namespace aby3
             refillBuffer();
         }
 
-        void init(Sh3::CommPkg& comm, block& seed, u64 buffSize = 256)
+        void init(CommPkg& comm, block& seed, u64 buffSize = 256)
         {
             comm.mNext.asyncSendCopy(seed);
             block prevSeed;
@@ -76,14 +76,14 @@ namespace aby3
         }
 
 
-        Sh3::si64 getRandIntShare()
+        si64 getRandIntShare()
         {
             if (mShareIdx + sizeof(i64) > mShareBuff[0].size() * sizeof(block))
             {
                 refillBuffer();
             }
 
-            Sh3::si64 r;
+            si64 r;
             r[0] = *(u64*)((u8*)mShareBuff[1].data() + mShareIdx);
             r[1] = *(u64*)((u8*)mShareBuff[0].data() + mShareIdx);
 
@@ -92,7 +92,7 @@ namespace aby3
             return r;
         }
 
-        Sh3::sb64 getRandBinaryShare()
+        sb64 getRandBinaryShare()
         {
             auto i = getRandIntShare();
             return { { i[0], i[1] } };
