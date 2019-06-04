@@ -380,8 +380,8 @@ namespace aby3
 
 		sf64Matrix<D>& operator-=(const sf64Matrix<D>& B)
 		{
-			mShares[0] += B.mShares[0];
-			mShares[1] += B.mShares[1];
+			mShares[0] -= B.mShares[0];
+			mShares[1] -= B.mShares[1];
 			return *this;
 		}
 

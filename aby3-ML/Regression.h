@@ -146,16 +146,15 @@ void SGD_Linear(
 
 		extractBatch(XX, YY, X, Y, batchIndices);
 
-		//lout << "X[" << i << "] " << engine.reveal(XX) << std::endl;
-		//lout << "Y[" << i << "] " << engine.reveal(YY) << std::endl;
-		//lout << "W[" << i << "] " << engine.reveal(w) << std::endl;
+		//engine << "X[" << i << "] " << engine.reveal(XX) << std::endl;
+		//engine << "Y[" << i << "] " << engine.reveal(YY) << std::endl;
+		//engine << "W[" << i << "] " << engine.reveal(w) << std::endl;
 
 		// compute the errors on the current batch.
 		Matrix error = engine.mul(XX, w);
 		error -= YY;
 
-		//lout << "P[" << i << "] " << engine.reveal(prod) << std::endl;
-		//lout << "E[" << i << "] " << engine.reveal(error) << std::endl;
+		//engine << "E[" << i << "] " << engine.reveal(error) << std::endl;
 
 		// compute XX = XX^T
 		XX.transposeInPlace();
@@ -165,8 +164,8 @@ void SGD_Linear(
 		//std::cout << update << std::endl;
 		w = w - update;
 
-		//lout << "U[" << i << "] " << engine.reveal(update) << std::endl;
-		//lout << "W[" << i << "] " << engine.reveal(w) << std::endl;
+		//engine << "U[" << i << "] " << engine.reveal(update) << std::endl;
+		//engine << "W[" << i << "] " << engine.reveal(w) << std::endl;
 
 
 		if (X_test && i % 1000 == 0)
@@ -175,14 +174,16 @@ void SGD_Linear(
 			auto now = std::chrono::system_clock::now();
 			auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count();
 			auto score = test_linearModel(engine, w, *X_test, *Y_test);
-			lout << i << " @ " << ((i+1) * 1000.0 / dur) <<" iters/s " << Color::Green << score  << std::endl << Color::Default;// << << std::endl;
+
+			if(engine.partyIdx() == 0)
+				lout << i << " @ " << ((i+1) * 1000.0 / dur) <<" iters/s " << Color::Green << score  << std::endl << Color::Default;// << << std::endl;
 		}
 	}
 }
 
 
 template<typename Engine, typename Matrix>
-double test_logisticModel(
+std::array<double,2> test_logisticModel(
 	Engine& engine,
 	Matrix& W,
 	Matrix& x,
@@ -195,7 +196,18 @@ double test_logisticModel(
 	Matrix l2 = engine.mul(errorT, error);
 
 
-	return engine.reveal(l2(0)) / (double)y.rows();
+	auto pp = engine.reveal(fxw);
+	auto yy = engine.reveal(y);
+	u64 count = 0;
+	for (u64 i = 0; i < fxw.size(); ++i)
+	{
+		bool c0 = pp(i) > 0.5;
+		bool c1 = yy(i) > 0.5;
+
+		count += (c0 == c1);
+	}
+
+	return { engine.reveal(l2(0)) / (double)y.rows(), count / (double)y.rows() };
 }
 
 
@@ -240,32 +252,41 @@ void SGD_Logistic(
 		// extract the rows indexed by batchIndices and store them in XX, YY.
 		extractBatch(XX, YY, X, Y, batchIndices);
 
+		//engine << "X[" << i << "] " << engine.reveal(XX) << std::endl;
+		//engine << "Y[" << i << "] " << engine.reveal(YY) << std::endl;
+		//engine << "W[" << i << "] " << engine.reveal(w) << std::endl;
+
 		// compute the errors on the current batch.
-		auto xw = engine.mul(XX, w);
-		auto fxw = engine.logisticFunc(xw);
+		Matrix xw = engine.mul(XX, w);
+		Matrix fxw = engine.logisticFunc(xw);
 
-		//std::cout << fxw(0) << " = f(" << xw(0) << ")" << std::endl;
+		//engine << "P[" << i << "] " << engine.reveal(xw) << std::endl;
+		//engine << "F[" << i << "] " << engine.reveal(fxw) << std::endl;
 
-		auto error = fxw - YY;
+		Matrix error = fxw - YY;
 
-		//std::cout << "error: " << error << std::endl;
+		//engine << "E[" << i << "] " << engine.reveal(error) << std::endl;
 
 		// compute XX = XX^T
 		XX.transposeInPlace();
 
 		// apply the update function  w = w - a/|B| (XX^T * (XX * w - YY))
-		auto update = engine.mulTruncate(XX, error, aB);
-		//std::cout << update << std::endl;
+		Matrix update = engine.mulTruncate(XX, error, aB);
+
+		//std::cout<< "U["<<i<<"] = " << update(0) << std::endl;
 		w = w - update;
 
+		//engine << "U[" << i << "] " << engine.reveal(update) << std::endl;
 
 		if (X_test && i % 1000 == 0)
 		{
 
 			auto now = std::chrono::system_clock::now();
 			auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count();
-			/*ostreamLock*/(std::cout) << i << " @ " << ((i + 1) * 1000.0 / dur) << " iters/s" << std::endl;
-			std::cout << test_linearModel(engine, w, *X_test, *Y_test) << std::endl;
+			auto score = test_logisticModel(engine, w, *X_test, *Y_test);
+			auto l2 = score[0];
+			auto percent = score[1];
+			lout << i << " @ " << ((i + 1) * 1000.0 / dur) << " iters/s  " << Color::Green<< l2 << " " << percent<< std::endl << Color::Default;
 		}
 	}
 }

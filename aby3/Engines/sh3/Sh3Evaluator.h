@@ -22,8 +22,9 @@ namespace aby3
     public:
 
         void init(u64 partyIdx, block prevSeed, block nextSeed, u64 buffSize = 256) { mShareGen.init(prevSeed, nextSeed, buffSize); mPartyIdx = partyIdx; }
-        void init(u64 partyIdx, CommPkg& comm, block& seed, u64 buffSize = 256) { mShareGen.init(comm, seed, buffSize); mPartyIdx = partyIdx; }
+        void init(u64 partyIdx, CommPkg& comm, block seed, u64 buffSize = 256) { mShareGen.init(comm, seed, buffSize); mPartyIdx = partyIdx; }
 
+		bool DEBUG_disable_randomization = false;
 
         void mul(
             CommPkg& comm,
@@ -38,54 +39,60 @@ namespace aby3
         //    si64Matrix& C);
 
         Sh3Task asyncMul(
-            Sh3Task& dependency,
+            Sh3Task dependency,
             const si64Matrix& A,
             const si64Matrix& B,
             si64Matrix& C);
 
 
+		Sh3Task asyncMul(
+			Sh3Task dependency,
+			const std::array<eMatrix<i64>, 2>& A,
+			const std::array<eMatrix<i64>, 2>& B,
+			std::array<eMatrix<i64>, 2>& C,
+			u64 shift);
+
+
+		Sh3Task asyncMul(
+			Sh3Task dependency,
+			const si64& A,
+			const si64& B,
+			si64& C,
+			u64 shift);
 
         template<Decimal D>
-        Sh3Task asyncMul(
-            Sh3Task& dependency,
-            const sf64<D>& A,
-            const sf64<D>& B,
-            sf64<D>& C);
+		Sh3Task asyncMul(
+			Sh3Task dependency,
+			const sf64<D>& A,
+			const sf64<D>& B,
+			sf64<D>& C)
+		{
+			return asyncMul(dependency, A.mShare, B.mShare, C.mShare, D);
+		}
 
 		template<Decimal D>
 		Sh3Task asyncMul(
-            Sh3Task& dependency,
-            const sf64Matrix<D>& A,
-            const sf64Matrix<D>& B,
-            sf64Matrix<D>& C);
+			Sh3Task dependency,
+			const sf64Matrix<D>& A,
+			const sf64Matrix<D>& B,
+			sf64Matrix<D>& C,
+			u64 shift)
+		{
+			return asyncMul(dependency, A.mShares, B.mShares, C.mShares, D + shift);
+		}
 
-        //Matrix mulTruncate(
-        //    const Matrix& A,
-        //    const Matrix& B,
-        //    u64 truncation);
-
-        //Matrix arithmBinMul(
-        //    const Matrix& ArithmaticShares,
-        //    const Matrix& BinaryShares);
-
-        //Lynx::CompletionHandle asyncArithBinMul(
-        //    const Matrix& Arithmatic,
-        //    const Matrix& Bin,
-        //    Matrix& C);
-
-        //Lynx::CompletionHandle asyncArithBinMul(
-        //    const Word& Arithmatic,
-        //    const Matrix& Bin,
-        //    Matrix& C);
-
-        //Lynx::CompletionHandle asyncConvertToPackedBinary(
-        //    const Matrix& arithmetic,
-        //    PackedBinMatrix& binaryShares,
-        //    CommPackage commPkg);
+		template<Decimal D>
+		Sh3Task asyncMul(
+			Sh3Task dependency,
+			const sf64Matrix<D>& A,
+			const sf64Matrix<D>& B,
+			sf64Matrix<D>& C)
+		{
+			return asyncMul(dependency, A.mShares, B.mShares, C.mShares, D);
+		}
 
 
-
-        TruncationPair getTruncationTuple(u64 xSize, u64 ySize, Decimal d);
+        TruncationPair getTruncationTuple(u64 xSize, u64 ySize, u64 d);
 
         u64 mPartyIdx = -1, mTruncationIdx = 0;
         Sh3ShareGen mShareGen;

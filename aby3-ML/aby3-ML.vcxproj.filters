@@ -24,7 +24,13 @@
     <ClCompile Include="LinearModelGen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PlainRuntime.cpp">
+    <ClCompile Include="PlainML.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="aby3ML.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="main-logistic.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -41,7 +47,13 @@
     <ClInclude Include="NeuralModelGen.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PlainRuntime.h">
+    <ClInclude Include="PlainML.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="aby3ML.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="main-logistic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

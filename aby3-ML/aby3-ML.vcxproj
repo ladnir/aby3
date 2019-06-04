@@ -127,16 +127,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="aby3ML.cpp" />
     <ClCompile Include="LinearModelGen.cpp" />
     <ClCompile Include="main-linear.cpp" />
+    <ClCompile Include="main-logistic.cpp" />
     <ClCompile Include="NeuralModelGen.cpp" />
-    <ClCompile Include="PlainRuntime.cpp" />
+    <ClCompile Include="PlainML.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="aby3ML.h" />
     <ClInclude Include="LinearModelGen.h" />
     <ClInclude Include="main-linear.h" />
+    <ClInclude Include="main-logistic.h" />
     <ClInclude Include="NeuralModelGen.h" />
-    <ClInclude Include="PlainRuntime.h" />
+    <ClInclude Include="PlainML.h" />
     <ClInclude Include="Regression.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

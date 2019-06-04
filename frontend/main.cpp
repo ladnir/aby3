@@ -7,10 +7,12 @@
 #include "com-psi_tests/UnitTests.h"
 #include <tests_cryptoTools/UnitTests.h>
 #include <aby3-ML/main-linear.h>
+#include <aby3-ML/main-logistic.h>
 
 #include "cryptoTools/tests_cryptoTools/UnitTests.h"
 
 using namespace oc;
+using namespace aby3;
 std::vector<std::string> unitTestTag{ "u", "unitTest" };
 
 
@@ -50,6 +52,17 @@ int main(int argc, char** argv)
 		{
 			set = true;
 			linear_plain_main(cmd);
+		}
+		if (cmd.isSet("linear"))
+		{
+			set = true;
+			linear_main_3pc_sh(cmd);
+		}
+
+		if (cmd.isSet("logistic-plain"))
+		{
+			set = true;
+			logistic_plain_main(cmd);
 		}
 
 		if (cmd.isSet("eric"))
