@@ -236,7 +236,7 @@ void Sh3_Encryptor_asyncIO_test()
     auto chl21 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "12").addChannel();
 
 
-    int trials = 10;
+    int trials = 1;
     CommPkg comm[3];
     comm[0] = { chl02, chl01 };
     comm[1] = { chl10, chl12 };
@@ -264,7 +264,11 @@ void Sh3_Encryptor_asyncIO_test()
         si64 sum{ { 0,0 } };
         sb64 XOR{ { 0,0 } };
 
-        for (int i = 0; i < trials; ++i)
+
+		e.localInt(rt.noDependencies(), vals[0], shrs[0]).get();
+
+		auto tt = rt.noDependencies();
+		for (int i = 0; i < trials; ++i)
         {
             vals[i] = i * 325143121;
             shrs[i] = { {0,0} };
@@ -279,7 +283,10 @@ void Sh3_Encryptor_asyncIO_test()
 
             s += vals[i];
             x ^= vals[i];
+
+			tt = tt && tasks[i][0] && tasks[i][1];
         }
+
 
         for (int i = 0; i < trials; ++i)
         {
@@ -298,8 +305,8 @@ void Sh3_Encryptor_asyncIO_test()
         }
 
         i64 v1, v2;
-        e.reveal(rt.noDependencies(), sum, v1).get();
-        e.reveal(rt.noDependencies(), XOR, v2).get();
+        e.reveal(tt, sum, v1).get();
+        e.reveal(tt, XOR, v2).get();
 
         if (v1 != s)
         {
@@ -367,6 +374,10 @@ void Sh3_Encryptor_asyncIO_test()
         si64 sum{ { 0,0 } };
         sb64 XOR{ { 0,0 } };
 
+		e.remoteInt(rt.noDependencies(), shrs[0]).get();
+
+		auto tt = rt.noDependencies();
+
         for (int i = 0; i < trials; ++i)
         {
             tasks[i][0] = e.remoteInt(rt.noDependencies(), shrs[i]).then([&sum, &shrs, i](Sh3Task& _) mutable {
@@ -377,30 +388,31 @@ void Sh3_Encryptor_asyncIO_test()
                 XOR = XOR ^ bshrs[i];
             });
 
+			tt = tt && tasks[i][0] && tasks[i][1];
         }
 
         for (int i = 0; i < trials; ++i)
         {
-            e.reveal(tasks[i][0], 0, shrs[i]);
-            e.reveal(tasks[i][1], 0, bshrs[i]);
+            e.reveal(tasks[i][0], 0, shrs[i]).get();
+            e.reveal(tasks[i][1], 0, bshrs[i]).get();
         }
-        e.reveal(rt.noDependencies(), 0, sum);
-        e.reveal(rt.noDependencies(), 0, XOR);
+        e.reveal(tt, 0, sum).get();
+        e.reveal(tt, 0, XOR).get();
 
 
 
 
         si64Matrix mShr(trials, trials);
         Sh3Task task = rt.noDependencies();
-        e.remoteIntMatrix(task, mShr);
-        e.reveal(task, 0, mShr);
+        task = e.remoteIntMatrix(task, mShr);
+        e.reveal(task, 0, mShr).get();
 
         sbMatrix bShr(trials, trials * 64);
-        e.remoteBinMatrix(task, bShr);
-        e.reveal(task, 0, bShr);
+		task = e.remoteBinMatrix(task, bShr);
+        e.reveal(task, 0, bShr).get();
 
         sPackedBin pShr(trials, trials * sizeof(i64) * 8);
-        e.remotePackedBinary(task, pShr);
+		task = e.remotePackedBinary(task, pShr);
         e.reveal(task, 0, pShr).get();
 
     };

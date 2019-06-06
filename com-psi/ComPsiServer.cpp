@@ -1035,7 +1035,7 @@ namespace osuCrypto
             t2 = mEnc.remotePackedBinary(mRt.noDependencies(), A[2]);
         }
 
-        mRt.runOne();
+        mRt.runOneRound();
         auto cir = getQueryCircuit(leftCircuitInput, rightCircuitInput, circuitOutput, query);
 
         aby3::Sh3BinaryEvaluator eval;
@@ -1258,7 +1258,7 @@ namespace osuCrypto
             t2 = mEnc.remotePackedBinary(mRt.noDependencies(), A[2]);
         }
 
-        mRt.runOne();
+        mRt.runOneRound();
         auto cir = getBasicCompareCircuit(leftJoinCol, {});
 
         aby3::Sh3BinaryEvaluator eval;

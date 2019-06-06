@@ -187,6 +187,8 @@ namespace aby3
                     mShares == b.mShares);
             }
 
+			eMatrix<i64>& operator[](u64 i) { return mShares[i]; }
+			const eMatrix<i64>& operator[](u64 i) const { return mShares[i]; }
         };
 
         //template<Decimal D>

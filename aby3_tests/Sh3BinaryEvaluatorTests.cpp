@@ -1,7 +1,7 @@
 #include "aby3/Engines/Lynx/LynxBinaryEngine.h"
 #include "aby3/Engines/sh3/Sh3Encryptor.h"
 #include "aby3/Engines/sh3/Sh3BinaryEvaluator.h"
-#include "aby3/Circuit/BetaLibrary.h"
+#include "aby3/Circuit/CircuitLibrary.h"
 #include "cryptoTools/Network/IOService.h"
 #include "cryptoTools/Common/Log.h"
 #include <random>

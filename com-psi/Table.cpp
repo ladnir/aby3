@@ -188,7 +188,7 @@ namespace osuCrypto
                 break;
             case selectDetails::Multiply:
 
-                lib.int_int_mult_build(cir, mem[gate.mIn1], mem[gate.mIn2], mem[gate.mOut]);
+                lib.int_int_mult_build(cir, mem[gate.mIn1], mem[gate.mIn2], mem[gate.mOut], oc::BetaLibrary::Optimized::Depth, false);
                 break;
             case selectDetails::Add:
                 lib.int_int_add_build_do(cir, mem[gate.mIn1], mem[gate.mIn2], mem[gate.mOut]);

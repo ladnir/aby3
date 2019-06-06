@@ -11,24 +11,25 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Circuit\CircuitLibrary.cpp" />
+    <ClCompile Include="Circuit\Garble.cpp" />
     <ClCompile Include="Engines\Lynx\LynxBinaryEngine.cpp" />
     <ClCompile Include="Engines\Lynx\LynxEncryptor.cpp" />
     <ClCompile Include="Engines\Lynx\LynxPiecewise.cpp" />
-    <ClCompile Include="Circuit\Garble.cpp" />
     <ClCompile Include="Engines\sh3\Sh3BinaryEvaluator.cpp" />
     <ClCompile Include="Engines\sh3\Sh3Converter.cpp" />
     <ClCompile Include="Engines\sh3\Sh3Evaluator.cpp" />
     <ClCompile Include="Engines\sh3\Sh3FixedPoint.cpp" />
+    <ClCompile Include="Engines\sh3\Sh3Piecewise.cpp" />
     <ClCompile Include="Engines\sh3\Sh3Runtime.cpp" />
     <ClCompile Include="Engines\sh3\Sh3Types.cpp" />
     <ClCompile Include="OT\SharedOT.cpp" />
-    <ClCompile Include="Circuit\BetaCircuit.cpp" />
-    <ClCompile Include="Circuit\BetaLibrary.cpp" />
     <ClCompile Include="Engines\LynxEngine.cpp" />
     <ClCompile Include="Engines\PlainEngine.cpp" />
     <ClCompile Include="Engines\sh3\Sh3Encryptor.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Circuit\CircuitLibrary.h" />
     <ClInclude Include="Circuit\Garble.h" />
     <ClInclude Include="Common\Defines.h" />
     <ClInclude Include="Engines\Lynx\LynxBinaryEngine.h" />
@@ -39,13 +40,11 @@
     <ClInclude Include="Engines\sh3\Sh3Converter.h" />
     <ClInclude Include="Engines\sh3\Sh3Evaluator.h" />
     <ClInclude Include="Engines\sh3\Sh3FixedPoint.h" />
+    <ClInclude Include="Engines\sh3\Sh3Piecewise.h" />
     <ClInclude Include="Engines\sh3\Sh3ShareGen.h" />
     <ClInclude Include="Engines\sh3\Sh3Types.h" />
     <ClInclude Include="Engines\sh3\Sh3Runtime.h" />
     <ClInclude Include="OT\SharedOT.h" />
-    <ClInclude Include="Circuit\BetaCircuit.h" />
-    <ClInclude Include="Circuit\BetaLibrary.h" />
-    <ClInclude Include="Circuit\Gate.h" />
     <ClInclude Include="Engines\LynxEngine.h" />
     <ClInclude Include="Engines\PlainEngine.h" />
     <ClInclude Include="Engines\sh3\Sh3Encryptor.h" />
@@ -92,7 +91,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>C:\libs\json\single_include;C:\libs\function2\include\;C:\libs\eigen\;C:\libs\NTL\include;C:\libs\boost;$(ProjectDir)/../../libOTe/;$(ProjectDir)/../../libOTe/cryptoTools;C:\libs\eigen;C:\libs\mpir\lib\x64\$(Configuration);$(ProjectDir)..</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0501;NDEBUG;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ShowIncludes>false</ShowIncludes>
       <AdditionalOptions>/arch:AVX /arch:AVX2 %(AdditionalOptions)</AdditionalOptions>
@@ -110,7 +109,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>C:\libs\json\single_include;C:\libs\function2\include\;C:\libs\eigen\;C:\libs\NTL\include;C:\libs\boost;$(ProjectDir)/../../libOTe/;$(ProjectDir)/../../libOTe/cryptoTools;C:\libs\eigen;C:\libs\mpir\lib\x64\$(Configuration);$(ProjectDir)..</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0501;NDEBUG;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ShowIncludes>false</ShowIncludes>
       <AdditionalOptions>/arch:AVX /arch:AVX2 %(AdditionalOptions)</AdditionalOptions>

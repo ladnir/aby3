@@ -79,6 +79,7 @@
       <AdditionalIncludeDirectories>C:\libs\function2\include\;C:\libs\eigen\;C:\libs\NTL\include;C:\libs\boost;$(ProjectDir)/../../libOTe/;$(ProjectDir)/../../libOTe/cryptoTools;C:\libs\eigen;C:\Users\peter\repo\relic\include;C:\libs\mpir\lib\x64\$(Configuration);$(ProjectDir)..;</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>-D_SCL_SECURE_NO_WARNINGS %(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0501;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -114,6 +115,7 @@
       <AdditionalIncludeDirectories>C:\libs\function2\include\;C:\libs\eigen\;C:\libs\NTL\include;C:\libs\boost;$(ProjectDir)/../../libOTe/;$(ProjectDir)/../../libOTe/cryptoTools;C:\libs\eigen;C:\Users\peter\repo\relic\include;C:\libs\mpir\lib\x64\$(Configuration);$(ProjectDir)..;</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalOptions>-D_SCL_SECURE_NO_WARNINGS %(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0501;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -128,6 +130,7 @@
     <ClCompile Include="Sh3ConverterTests.cpp" />
     <ClCompile Include="Sh3EncryptorTests.cpp" />
     <ClCompile Include="Sh3EvaluatorTests.cpp" />
+    <ClCompile Include="Sh3RuntimeTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aby3_tests.h" />
@@ -137,6 +140,7 @@
     <ClInclude Include="Sh3ConverterTests.h" />
     <ClInclude Include="Sh3EncryptorTests.h" />
     <ClInclude Include="Sh3EvaluatorTests.h" />
+    <ClInclude Include="Sh3RuntimeTests.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

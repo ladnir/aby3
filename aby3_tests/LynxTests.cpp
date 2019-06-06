@@ -459,7 +459,7 @@ void Lynx_BinaryEngine_add_msb_test()
 
 
 
-void Lynx_cir_piecewise_Helper_test()
+void Lynx_cir_Piecewise_Helper_test()
 {
     u64 size = 64;
     u64 dec = 16;
@@ -509,7 +509,7 @@ void Lynx_Piecewise_plain_test()
         }
     }
 
-    // piecewise linear logistic function
+    // Piecewise linear logistic function
     {
         Lynx::Piecewise ll(dec);
         ll.mThresholds.resize(2, 0);

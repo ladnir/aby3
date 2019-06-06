@@ -4,7 +4,7 @@
 #include "aby3/Engines/sh3/Sh3BinaryEvaluator.h"
 #include "aby3/Engines/sh3/Sh3Encryptor.h"
 #include "aby3/Engines/sh3/Sh3Evaluator.h"
-#include "aby3/Circuit/BetaLibrary.h"
+#include "aby3/Circuit/CircuitLibrary.h"
 #include <boost/optional.hpp>
 
 namespace osuCrypto

@@ -106,7 +106,7 @@ void lowMC_Circuit_test() {
 
 void lowMC_FileCircuit_test() {
 
-
+#ifdef USE_JSON
     oc::Timer t;
 
     t.setTimePoint("s");
@@ -240,6 +240,9 @@ void lowMC_FileCircuit_test() {
             throw UnitTestFail();
         }
     }
+#else
+	throw UnitTestSkipped("USE_JSON not defined");
+#endif
 }
 
 

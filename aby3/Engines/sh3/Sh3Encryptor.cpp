@@ -45,10 +45,10 @@ namespace aby3
             comm.mNext.asyncSendCopy(dest[0]);
             auto fu = comm.mPrev.asyncRecv(dest[1]);
 
-            self.nextRound([fu = std::move(fu)](CommPkg& comm, Sh3Task& self) mutable {
+            self.then([fu = std::move(fu)](CommPkg& comm, Sh3Task& self) mutable {
                 fu.get();
             });
-        });
+        }).getClosure();
     }
 
     Sh3Task Sh3Encryptor::remoteInt(Sh3Task dep, si64 & dest)
@@ -80,11 +80,11 @@ namespace aby3
             comm.mNext.asyncSendCopy(ret[0]);
             auto fu = comm.mPrev.asyncRecv(ret[1]);
 
-            self.nextRound([fu = std::move(fu)](CommPkg& comm, Sh3Task& self) mutable {
+            self.then([fu = std::move(fu)](CommPkg& comm, Sh3Task& self) mutable {
                 fu.get();
             });
 
-        });
+        }).getClosure();
     }
 
     Sh3Task Sh3Encryptor::remoteBinary(Sh3Task dep, sb64 & dest)
@@ -118,9 +118,9 @@ namespace aby3
             comm.mNext.asyncSendCopy(ret.mShares[0].data(), ret.mShares[0].size());
             auto fu = comm.mPrev.asyncRecv(ret.mShares[1].data(), ret.mShares[1].size());
 
-            self.nextRound([fu = std::move(fu)](CommPkg& comm, Sh3Task& self)mutable{
+            self.then([fu = std::move(fu)](CommPkg& comm, Sh3Task& self)mutable{
                 fu.get();
-            });
+            }).getClosure();
         });
 
     }
@@ -145,10 +145,10 @@ namespace aby3
             comm.mNext.asyncSendCopy(ret.mShares[0].data(), ret.mShares[0].size());
             auto fu = comm.mPrev.asyncRecv(ret.mShares[1].data(), ret.mShares[1].size());
 
-            self.nextRound([fu = std::move(fu)](CommPkg& comm, Sh3Task& self) mutable {
+            self.then([fu = std::move(fu)](CommPkg& comm, Sh3Task& self) mutable {
                 fu.get();
             });
-        });
+        }).getClosure();
     }
 
 
@@ -181,10 +181,10 @@ namespace aby3
             comm.mNext.asyncSendCopy(ret.mShares[0].data(), ret.mShares[0].size());
             auto fu = comm.mPrev.asyncRecv(ret.mShares[1].data(), ret.mShares[1].size());
 
-            self.nextRound([fu = std::move(fu)](CommPkg&, Sh3Task& self) mutable {
+            self.then([fu = std::move(fu)](CommPkg&, Sh3Task& self) mutable {
                 fu.get();
             });
-        });
+        }).getClosure();
     }
 
     void Sh3Encryptor::remoteBinMatrix(CommPkg & comm, sbMatrix & ret)
@@ -206,10 +206,10 @@ namespace aby3
             comm.mNext.asyncSendCopy(ret.mShares[0].data(), ret.mShares[0].size());
             auto fu = comm.mPrev.asyncRecv(ret.mShares[1].data(), ret.mShares[1].size());
 
-            self.nextRound([fu = std::move(fu)](CommPkg& comm, Sh3Task& self) mutable {
+            self.then([fu = std::move(fu)](CommPkg& comm, Sh3Task& self) mutable {
                 fu.get();
             });
-        });
+        }).getClosure();
     }
 
     void Sh3Encryptor::localPackedBinary(CommPkg & comm, const i64Matrix& m, sPackedBin & dest)
@@ -265,10 +265,10 @@ namespace aby3
             comm.mNext.asyncSendCopy(dest.mShares[0].data(), dest.mShares[0].size());
             auto fu = comm.mPrev.asyncRecv(dest.mShares[1].data(), dest.mShares[1].size());
 
-            self.nextRound([fu = std::move(fu)](CommPkg& comm, Sh3Task& self) mutable {
+            self.then([fu = std::move(fu)](CommPkg& comm, Sh3Task& self) mutable {
                 fu.get();
             });
-        });
+        }).getClosure();
     }
 
     void Sh3Encryptor::remotePackedBinary(CommPkg & comm, sPackedBin & dest)
@@ -291,10 +291,10 @@ namespace aby3
             comm.mNext.asyncSendCopy(dest.mShares[0].data(), dest.mShares[0].size());
             auto fu = comm.mPrev.asyncRecv(dest.mShares[1].data(), dest.mShares[1].size());
 
-            self.nextRound(std::move([fu = std::move(fu)](CommPkg& comm, Sh3Task& self) mutable {
+            self.then(std::move([fu = std::move(fu)](CommPkg& comm, Sh3Task& self) mutable {
                 fu.get();
             }));
-        });
+        }).getClosure();
     }
 
     i64 Sh3Encryptor::reveal(CommPkg & comm, const si64 & x)

@@ -47,9 +47,9 @@ namespace aby3
 
 		Sh3Task asyncMul(
 			Sh3Task dependency,
-			const std::array<eMatrix<i64>, 2>& A,
-			const std::array<eMatrix<i64>, 2>& B,
-			std::array<eMatrix<i64>, 2>& C,
+			const si64Matrix& A,
+			const si64Matrix& B,
+			si64Matrix& C,
 			u64 shift);
 
 
@@ -67,7 +67,7 @@ namespace aby3
 			const sf64<D>& B,
 			sf64<D>& C)
 		{
-			return asyncMul(dependency, A.mShare, B.mShare, C.mShare, D);
+			return asyncMul(dependency, A.i64Cast(), B.i64Cast(), C.i64Cast(), D);
 		}
 
 		template<Decimal D>
@@ -78,7 +78,7 @@ namespace aby3
 			sf64Matrix<D>& C,
 			u64 shift)
 		{
-			return asyncMul(dependency, A.mShares, B.mShares, C.mShares, D + shift);
+			return asyncMul(dependency, A.i64Cast(), B.i64Cast(), C.i64Cast(), D + shift);
 		}
 
 		template<Decimal D>
@@ -88,9 +88,21 @@ namespace aby3
 			const sf64Matrix<D>& B,
 			sf64Matrix<D>& C)
 		{
-			return asyncMul(dependency, A.mShares, B.mShares, C.mShares, D);
+			return asyncMul(dependency, A.i64Cast(), B.i64Cast(), C.i64Cast(), D);
 		}
 
+
+		Sh3Task asyncMul(
+			Sh3Task dep,
+			const si64Matrix& A,
+			const sbMatrix& B,
+			si64Matrix& C);
+
+		Sh3Task asyncMul(
+			Sh3Task dep,
+			const i64& a,
+			const sbMatrix& B,
+			si64Matrix& C);
 
         TruncationPair getTruncationTuple(u64 xSize, u64 ySize, u64 d);
 

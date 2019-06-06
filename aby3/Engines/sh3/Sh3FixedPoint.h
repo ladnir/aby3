@@ -315,15 +315,18 @@ namespace aby3
 
 		value_type& operator[](u64 i) { return mShare[i]; }
 		const value_type& operator[](u64 i) const { return mShare[i]; }
+
+
+		si64& i64Cast() { return mShare; };
+		const si64& i64Cast() const { return mShare; };
 	};
 
 
 	template<Decimal D>
-	struct sf64Matrix
+	struct sf64Matrix : private si64Matrix
 	{
 		static const Decimal mDecimal = D;
-		std::array<eMatrix<i64>, 2> mShares;
-
+		
 		struct ConstRow { const sf64Matrix<D>& mMtx; const u64 mIdx; };
 		struct Row { sf64Matrix<D>& mMtx; const u64 mIdx;  const Row& operator=(const Row& row); const ConstRow& operator=(const ConstRow& row); };
 
@@ -428,6 +431,13 @@ namespace aby3
 				mShares == b.mShares);
 		}
 
+
+		si64Matrix& i64Cast() { return static_cast<si64Matrix&>(*this); }
+		const si64Matrix& i64Cast() const { return static_cast<const si64Matrix&>(* this); }
+
+
+		eMatrix<i64>& operator[](u64 i) { return mShares[i]; }
+		const eMatrix<i64>& operator[](u64 i) const { return mShares[i]; }
 	};
 
 

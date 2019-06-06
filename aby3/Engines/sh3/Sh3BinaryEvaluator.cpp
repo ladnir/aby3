@@ -493,7 +493,7 @@ namespace aby3
 
             roundCallback(comm, self);
 
-        }).then([this, outputs = std::move(outputs)](Sh3Task& self)
+        }).getClosure().then([this, outputs = std::move(outputs)](Sh3Task& self)
         {
             for (u64 i = 0; i < outputs.size(); ++i)
             {
@@ -512,7 +512,7 @@ namespace aby3
         return dependency.then([this](CommPkg& comm, Sh3Task& self)
         {
             roundCallback(comm, self);
-        });
+        }).getClosure();
     }
 
     u8 extractBit(i64* data, u64 rowIdx)
@@ -1293,7 +1293,7 @@ namespace aby3
 
         if (hasMoreRounds())
         {
-            task.nextRound([this](CommPkg& comm, Sh3Task& task)
+            task.then([this](CommPkg& comm, Sh3Task& task)
             {
                 roundCallback(comm, task);
             }

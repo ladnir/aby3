@@ -462,7 +462,7 @@ namespace Lynx
         //    }
         //}
 
-        auto cir = eng.mCirLibrary.int_Piecewise_helper(sizeof(Engine::Word) * 8, mThresholds.size());
+        auto cir = eng.mCirLibrary.int_Sh3Piecewise_helper(sizeof(Engine::Word) * 8, mThresholds.size());
         BinaryEngine binEng(eng.mPartyIdx, eng.mPrev, eng.mNext);
         binEng.setCir(cir, inputs.size());
         binEng.setInput(mThresholds.size(), circuitInput1);

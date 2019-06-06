@@ -5,6 +5,7 @@
 #include <aby3/Engines/sh3/Sh3FixedPoint.h>
 #include <aby3/Engines/sh3/Sh3Encryptor.h>
 #include <aby3/Engines/sh3/Sh3Evaluator.h>
+#include <aby3/Engines/sh3/Sh3Piecewise.h>
 
 namespace aby3
 {
@@ -114,8 +115,27 @@ namespace aby3
 		}
 
 
+		Sh3Piecewise mLogistic;
 
+		template<Decimal D>
+		sf64Matrix<D> logisticFunc(const sf64Matrix<D>& Y)
+		{
+			if (mLogistic.mThresholds.size() == 0){
+				mLogistic.mThresholds.resize(2);
+				mLogistic.mThresholds[0] = -0.5;
+				mLogistic.mThresholds[1] = 0.5;
+				mLogistic.mCoefficients.resize(3);
+				mLogistic.mCoefficients[1].resize(2);
+				mLogistic.mCoefficients[1][0] = 0.5;
+				mLogistic.mCoefficients[1][1] = 1;
+				mLogistic.mCoefficients[2].resize(1);
+				mLogistic.mCoefficients[2][0] = 1;
+			}
 
+			sf64Matrix<D> out(Y.rows(), Y.cols());
+			mLogistic.eval<D>(mRt.noDependencies(), Y, out);
+			return out;
+		}
 
 
 

@@ -1,7 +1,7 @@
 #pragma once
 #include "Sh3Types.h"
 
-#include "aby3/Circuit/BetaCircuit.h"
+#include <cryptoTools/Circuit/BetaCircuit.h>
 #include "Sh3Runtime.h"
 #include <cryptoTools/Crypto/sha1.h>
 #include "Sh3ShareGen.h"

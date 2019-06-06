@@ -80,6 +80,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\libs\function2\include\;C:\libs\eigen\;C:\libs\NTL\include;C:\libs\boost;$(ProjectDir)/../../libOTe/;$(ProjectDir)/../../libOTe/cryptoTools;C:\libs\eigen;C:\Users\peter\repo\relic\include;C:\libs\mpir\lib\x64\$(Configuration);$(ProjectDir)..;</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0501;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -104,6 +105,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\libs\function2\include\;C:\libs\eigen\;C:\libs\NTL\include;C:\libs\boost;$(ProjectDir)/../../libOTe/;$(ProjectDir)/../../libOTe/cryptoTools;C:\libs\eigen;C:\Users\peter\repo\relic\include;C:\libs\mpir\lib\x64\$(Configuration);$(ProjectDir)..;</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0501;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

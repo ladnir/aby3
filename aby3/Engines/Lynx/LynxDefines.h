@@ -5,7 +5,7 @@
 #include <cryptoTools/Network/Session.h>
 #include <cryptoTools/Network/Channel.h>
 #include <utility>
-#include "aby3/Circuit/BetaLibrary.h"
+#include <cryptoTools/Circuit/BetaLibrary.h>
 #include <functional>
 
 

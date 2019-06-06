@@ -1,7 +1,7 @@
 #pragma once
 #include "aby3/Engines/Lynx/LynxDefines.h"
 #include "aby3/OT/SharedOT.h"
-
+#include "aby3/Circuit/CircuitLibrary.h"
 namespace Lynx
 {
 	class Piecewise;
@@ -111,7 +111,7 @@ namespace Lynx
 		Matrix argMax(const Matrix& Y);
 		Matrix extractSign(const Matrix& Y);
 
-		BetaLibrary mCirLibrary;
+		aby3::CircuitLibrary mCirLibrary;
 
 		
 

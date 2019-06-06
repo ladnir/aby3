@@ -12,7 +12,7 @@
 #include <algorithm>
 
 
-#include <aby3/Circuit/BetaCircuit.h>
+#include <aby3/Circuit/CircuitLibrary.h>
 #include <cryptoTools/Crypto/PRNG.h>
 
 namespace osuCrypto

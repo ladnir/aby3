@@ -78,6 +78,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\libs\function2\include\;C:\libs\eigen\;C:\libs\NTL\include;C:\libs\boost;$(ProjectDir)/../../libOTe/;$(ProjectDir)/../../libOTe/cryptoTools;C:\libs\eigen;C:\Users\peter\repo\relic\include;C:\libs\mpir\lib\x64\$(Configuration);$(ProjectDir)..;</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0501;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>C:/libs/boost/stage/lib;C:\libs\mpir\lib\x64\$(Configuration);C:\libs\miracl\x64\$(Configuration);C:\libs\NTL\x64/$(Configuration);$(ProjectDir)../../libOTe/x64/$(Configuration);$(ProjectDir)../../relic/lib/$(Configuration);$(ProjectDir)../../emp/emp-tool/x64/$(Configuration);$(OutputPath)</AdditionalLibraryDirectories>
@@ -116,6 +117,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\libs\function2\include\;C:\libs\eigen\;C:\libs\NTL\include;C:\libs\boost;$(ProjectDir)/../../libOTe/;$(ProjectDir)/../../libOTe/cryptoTools;C:\libs\eigen;C:\Users\peter\repo\relic\include;C:\libs\mpir\lib\x64\$(Configuration);$(ProjectDir)..;</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0501;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>

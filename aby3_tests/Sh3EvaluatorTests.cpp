@@ -416,10 +416,10 @@ void Sh3_Evaluator_asyncMul_matrixFixed_test(const oc::CLP & cmd)
 			c = a * b;
 			auto c64 = a.i64Cast() * b.i64Cast();
 
-			A.mShares[0].setZero();
-			A.mShares[1].setZero();
-			B.mShares[0].setZero();
-			B.mShares[1].setZero();
+			A[0].setZero();
+			A[1].setZero();
+			B[0].setZero();
+			B[1].setZero();
 
 			if (idx == 0)
 			{

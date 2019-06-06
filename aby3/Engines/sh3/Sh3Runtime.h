@@ -4,11 +4,14 @@
 #include <cryptoTools/Network/Session.h>
 #include <boost/variant.hpp>
 #include <function2/function2.hpp>
+#include <deque>
+#include <unordered_map>
 
 namespace aby3
 {
 
     class Sh3Runtime;
+	class Sh3TaskBase;
 
     class Sh3Task
     {
@@ -18,7 +21,7 @@ namespace aby3
         using ContinuationFunc = fu2::unique_function<void(Sh3Task& self)>;
 
         // returns the associated runtime.
-        Sh3Runtime& getRuntime() { return *mRuntime; }
+        Sh3Runtime& getRuntime() const { return *mRuntime; }
 
         // schedules a task that can be executed in the following round.
         Sh3Task then(RoundFunc task);
@@ -26,12 +29,18 @@ namespace aby3
         // schedule a task that can be executed in the same round as this task.
         Sh3Task then(ContinuationFunc task);
 
-        // mark this task as not completed and perform the provided function in the following round.
-        void nextRound(RoundFunc task);
+		// Get a task that is fulfilled when all of this tasks dependencies
+		// are fulfilled. 
+		Sh3Task getClosure();
+
+
+		Sh3Task operator&&(const Sh3Task& o)const;
 
         // blocks until this task is completed. 
         void get();
 
+
+		Sh3TaskBase* basePtr();
         Sh3Runtime* mRuntime = nullptr;
         i64 mTaskIdx = -1;
     };
@@ -39,33 +48,49 @@ namespace aby3
     class Sh3TaskBase
     {
     public:
+		Sh3TaskBase() = default;
+		Sh3TaskBase(const Sh3TaskBase&) = delete;
+		Sh3TaskBase(Sh3TaskBase&&) = default;
+		~Sh3TaskBase() = default;
+
         struct EmptyState {};
+		struct Closure {};
+		struct And {};
 
         i64 mIdx = -1;
-        u64 mDepCount;
+        u64 mDepCount_ = 0;
 
-        void pop()
+        void clear()
         {
             mIdx = -1;
             mChildren.clear();
             mFunc = EmptyState{};
         }
 
-        void addChild(Sh3TaskBase* child)
+        void addChild(Sh3TaskBase& child)
         {
-            mChildren.push_back(child->mIdx);
+            mChildren.push_back(child.mIdx);
         }
 
 
-        std::vector<i64> mChildren;
+		// The list of downstream tasks that depend on this task. 
+		// When this task is fulfillied, we will check if these
+		// tasks are ready to be run. 
+		std::vector<i64> mChildren;
 
+		// The list of upstream (closure) tasks that should be partially 
+		// fulfilled when this task is fulfilled. 
+		//std::vector<i64> mClosures;
 
         boost::variant<
             EmptyState,
+			Closure,
+			And,
             Sh3Task::RoundFunc,
             Sh3Task::ContinuationFunc>
             mFunc = EmptyState{};
 
+		void depFulfilled(Sh3TaskBase& parent, Sh3Runtime& rt);
 
         // returns true if this task is initialized.
         bool isValid() const
@@ -76,7 +101,7 @@ namespace aby3
         // returns true if this task is ready to be performed
         bool isReady() const
         {
-            return isValid() && mDepCount == 0;
+            return isValid() && mDepCount_ == 0;
         }
 
         // returns true if this task has completed all of its work
@@ -90,117 +115,100 @@ namespace aby3
         {
             return boost::get<Sh3Task::ContinuationFunc>(&mFunc);
         }
+
+		bool isAggregateTask()
+		{
+			return isClosure() || isAnd();
+		}
+
+		bool isClosure()
+		{
+			return boost::get<Closure>(&mFunc);
+		}
+		bool isAnd()
+		{
+			return boost::get<And>(&mFunc);
+		}
     };
 
-    class TaskDeque
-    {
-    public:
 
-        u64 size() const { return mPushIdx - mPopIdx; }
+	class TaskDag
+	{
+	public:
+		std::deque<i64> mReadyDeque;
+		std::unordered_map<i64, Sh3TaskBase> mTaskMap;
 
-        u64 capacity() const
-        {
-            return mTasks.size();
-        }
+		i64 mPushIdx = 0;
+		Sh3TaskBase& emplace()
+		{
+			auto p = mTaskMap.emplace(mPushIdx, Sh3TaskBase{});
+			p.first->second.mIdx = mPushIdx++;
+			return p.first->second;
+		}
+		void enqueueBack(i64 idx)
+		{
+			if (mTaskMap.find(idx) == mTaskMap.end())
+				throw RTE_LOC;
+			mReadyDeque.push_back(idx);
+		}
 
-        void reserve(u64 size)
-        {
-            if (capacity() < size)
-            {
-                auto nextPowOf2 = 1ull << oc::log2ceil(size);
+		//void enqueueFront(i64 idx)
+		//{
+		//	if (mTaskMap.find(idx) == mTaskMap.end())
+		//		throw RTE_LOC;
+		//	mReadyDeque.push_front(idx);
+		//}
 
-                auto mod = nextPowOf2 - 1;
-                std::vector<Sh3TaskBase> newTasks(nextPowOf2);
+		Sh3TaskBase& front()
+		{
+			if (mReadyDeque.size() == 0)
+				throw RTE_LOC;
+			return mTaskMap.find(mReadyDeque.front())->second;
+		}
+		void popFront()
+		{
+			if (mReadyDeque.size() == 0)
+				throw RTE_LOC;
 
-                auto s = mPopIdx;
-                auto e = mPushIdx;
-                while (s != e)
-                {
-                    newTasks[s & mod] = std::move(*modGet(s));
-                    ++s;
-                }
+			auto iter = mTaskMap.find(mReadyDeque.front());
+			if (iter == mTaskMap.end())
+				throw RTE_LOC;
 
-                mTasks = std::move(newTasks);
-            }
-        }
+			mTaskMap.erase(iter);
+			mReadyDeque.pop_front();
+		}
 
+		void remove(i64 idx)
+		{
+			auto iter = mTaskMap.find(idx);
+			if (iter == mTaskMap.end())
+				throw RTE_LOC;
 
-        Sh3TaskBase* push()
-        {
-            if (size() == capacity())
-                reserve(capacity() * 2);
+			mTaskMap.erase(iter);
+		}
 
-            auto ptr = modGet(mPushIdx);
+		Sh3TaskBase* tryGet(i64 idx)
+		{
+			if (idx >= mPushIdx)
+				throw std::runtime_error("requested task that has not been created. " LOCATION);
 
-            if (ptr->isValid())
-                throw std::runtime_error(LOCATION);
-            ptr->mIdx = mPushIdx;
+			auto iter = mTaskMap.find(idx);
+			if (iter == mTaskMap.end())
+				return nullptr;
+			return &iter->second;
+		}
 
-            ++mPushIdx;
+		void reserve(u64 n)
+		{
+			//mReadyQueue.reserve(n);
+			mTaskMap.reserve(n);
+		}
 
-            return ptr;
-        }
-
-
-        Sh3TaskBase* get(i64 taskIdx)
-        {
-            if (size())
-            {
-                auto& oldest = *modGet(mPopIdx);
-                if (oldest.mIdx <= taskIdx)
-                {
-                    auto idx = mPopIdx + taskIdx - oldest.mIdx;
-                    auto ptr = modGet(idx);
-
-                    if (ptr->mIdx != taskIdx)
-                        ptr = nullptr;
-
-                    return ptr;
-                }
-            }
-
-            return nullptr;
-        }
-
-        Sh3TaskBase* getNext(i64 taskIdx)
-        {
-            while (taskIdx < mPushIdx)
-            {
-                auto ptr = modGet(taskIdx);
-                if (ptr->isReady())
-                {
-                    return ptr;
-                }
-
-                ++taskIdx;
-            }
-
-            return nullptr;
-        }
-
-        void pop(u64 taskIdx)
-        {
-            auto ptr = get(taskIdx);
-            if (ptr == nullptr)
-                throw std::runtime_error(LOCATION);
-            if (ptr->isValid() == false)
-                throw std::runtime_error(LOCATION);
-
-            ptr->pop();
-
-            while (size() && modGet(mPopIdx)->mIdx == -1)
-                ++mPopIdx;
-        }
-
-
-        i64 mPopIdx = 0, mPushIdx = 0;
-        std::vector<Sh3TaskBase> mTasks;
-
-        Sh3TaskBase* modGet(u64 idx)
-        {
-            return &mTasks[idx & (mTasks.size() - 1)];
-        }
-    };
+		u64 size()
+		{
+			return mTaskMap.size();
+		}
+	};
 
     class Sh3Runtime
     {
@@ -213,6 +221,14 @@ namespace aby3
         {
             init(partyIdx, comm);
         }
+
+		~Sh3Runtime()
+		{
+			if (mTasks.size())
+			{
+				std::cout << "~~~~~~~~~~~~~~~~ Runtime not empty!!! ~~~~~~~~~~~~~~~~" << std::endl;
+			}
+		}
 
         u64 mPartyIdx = -1;
         CommPkg mComm;
@@ -231,20 +247,143 @@ namespace aby3
         const Sh3Task& noDependencies() const { return mNullTask; }
         operator Sh3Task() const { return noDependencies(); }
 
-        void addTask(span<Sh3Task> deps, Sh3Task& handle, Sh3Task::RoundFunc&& func);
+		Sh3Task addTask(span<Sh3Task> deps, Sh3Task::RoundFunc&& func);
 
-        void addTask(span<Sh3Task> deps, Sh3Task& handle, Sh3Task::ContinuationFunc&& func);
-        void configureTask(span<Sh3Task> deps, Sh3Task& handle, Sh3TaskBase* base);
+		Sh3Task addTask(span<Sh3Task> deps, Sh3Task::ContinuationFunc&& func);
+
+		Sh3Task addClosure(span<Sh3Task> deps);
+		
+		Sh3Task addAnd(span<Sh3Task> deps);
+
+		void configureAnd(span<i64> deps, Sh3TaskBase& handle);
+		void configureClosure(span<i64> deps, Sh3TaskBase& handle);
+		Sh3Task configureTask(span<Sh3Task> deps, Sh3TaskBase& base);
 
         void runUntilTaskCompletes(i64 taskIdx);
-        void runOne();
+        void runNext();
         void runAll();
+		void runOneRound();
 
-        void runTask(Sh3TaskBase* task);
+        //void runTask(Sh3TaskBase* task);
 
-        TaskDeque mTasks;
+        TaskDag mTasks;
         Sh3Task mNullTask;
         //std::vector<Sh3TaskBase*> mActiveTasks;
     };
+
+
+
+	// class TaskDeque
+	// {
+	// public:
+
+	//     u64 size() const { return mPushIdx - mPopIdx; }
+
+	//     u64 capacity() const
+	//     {
+	//         return mTasks.size();
+	//     }
+
+	//     void reserve(u64 size)
+	//     {
+	//         if (capacity() < size)
+	//         {
+	//             auto nextPowOf2 = 1ull << oc::log2ceil(size);
+
+	//             auto mod = nextPowOf2 - 1;
+	//             std::vector<Sh3TaskBase> newTasks(nextPowOf2);
+
+	//             auto s = mPopIdx;
+	//             auto e = mPushIdx;
+	//             while (s != e)
+	//             {
+	//                 newTasks[s & mod] = std::move(*modGet(s));
+	//                 ++s;
+	//             }
+
+	//             mTasks = std::move(newTasks);
+	//         }
+	//     }
+
+
+	//     Sh3TaskBase* push()
+	//     {
+	//         if (size() == capacity())
+	//             reserve(capacity() * 2);
+
+	//         auto ptr = modGet(mPushIdx);
+
+	//         if (ptr->isValid())
+	//             throw std::runtime_error(LOCATION);
+	//         ptr->mIdx = mPushIdx;
+
+	//         ++mPushIdx;
+
+	//         return ptr;
+	//     }
+
+
+	//     Sh3TaskBase* get(i64 taskIdx)
+	//     {
+			 //if (taskIdx >= mPushIdx)
+			 //	throw std::runtime_error("requested task that has not been created. " LOCATION);
+
+	//         if (size())
+	//         {
+	//             auto& oldest = *modGet(mPopIdx);
+	//             if (oldest.mIdx <= taskIdx)
+	//             {
+	//                 auto idx = mPopIdx + taskIdx - oldest.mIdx;
+	//                 auto ptr = modGet(idx);
+
+	//                 if (ptr->mIdx != taskIdx)
+	//                     ptr = nullptr;
+
+	//                 return ptr;
+	//             }
+	//         }
+
+	//         return nullptr;
+	//     }
+
+	//     Sh3TaskBase* getNext(i64 taskIdx)
+	//     {
+	//         while (taskIdx < mPushIdx)
+	//         {
+	//             auto ptr = modGet(taskIdx);
+	//             if (ptr->isReady())
+	//             {
+	//                 return ptr;
+	//             }
+
+	//             ++taskIdx;
+	//         }
+
+	//         return nullptr;
+	//     }
+
+	//     void pop(u64 taskIdx)
+	//     {
+	//         auto ptr = get(taskIdx);
+	//         if (ptr == nullptr)
+	//             throw std::runtime_error(LOCATION);
+	//         if (ptr->isValid() == false)
+	//             throw std::runtime_error(LOCATION);
+
+	//         ptr->pop();
+
+	//         while (size() && modGet(mPopIdx)->mIdx == -1)
+	//             ++mPopIdx;
+	//     }
+
+
+	//     i64 mPopIdx = 0, mPushIdx = 0;
+	//     std::vector<Sh3TaskBase> mTasks;
+
+	//     Sh3TaskBase* modGet(u64 idx)
+	//     {
+	//         return &mTasks[idx & (mTasks.size() - 1)];
+	//     }
+	// };
 
 }
