@@ -637,3 +637,304 @@ void Sh3_f64_basics_test()
 
 	}
 }
+
+void createSharing(
+	PRNG& prng,
+	i64Matrix& value,
+	si64Matrix& s0,
+	si64Matrix& s1,
+	si64Matrix& s2);
+
+
+void createSharing(
+	PRNG& prng,
+	i64Matrix& value,
+	sbMatrix& s0,
+	sbMatrix& s1,
+	sbMatrix& s2)
+{
+
+	//s0.mShares[0] = value;
+
+	s0.mShares[0].resize(value.rows(), value.cols());
+	s1.mShares[0].resize(value.rows(), value.cols());
+	s2.mShares[0].resize(value.rows(), value.cols());
+
+	for (auto i = 0ull; i < s0.mShares[0].size(); ++i)
+		s0.mShares[0](i) = value(i);
+
+	//if (zeroshare) {
+	//	s1.mShares[0].setZero();
+	//	s2.mShares[0].setZero();
+	//}
+	//else 
+	{
+		prng.get(s1.mShares[0].data(), s1.mShares[0].size());
+		prng.get(s2.mShares[0].data(), s2.mShares[0].size());
+
+		for (u64 i = 0; i < s0.mShares[0].size(); ++i)
+			s0.mShares[0](i) ^= s1.mShares[0](i) ^ s2.mShares[0](i);
+	}
+
+	s0.mShares[1] = s2.mShares[0];
+	s1.mShares[1] = s0.mShares[0];
+	s2.mShares[1] = s1.mShares[0];
+}
+
+void sh3_asyncArithBinMul_test()
+{
+	IOService ios;
+
+	auto chl01 = Session(ios, "127.0.0.1:1313", SessionMode::Server, "01").addChannel();
+	auto chl10 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "01").addChannel();
+	auto chl02 = Session(ios, "127.0.0.1:1313", SessionMode::Server, "02").addChannel();
+	auto chl20 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "02").addChannel();
+	auto chl12 = Session(ios, "127.0.0.1:1313", SessionMode::Server, "12").addChannel();
+	auto chl21 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "12").addChannel();
+
+
+	PRNG prng(ZeroBlock);
+	u64 size = 100;
+	u64 dec = 16;
+
+	CommPkg comms[3];
+	comms[0] = { chl02, chl01 };
+	comms[1] = { chl10, chl12 };
+	comms[2] = { chl21, chl20 };
+
+	Sh3Runtime p0, p1, p2;
+
+	p0.init(0, comms[0]);
+	p1.init(1, comms[1]);
+	p2.init(2, comms[2]);
+
+	Sh3Encryptor encs[3];
+	Sh3Evaluator evals[3];
+	encs[0].init(0, toBlock(0, 0), toBlock(0, 1));
+	encs[1].init(1, toBlock(0, 1), toBlock(0, 2));
+	encs[2].init(2, toBlock(0, 2), toBlock(0, 0));
+	evals[0].init(0, toBlock(1, 0), toBlock(1, 1));
+	evals[1].init(1, toBlock(1, 1), toBlock(1, 2));
+	evals[2].init(2, toBlock(1, 2), toBlock(1, 0));
+	
+	//const Decimal D = Decimal::D8;
+	eMatrix<i64> a(size, 1), b(size, 1), c(size, 1), cc(size, 1);
+
+	si64Matrix
+		a0(size, 1),
+		a1(size, 1),
+		a2(size, 1),
+		c0(size, 1),
+		c1(size, 1),
+		c2(size, 1);
+
+	sbMatrix
+		b0(size, 1),
+		b1(size, 1),
+		b2(size, 1);
+
+	u64 trials = 10;
+	for (u64 t = 0; t < trials; ++t)
+	{
+		for (u64 i = 0; i < size; ++i)
+			b(i) = prng.get<bool>();
+
+		prng.get(a.data(), a.size());
+
+		for (u64 i = 0; i < size; ++i)
+		{
+			a(i) = a(i) >> 32;
+			c(i) = a(i) * b(i);
+		}
+
+		createSharing(prng, b, b0, b1, b2);
+		createSharing(prng, a, a0, a1, a2);
+
+		for (u64 i = 0; i < size; ++i)
+		{
+			//if (a(i) != a0(i)[0] + a0(i)[1] + a1(i)[0])
+			//	throw std::runtime_error(LOCATION);
+			//std::cout << "a[" << i << "] = " << a0(i)[0] << " + " << a0(i)[1] << " + " << a1(i)[0] << std::endl;
+
+			b0.mShares[0](i) &= 1;
+			b0.mShares[1](i) &= 1;
+			b1.mShares[0](i) &= 1;
+			b1.mShares[1](i) &= 1;
+			b2.mShares[0](i) &= 1;
+			b2.mShares[1](i) &= 1;
+		}
+
+		auto as0 = evals[0].asyncMul(p0, a0, b0, c0);
+		auto as1 = evals[1].asyncMul(p1, a1, b1, c1);
+		auto as2 = evals[2].asyncMul(p2, a2, b2, c2);
+
+		p0.runNext();
+		p1.runNext();
+		p2.runNext();
+
+		as0.get();
+		as1.get();
+		as2.get();
+
+		//t0 = std::thread([&]() { p0.asyncArithBinMul(a0, b0, c0).get(); });
+		//t1 = std::thread([&]() { p1.asyncArithBinMul(a1, b1, c1).get(); });
+		//t2 = std::thread([&]() { p2.asyncArithBinMul(a2, b2, c2).get(); });
+		//t0.join();
+		//t1.join();
+		//t2.join();
+
+		//typedef LynxEngine::Word Word;
+		for (u64 i = 0; i < size; ++i)
+		{
+
+			if (c0.mShares[0] != c1.mShares[1])
+				throw std::runtime_error(LOCATION);
+			if (c1.mShares[0] != c2.mShares[1])
+				throw std::runtime_error(LOCATION);
+			if (c2.mShares[0] != c0.mShares[1])
+				throw std::runtime_error(LOCATION);
+			auto ci0 = c0.mShares[0](i);
+			auto ci1 = c1.mShares[0](i);
+			auto ci2 = c2.mShares[0](i);
+			auto di0 = c0.mShares[1](i);
+			auto di1 = c1.mShares[1](i);
+			auto di2 = c2.mShares[1](i);
+			//std::cout << "ci0 " << ci0 << " " << di1 << std::endl;
+			//std::cout << "ci1 " << ci1 << " " << di2 << std::endl;
+			//std::cout << "ci2 " << ci2 << " " << di0 << std::endl;
+
+			//cc(i) = p0.shareToWord(c0(i), c1(i)[0]);// ^ c2(i);
+			cc(i) = c0.mShares[0](i) + c0.mShares[1](i) + c1.mShares[0](i);
+			auto ai = a(i);
+			auto bi = b(i);
+			auto cci = cc(i);
+			auto ci = c(i);
+			if (cc(i) != c(i))
+			{
+				throw std::runtime_error(LOCATION);
+			}
+		}
+	}
+}
+
+void sh3_asyncPubArithBinMul_test()
+{
+
+	IOService ios;
+
+	auto chl01 = Session(ios, "127.0.0.1:1313", SessionMode::Server, "01").addChannel();
+	auto chl10 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "01").addChannel();
+	auto chl02 = Session(ios, "127.0.0.1:1313", SessionMode::Server, "02").addChannel();
+	auto chl20 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "02").addChannel();
+	auto chl12 = Session(ios, "127.0.0.1:1313", SessionMode::Server, "12").addChannel();
+	auto chl21 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "12").addChannel();
+
+	PRNG prng(ZeroBlock);
+	u64 size = 100;
+
+	CommPkg comms[3];
+	comms[0] = { chl02, chl01 };
+	comms[1] = { chl10, chl12 };
+	comms[2] = { chl21, chl20 };
+
+	Sh3Runtime p0, p1, p2;
+
+	p0.init(0, comms[0]);
+	p1.init(1, comms[1]);
+	p2.init(2, comms[2]);
+	Sh3Encryptor encs[3];
+	Sh3Evaluator evals[3];
+	encs[0].init(0, toBlock(0, 0), toBlock(0, 1));
+	encs[1].init(1, toBlock(0, 1), toBlock(0, 2));
+	encs[2].init(2, toBlock(0, 2), toBlock(0, 0));
+	evals[0].init(0, toBlock(1, 0), toBlock(1, 1));
+	evals[1].init(1, toBlock(1, 1), toBlock(1, 2));
+	evals[2].init(2, toBlock(1, 2), toBlock(1, 0));
+
+	eMatrix<i64> b(size, 1), c(size, 1), cc(size, 1);
+
+	sbMatrix
+		b0(size, 1),
+		b1(size, 1),
+		b2(size, 1);
+	si64Matrix
+		c0(size, 1),
+		c1(size, 1),
+		c2(size, 1);
+
+	i64 a = prng.get<i64>();
+
+	for (u64 i = 0; i < size; ++i)
+		b(i) = prng.get<bool>();
+
+	for (u64 i = 0; i < size; ++i)
+	{
+		c(i) = a * b(i);
+	}
+
+	createSharing(prng, b, b0, b1, b2);
+
+	for (u64 i = 0; i < size; ++i)
+	{
+		//if (a(i) != a0(i)[0] + a0(i)[1] + a1(i)[0])
+		//	throw std::runtime_error(LOCATION);
+		//std::cout << "a[" << i << "] = " << a0(i)[0] << " + " << a0(i)[1] << " + " << a1(i)[0] << std::endl;
+
+		b0.mShares[0](i) &= 1;
+		b0.mShares[1](i) &= 1;
+		b1.mShares[0](i) &= 1;
+		b1.mShares[1](i) &= 1;
+		b2.mShares[0](i) &= 1;
+		b2.mShares[1](i) &= 1;
+	}
+
+	auto as0 = evals[0].asyncMul(p0, a, b0, c0);
+	auto as1 = evals[1].asyncMul(p1, a, b1, c1);
+	auto as2 = evals[2].asyncMul(p2, a, b2, c2);
+
+	p0.runNext();
+	p1.runNext();
+	p2.runNext();
+
+	as0.get();
+	as1.get();
+	as2.get();
+
+	//t0 = std::thread([&]() { p0.asyncArithBinMul(a0, b0, c0).get(); });
+	//t1 = std::thread([&]() { p1.asyncArithBinMul(a1, b1, c1).get(); });
+	//t2 = std::thread([&]() { p2.asyncArithBinMul(a2, b2, c2).get(); });
+	//t0.join();
+	//t1.join();
+	//t2.join();
+
+	//typedef LynxEngine::Word Word;
+	for (u64 i = 0; i < size; ++i)
+	{
+
+		if (c0.mShares[0] != c1.mShares[1])
+			throw std::runtime_error(LOCATION);
+		if (c1.mShares[0] != c2.mShares[1])
+			throw std::runtime_error(LOCATION);
+		if (c2.mShares[0] != c0.mShares[1])
+			throw std::runtime_error(LOCATION);
+		auto ci0 = c0.mShares[0](i);
+		auto ci1 = c1.mShares[0](i);
+		auto ci2 = c2.mShares[0](i);
+		auto di0 = c0.mShares[1](i);
+		auto di1 = c1.mShares[1](i);
+		auto di2 = c2.mShares[1](i);
+		//std::cout << "ci0 " << ci0 << " " << di1 << std::endl;
+		//std::cout << "ci1 " << ci1 << " " << di2 << std::endl;
+		//std::cout << "ci2 " << ci2 << " " << di0 << std::endl;
+
+		//cc(i) = p0.shareToWord(c0(i), c1(i)[0]);// ^ c2(i);
+		cc(i) = c0.mShares[0](i) + c0.mShares[1](i) + c1.mShares[0](i);
+		auto bi = b(i);
+		auto cci = cc(i);
+		auto ci = c(i);
+		if (cc(i) != c(i))
+		{
+			throw std::runtime_error(LOCATION);
+		}
+	}
+}

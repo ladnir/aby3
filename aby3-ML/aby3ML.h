@@ -133,7 +133,7 @@ namespace aby3
 			}
 
 			sf64Matrix<D> out(Y.rows(), Y.cols());
-			mLogistic.eval<D>(mRt.noDependencies(), Y, out);
+			mLogistic.eval<D>(mRt.noDependencies(), Y, out, mEval);
 			return out;
 		}
 

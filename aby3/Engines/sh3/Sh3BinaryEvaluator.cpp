@@ -509,10 +509,13 @@ namespace aby3
         distributeInputs();
 #endif
 
-        return dependency.then([this](CommPkg& comm, Sh3Task& self)
+        auto ret = dependency.then([this](CommPkg& comm, Sh3Task& self)
         {
             roundCallback(comm, self);
-        }).getClosure();
+        }, "bin-eval-closure").getClosure();
+
+
+		return ret;
     }
 
     u8 extractBit(i64* data, u64 rowIdx)
@@ -1293,11 +1296,13 @@ namespace aby3
 
         if (hasMoreRounds())
         {
-            task.then([this](CommPkg& comm, Sh3Task& task)
+            auto t = task.then([this](CommPkg& comm, Sh3Task& task)
             {
                 roundCallback(comm, task);
             }
             );
+
+			t.name() = "callback";
         }
     }
 

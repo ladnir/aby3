@@ -7,6 +7,7 @@ using namespace oc;
 void Sh3_Runtime_schedule_test(const CLP& cmd)
 {
 	Sh3Runtime rt;
+	rt.mPrint = cmd.isSet("print");
 
 	CommPkg comm;
 	rt.init(0, comm);
@@ -19,14 +20,14 @@ void Sh3_Runtime_schedule_test(const CLP& cmd)
 			if (counter++ != 0)
 				throw RTE_LOC;
 		}
-	);
+	,"task0");
 
 	auto task1 = base.then([&](CommPkg & _, Sh3Task self)
 		{
 			if (counter++ != 1)
 				throw RTE_LOC;
 		}
-	);
+	, "task1");
 
 	auto task2 = (task0 && task1).then([&](CommPkg & _, Sh3Task self)
 		{
@@ -38,28 +39,28 @@ void Sh3_Runtime_schedule_test(const CLP& cmd)
 				if (counter++ != 5)
 					throw RTE_LOC;
 				}
-			).then([&](CommPkg& _, Sh3Task self) {
+			, "task2-sub1").then([&](CommPkg& _, Sh3Task self) {
 
 					if (counter++ != 6)
 						throw RTE_LOC;
 				}
-			);
+			, "task2-sub2");
 		}
-	);
+	, "task2");
 
 	task2.then([&](Sh3Task self) 
 		{
 			if (counter++ != 3)
 				throw RTE_LOC;
 		}
-	);
+	, "task2-cont.");
 
 	auto task3 = task2.getClosure().then([&](CommPkg & _, Sh3Task self) {
 
 		if (counter++ != 7)
 			throw RTE_LOC;
 		}
-	);
+	, "task3");
 
 	task2.get();	
 

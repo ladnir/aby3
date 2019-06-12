@@ -1,5 +1,8 @@
 #pragma once
 
+#include "aby3/Engines/sh3/Sh3Runtime.h"
+#include "aby3/Engines/sh3/Sh3Encryptor.h"
+#include "aby3/Engines/sh3/Sh3Evaluator.h"
 #include "aby3/Engines/sh3/Sh3BinaryEvaluator.h"
 #include <aby3/Engines/sh3/Sh3Types.h>
 #include <aby3/Engines/sh3/Sh3FixedPoint.h>
@@ -20,9 +23,9 @@ namespace aby3
 			Coef(const i64& i) { *this = i; }
 			Coef(const double& d) { *this = d; }
 
-			bool mIsInteger;
-			i64 mInt;
-			double mDouble;
+			bool mIsInteger = false;
+			i64 mInt = 0;
+			double mDouble = 0;
 
 			void operator=(const i64& i)
 			{
@@ -98,6 +101,7 @@ namespace aby3
 			const si64Matrix& input,
 			si64Matrix& output,
 			u64 D,
+			Sh3Evaluator& evaluator,
 			bool print = false);
 
 
@@ -106,9 +110,10 @@ namespace aby3
 			Sh3Task dep,
 			const sf64Matrix<D>& inputs,
 			sf64Matrix<D>& outputs,
+			Sh3Evaluator& evaluator,
 			bool print = false)
 		{
-			return eval(dep, inputs.i64Cast(), outputs.i64Cast(), D, print);
+			return eval(dep, inputs.i64Cast(), outputs.i64Cast(), D, evaluator, print);
 		}
 
 		std::vector<sbMatrix> mInputRegions;
@@ -118,6 +123,10 @@ namespace aby3
 		CircuitLibrary lib;
 		std::vector<si64Matrix>functionOutputs;
 
+
+
+		Sh3Encryptor DebugEnc;
+		Sh3Runtime DebugRt;
 		//void getInputThresholds(const LynxEngine::Matrix & inputs, LynxEngine & eng, LynxEngine::Matrix &inputThresholds);
 
 		Sh3Task getInputRegions(

@@ -3,6 +3,7 @@
 #include "Sh3ShareGen.h"
 #include "Sh3Runtime.h"
 #include "Sh3FixedPoint.h"
+#include "aby3/OT/SharedOT.h"
 
 namespace aby3
 {
@@ -108,7 +109,7 @@ namespace aby3
 
         u64 mPartyIdx = -1, mTruncationIdx = 0;
         Sh3ShareGen mShareGen;
-
+		SharedOT mOtP02, mOtP01, mOtP10, mOtP12;
     };
 
 

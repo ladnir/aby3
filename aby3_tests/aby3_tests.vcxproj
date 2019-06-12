@@ -130,6 +130,7 @@
     <ClCompile Include="Sh3ConverterTests.cpp" />
     <ClCompile Include="Sh3EncryptorTests.cpp" />
     <ClCompile Include="Sh3EvaluatorTests.cpp" />
+    <ClCompile Include="Sh3PiecewiseTests.cpp" />
     <ClCompile Include="Sh3RuntimeTests.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -140,6 +141,7 @@
     <ClInclude Include="Sh3ConverterTests.h" />
     <ClInclude Include="Sh3EncryptorTests.h" />
     <ClInclude Include="Sh3EvaluatorTests.h" />
+    <ClInclude Include="Sh3PiecewiseTests.h" />
     <ClInclude Include="Sh3RuntimeTests.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -5,6 +5,7 @@
 #include "cryptoTools/Common/Log.h"
 //#include "aby3/Engines/Lynx/LynxBinaryEngine.h"
 #include "aby3/Engines/sh3/Sh3Evaluator.h"
+#include "aby3/Engines/sh3/Sh3Encryptor.h"
 
 namespace aby3
 {
@@ -179,16 +180,18 @@ namespace aby3
 		}
 
 	}
-
+#define UPDATE 
 
 	Sh3Task Sh3Piecewise::eval(
 		Sh3Task dep,
 		const si64Matrix & inputs,
 		si64Matrix & outputs,
 		u64 D,
+		Sh3Evaluator& evaluator,
 		bool print)
 	{
-		return dep.then([&inputs, &outputs, D, print, this](CommPkg & comm, Sh3Task self) {
+		UPDATE;
+		//auto ret = dep.then([&inputs, &outputs, D, &evaluator, print, this](CommPkg & comm, Sh3Task self) {
 
 			if (inputs.cols() != 1 || outputs.cols() != 1)
 				throw std::runtime_error(LOCATION);
@@ -203,60 +206,79 @@ namespace aby3
 				throw std::runtime_error(LOCATION);
 
 
-			//		auto fxEvalRoutine = [&inputs, &outputs, this, D, print]
-			//		(CommPkg & comm, Sh3Task self) {
-			//
-			//
-			//			//TODO("!!!!!!!!!!!!!! REMOVE THIS !!!!!!!!!!!!!! ");
-			//#ifdef Sh3Piecewise_DEBUG
-			//
-			//			auto plain_inputs = eng.reveal(inputs);
-			//			Engine::value_type_matrix plain_outputs(outputs.rows(), outputs.cols());
-			//			eval(plain_inputs, plain_outputs);
-			//
-			//			auto inputVals = eng.reconstructShare(inputs);
-			//			auto true_inputRegions = getInputRegions(inputVals);
-			//
-			//			std::vector<i64_matrix> inputRegions__(mCoefficients.size());
-			//			for (u64 i = 0; i < mCoefficients.size(); ++i)
-			//			{
-			//				inputRegions__[i] = eng.reconstructShare(inputRegions[i], ShareType::Binary);
-			//				//std::cout << i << std::endl << inputRegions__[i] << std::endl << std::endl;
-			//			}
-			//
-			//			for (u64 i = 0; i < inputs.size(); ++i)
-			//			{
-			//				oc::ostreamLock oo(std::cout);
-			//
-			//				if (print) oo << i << ":  ";
-			//
-			//				for (u64 t = 0; t < inputRegions.size(); ++t)
-			//				{
-			//					if (print) oo << inputRegions__[t](i) << ", ";
-			//
-			//
-			//					if (true_inputRegions(i, t) != inputRegions__[t](i))
-			//					{
-			//						oo << "bad input region " << i << " " << t << std::endl;
-			//					}
-			//				}
-			//				if (print) oo << std::endl;
-			//			}
-			//#endif
-			//
-			//			//// Phase 3: ...
-			//		};
-			//
-
 			mInputRegions.resize(mCoefficients.size());
-			auto rangeTestTask = getInputRegions(inputs, D, comm, self, print);
+			UPDATE;
+			//auto rangeTestTask = getInputRegions(inputs, D, comm, self, print);
+			auto rangeTestTask = getInputRegions(inputs, D, dep.getRuntime().mComm, dep, print);
 
-			//auto rangeTestTask = dep.then(rangeTestRoutine).getClosure();
+
+
+			//TODO("!!!!!!!!!!!!!! REMOVE THIS !!!!!!!!!!!!!! ");
+#define Sh3Piecewise_DEBUG
+#ifdef Sh3Piecewise_DEBUG
+			//rangeTestTask.then([&](Sh3Task self){
+
+					i64Matrix plain_inputs(inputs.rows(), inputs.cols());
+					DebugEnc.revealAll(DebugRt.noDependencies(), inputs, plain_inputs).get();
+
+					i64Matrix plain_outputs(outputs.rows(), outputs.cols());
+					eval(plain_inputs, plain_outputs, D);
+
+					auto true_inputRegions = getInputRegions(plain_inputs, D);
+
+					std::vector<i64Matrix> inputRegions__(mCoefficients.size());
+					for (u64 i = 0; i < mCoefficients.size(); ++i)
+					{
+						//inputRegions__[i] = 
+						inputRegions__[i].resize(mInputRegions[i].rows(), 1);
+						DebugEnc.revealAll(DebugRt.noDependencies(), mInputRegions[i], inputRegions__[i]).get();
+						//std::cout << i << std::endl << inputRegions__[i] << std::endl << std::endl;
+					}
+
+					for (u64 i = 0; i < inputs.size(); ++i)
+					{
+						oc::ostreamLock oo(std::cout);
+
+						if (print) oo << i << ":  ";
+
+						for (u64 t = 0; t < mInputRegions.size(); ++t)
+						{
+							if (print) oo << inputRegions__[t](i) << ", ";
+
+
+							if (true_inputRegions(i, t) != inputRegions__[t](i))
+							{
+								oo << "bad input region " << i << " " << t << std::endl;
+							}
+						}
+						if (print) oo << std::endl;
+					}
+		UPDATE;
+			//	}
+			//, "debug-print");
+#endif
+		UPDATE;
+		//	}
+		//,"eval-part1").getClosure("eval-part1-closure");
+
+
+		UPDATE;
+		//ret.get();
+
+		UPDATE;
+		//ret = ret.then([&inputs, &outputs, D, &evaluator, print, this](CommPkg & comm, Sh3Task self) {
+
+			//rangeTestTask.get();
+
 
 			functionOutputs.resize(mCoefficients.size());
-			auto fxEvalTask = getFunctionValues(inputs, comm, self, D, functionOutputs);
+			UPDATE;
+			//auto fxEvalTask = getFunctionValues(inputs, comm, self, D, functionOutputs);
+			auto fxEvalTask = getFunctionValues(inputs, dep.getRuntime().mComm, dep, D, functionOutputs);
+
 			//= dep.then(fxEvalRoutine).getClosure();
-			auto combineTask = (rangeTestTask && fxEvalTask);
+			//auto combineTask = (rangeTestTask && fxEvalTask);
+			auto combineTask = (fxEvalTask);
 
 
 			//std::vector<CompletionHandle> handles(mCoefficients.size());
@@ -265,8 +287,7 @@ namespace aby3
 			//{
 			outputs.mShares[0].setZero();
 			outputs.mShares[1].setZero();
-			Sh3Evaluator eval;
-
+			
 			auto multTask = combineTask;
 
 			for (u64 c = 0; c < mCoefficients.size(); ++c)
@@ -276,7 +297,8 @@ namespace aby3
 					if (mCoefficients[c].size() > 1)
 					{
 						// multiplication by a private value
-						multTask = multTask && eval.asyncMul(
+						//multTask = multTask && 
+						evaluator.asyncMul(
 							combineTask,
 							functionOutputs[c],
 							mInputRegions[c],
@@ -284,7 +306,9 @@ namespace aby3
 								{
 									outputs = outputs + functionOutputs[c];
 								}
-						);
+						).get();
+
+
 						//handles[c].get();
 					}
 					else
@@ -292,7 +316,8 @@ namespace aby3
 						// multiplication by a public constant
 						functionOutputs[c].resize(inputs.rows(), inputs.cols());
 
-						multTask = multTask && eval.asyncMul(
+						//multTask = multTask && 
+						evaluator.asyncMul(
 							combineTask,
 							mCoefficients[c][0].getFixedPoint(D),
 							mInputRegions[c],
@@ -300,7 +325,7 @@ namespace aby3
 								{
 									outputs = outputs + functionOutputs[c];
 								}
-						);
+						).get();
 						//handles[c].get();
 					}
 
@@ -308,16 +333,21 @@ namespace aby3
 #ifdef Sh3Piecewise_DEBUG
 					if (print)
 					{
+						i64Matrix plain_inputs(inputs.rows(), inputs.cols());
+						DebugEnc.revealAll(DebugRt.noDependencies(), inputs, plain_inputs).get();
+
 						std::cout << "coef[" << c << "] = ";
 						if (mCoefficients[c].size() > 1)
-							std::cout << mCoefficients[c][1].getInteger() << " " << inputVals(0) << " + ";
+							std::cout << mCoefficients[c][1].getInteger() << " " << plain_inputs(0) << " + ";
 
 						if (mCoefficients[c].size() > 0)
-							std::cout << mCoefficients[c][0].getFixedPoint(decimal) << std::endl;
+							std::cout << mCoefficients[c][0].getFixedPoint(D) << std::endl;
 					}
 #endif
 				}
 			}
+
+
 
 			//auto combineRoutine = [this, &outputs, print](Sh3Task self)
 			//{
@@ -337,7 +367,15 @@ namespace aby3
 			//	}
 			//};
 			//char cccc = 0;
-		});
+
+		UPDATE;
+		//	}
+		//).getClosure();
+
+		//ret.get();
+
+		//return ret;
+			return dep;
 	}
 
 
@@ -356,8 +394,8 @@ namespace aby3
 		// This is a bit stange but for each theshold computation, input0 will
 		// be different but input1 will be the same. This is a small optimization.
 		circuitInput0.resize(mThresholds.size());
-		circuitInput1.resize(inputs.size(), 1);
-		for (auto& c : circuitInput0) c.resize(inputs.size(), 1);
+		circuitInput1.resize(inputs.size(), 64);
+		for (auto& c : circuitInput0) c.resize(inputs.size(), 64);
 
 
 		// Lets us construct two sharings (x0+x1) and x2. The former will be a normal sharing
@@ -366,8 +404,8 @@ namespace aby3
 		// can be insecure. However, in this case its ok.
 
 		auto pIdx = self.getRuntime().mPartyIdx;
-		auto& c0s0 = circuitInput0[0].mShares[0];
-		auto& c0s1 = circuitInput0[0].mShares[1];
+		auto & c0s0 = circuitInput0[0].mShares[0];
+		auto & c0s1 = circuitInput0[0].mShares[1];
 		switch (pIdx)
 		{
 		case 0:
@@ -378,7 +416,7 @@ namespace aby3
 
 			for (u64 i = 0; i < c0s0.size(); ++i)
 				c0s0(i) = inputs.mShares[0](i)
-						+ inputs.mShares[1](i);
+				+ inputs.mShares[1](i);
 
 			TODO("Radomize the shares....");
 			// We need to randomize the share
@@ -414,7 +452,8 @@ namespace aby3
 		comm.mNext.asyncSend(c0s0.data(), c0s0.size());
 		auto fu = comm.mPrev.asyncRecv(c0s1.data(), c0s1.size());
 
-		return self.then([&inputs, pIdx, this, decimal, fu = std::move(fu)](CommPkg & comm, Sh3Task self) mutable {
+		UPDATE;
+		//auto ret = self.then([&inputs, pIdx, this, decimal, fu = std::move(fu)](CommPkg & comm, Sh3Task self) mutable {
 
 			fu.get();
 			// Now we need to augment the circuitInput0 shares for each of the thresholds.
@@ -462,8 +501,18 @@ namespace aby3
 					mInputRegions[t].resize(inputs.rows(), inputs.cols());
 					binEng.getOutput(t, mInputRegions[t]);
 				}
-				});
-		}).getClosure();
+				}
+				, "binEval-continuation")
+
+				.get();
+			UPDATE;
+				
+		//}, "getInputRegions-part2");
+		//auto closure = ret.getClosure("getInputRegions-closure");
+		//return closure;
+		
+		return self.getRuntime();
+
 	}
 
 	Sh3Task Sh3Piecewise::getFunctionValues(
