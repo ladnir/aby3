@@ -490,7 +490,7 @@ namespace aby3
             validateMemory();
             distributeInputs();
 #endif
-
+			 
             roundCallback(comm, self);
 
         }).getClosure().then([this, outputs = std::move(outputs)](Sh3Task& self)

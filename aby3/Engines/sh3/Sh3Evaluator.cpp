@@ -189,7 +189,7 @@ namespace aby3
 				break;
 			}
 			case 2:
-			{
+			{ 
 				BitVector c0(a.size()), c1(a.size());
 				std::vector<i64> s0(a.size()), s1(a.size());
 				for (u64 i = 0; i < a.size(); ++i)

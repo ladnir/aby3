@@ -120,8 +120,8 @@ namespace aby3
 
             self.then([fu = std::move(fu)](CommPkg& comm, Sh3Task& self)mutable{
                 fu.get();
-            }).getClosure();
-        });
+            });
+        }).getClosure();
 
     }
 

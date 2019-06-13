@@ -327,7 +327,7 @@ namespace aby3
 								}
 						).get();
 						//handles[c].get();
-					}
+					} 
 
 					//auto pub = eng.reconstructShare(functionOutputs[c]);
 #ifdef Sh3Piecewise_DEBUG

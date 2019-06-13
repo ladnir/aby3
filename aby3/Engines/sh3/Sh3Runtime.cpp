@@ -369,7 +369,6 @@ namespace aby3
 		if (closure.mClosureCount != 0)
 			throw RTE_LOC;
 
-		closure.mStatus = Sh3TaskBase::Closed;
 
 		auto dsTasks = getDownstream(mTasks, closure);
 		std::vector<i64> removes; removes.reserve(dsTasks.size());
@@ -394,6 +393,8 @@ namespace aby3
 		Sh3Task dep{this, closure.mIdx, Sh3Task::Closure };
 		for (auto cIdx : closure.mClosureChildren)
 			mTasks.get(cIdx).depFulfilled(dep, *this);
+
+		closure.mStatus = Sh3TaskBase::Closed;
 
 		for(auto r : removes)
 			mTasks.remove(r);

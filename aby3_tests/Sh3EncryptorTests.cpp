@@ -327,6 +327,13 @@ void Sh3_Encryptor_asyncIO_test()
 
         si64Matrix mShr(trials, trials);
         Sh3Task task = rt.noDependencies();
+		//rt.mPrint = true;
+
+		if (rt.mTasks.mTaskMap.size() || rt.mTasks.mReadyDeque.size())
+		{
+			std::cout << "bad runtime 1" << std::endl;
+			failed = true;
+		}
         task = e.localIntMatrix(task, m, mShr);
         e.reveal(task, mShr, mm).get();
 
@@ -335,6 +342,12 @@ void Sh3_Encryptor_asyncIO_test()
             std::cout << "int mtx" << std::endl;
             failed = true;
         }
+
+		if (rt.mTasks.mTaskMap.size() || rt.mTasks.mReadyDeque.size())
+		{
+			std::cout << "bad runtime 2" << std::endl;
+			failed = true;
+		}
 
         sbMatrix bShr(trials, trials * 64);
         task = e.localBinMatrix(task, m, bShr);

@@ -6,7 +6,7 @@ namespace aby3
 {
 
 
-
+	 
     void Sh3Converter::toPackedBin(const sbMatrix & in, sPackedBin & dest)
     {
         dest.reset(in.rows(), in.bitCount());
