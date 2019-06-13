@@ -33,6 +33,9 @@
     <ClCompile Include="main-logistic.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="main-pred.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main-linear.h">
@@ -54,6 +57,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="main-logistic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="main-pred.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

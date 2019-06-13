@@ -1,3 +1,6 @@
+
+#ifdef PRED_PROTOCOL
+
 #include "online/pred.h"
 #include "cryptoTools/Common/CLP.h"
 #include "cryptoTools/Crypto/PRNG.h"
@@ -435,3 +438,4 @@ int linear_logistic_pred_3pc_sh(int argc, char** argv)
 }
 
 
+#endif

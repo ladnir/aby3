@@ -424,19 +424,20 @@ namespace aby3
 			auto a = isAnd();
 			if (c || a)
 			{
+				Sh3Task dep{ &rt, mIdx, Sh3Task::Evaluation };
+
 				if (c) {
 					if (rt.mPrint)
 						oc::lout << "Evaluating cont. " << mIdx << " " << mName << std::endl;
 
 					rt.mIsActive = true;
-					boost::get<Sh3Task::ContinuationFunc>(mFunc)(Sh3Task{ &rt, mIdx });
+					boost::get<Sh3Task::ContinuationFunc>(mFunc)(dep);
 					rt.mIsActive = false;
 
 					if (rt.mPrint)
 						oc::lout << "Evaluated cont. " << mIdx << " " << mName << std::endl;
 				}
 
-				Sh3Task dep{ &rt, mIdx, Sh3Task::Evaluation };
 
 				for (auto cIdx : mUpstreamClosures)
 				{

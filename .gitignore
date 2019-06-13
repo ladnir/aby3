@@ -9,6 +9,14 @@
 *.pdf
 *.dvi
 
+/thirdparty/
+/lib/
+/bin/
+Makefile
+*/CMakeFiles/
+/CMakeFiles/
+*.cmake
+CMakeCache.txt
 
 *.pptx
 *.xlsx
@@ -24,7 +32,7 @@ x64/*
 
 log.txt
 */log.txt
-*.txt
+
 *.bin
 *.json
 

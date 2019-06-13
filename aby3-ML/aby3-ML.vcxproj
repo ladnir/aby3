@@ -133,6 +133,7 @@
     <ClCompile Include="LinearModelGen.cpp" />
     <ClCompile Include="main-linear.cpp" />
     <ClCompile Include="main-logistic.cpp" />
+    <ClCompile Include="main-pred.cpp" />
     <ClCompile Include="NeuralModelGen.cpp" />
     <ClCompile Include="PlainML.cpp" />
   </ItemGroup>
@@ -141,6 +142,7 @@
     <ClInclude Include="LinearModelGen.h" />
     <ClInclude Include="main-linear.h" />
     <ClInclude Include="main-logistic.h" />
+    <ClInclude Include="main-pred.h" />
     <ClInclude Include="NeuralModelGen.h" />
     <ClInclude Include="PlainML.h" />
     <ClInclude Include="Regression.h" />

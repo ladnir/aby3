@@ -148,9 +148,9 @@ void Sh3_Piecewise_test(const oc::CLP& cmd)
 	p1.init(1, comms[1]); 
 	p2.init(2, comms[2]); 
 
-	ev0.init(0, oc::toBlock(0ull), oc::toBlock(1));
+	ev0.init(0, oc::toBlock(3), oc::toBlock(1));
 	ev1.init(1, oc::toBlock(1), oc::toBlock(2));
-	ev2.init(2, oc::toBlock(2), oc::toBlock(0ull));
+	ev2.init(2, oc::toBlock(2), oc::toBlock(3));
 
 	PRNG prng(ZeroBlock);
 	std::normal_distribution<double> dist(3.0);
