@@ -214,10 +214,10 @@ namespace aby3
 
 
 			//TODO("!!!!!!!!!!!!!! REMOVE THIS !!!!!!!!!!!!!! ");
-#define Sh3Piecewise_DEBUG
+//#define Sh3Piecewise_DEBUG
 #ifdef Sh3Piecewise_DEBUG
 			//rangeTestTask.then([&](Sh3Task self){
-
+			
 					i64Matrix plain_inputs(inputs.rows(), inputs.cols());
 					DebugEnc.revealAll(DebugRt.noDependencies(), inputs, plain_inputs).get();
 

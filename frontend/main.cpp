@@ -65,6 +65,12 @@ int main(int argc, char** argv)
 			logistic_plain_main(cmd);
 		}
 
+		if (cmd.isSet("logistic"))
+		{
+			set = true;
+			logistic_main_3pc_sh(cmd);
+		}
+
 		if (cmd.isSet("eric"))
 		{
 			set = true;

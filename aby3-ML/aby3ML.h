@@ -16,6 +16,7 @@ namespace aby3
 		Sh3Encryptor mEnc;
 		Sh3Evaluator mEval;
 		Sh3Runtime mRt;
+		bool mPrint = true;
 
 		u64 partyIdx()
 		{
@@ -153,28 +154,28 @@ namespace aby3
 		template<typename T>
 		aby3ML& operator<<(const T& v)
 		{
-			if(partyIdx()==0) std::cout << v;
+			if(partyIdx()==0 && mPrint) std::cout << v;
 			return *this;
 		}
 		template<typename T>
 		aby3ML& operator<<(T& v)
 		{
-			if (partyIdx() == 0) std::cout << v;
+			if (partyIdx() == 0 && mPrint) std::cout << v;
 			return *this;
 		}
 		aby3ML& operator<< (std::ostream& (*v)(std::ostream&))
 		{
-			if (partyIdx() == 0) std::cout << v;
+			if (partyIdx() == 0 && mPrint) std::cout << v;
 			return *this;
 		}
 		aby3ML& operator<< (std::ios& (*v)(std::ios&))
 		{
-			if (partyIdx() == 0) std::cout << v;
+			if (partyIdx() == 0 && mPrint) std::cout << v;
 			return *this;
 		}
 		aby3ML& operator<< (std::ios_base& (*v)(std::ios_base&))
 		{
-			if (partyIdx() == 0) std::cout << v;
+			if (partyIdx() == 0 && mPrint) std::cout << v;
 			return *this;
 		}
 

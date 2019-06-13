@@ -64,34 +64,34 @@ namespace aby3
 
 
 
-
+		bool mPrint = true;
 
 		template<typename T>
-		std::ostream& operator<<(const T& v)
+		PlainML& operator<<(const T& v)
 		{
-			std::cout << v;
-			return std::cout;
+			if (mPrint) std::cout << v;
+			return *this;
 		}
 		template<typename T>
-		std::ostream& operator<<(T& v)
+		PlainML& operator<<(T& v)
 		{
-			std::cout << v;
-			return std::cout;
+			if (mPrint) std::cout << v;
+			return *this;
 		}
-		std::ostream& operator<< (std::ostream& (*v)(std::ostream&))
+		PlainML& operator<< (std::ostream& (*v)(std::ostream&))
 		{
-			std::cout << v;
-			return std::cout;
+			if (mPrint) std::cout << v;
+			return *this;
 		}
-		std::ostream& operator<< (std::ios& (*v)(std::ios&))
+		PlainML& operator<< (std::ios& (*v)(std::ios&))
 		{
-			std::cout << v;
-			return std::cout;
+			if (mPrint) std::cout << v;
+			return *this;
 		}
-		std::ostream& operator<< (std::ios_base& (*v)(std::ios_base&))
+		PlainML& operator<< (std::ios_base& (*v)(std::ios_base&))
 		{
-			std::cout << v;
-			return std::cout;
+			if (mPrint) std::cout << v;
+			return *this;
 		}
 
 	};

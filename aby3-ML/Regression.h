@@ -11,6 +11,8 @@
 #include <aby3/Engines/sh3/Sh3FixedPoint.h>
 using namespace oc;
 
+#define DEBUG_PRINT(x)
+
 struct RegressionParam
 {
 	u64 mIterations;
@@ -146,15 +148,15 @@ void SGD_Linear(
 
 		extractBatch(XX, YY, X, Y, batchIndices);
 
-		//engine << "X[" << i << "] " << engine.reveal(XX) << std::endl;
-		//engine << "Y[" << i << "] " << engine.reveal(YY) << std::endl;
-		//engine << "W[" << i << "] " << engine.reveal(w) << std::endl;
+		DEBUG_PRINT(engine << "X[" << i << "] " << engine.reveal(XX) << std::endl);
+		DEBUG_PRINT(engine << "Y[" << i << "] " << engine.reveal(YY) << std::endl);
+		DEBUG_PRINT(engine << "W[" << i << "] " << engine.reveal(w) << std::endl);
 
 		// compute the errors on the current batch.
 		Matrix error = engine.mul(XX, w);
 		error -= YY;
 
-		//engine << "E[" << i << "] " << engine.reveal(error) << std::endl;
+		DEBUG_PRINT(engine << "E[" << i << "] " << engine.reveal(error) << std::endl);
 
 		// compute XX = XX^T
 		XX.transposeInPlace();
@@ -164,8 +166,8 @@ void SGD_Linear(
 		//std::cout << update << std::endl;
 		w = w - update;
 
-		//engine << "U[" << i << "] " << engine.reveal(update) << std::endl;
-		//engine << "W[" << i << "] " << engine.reveal(w) << std::endl;
+		DEBUG_PRINT(engine << "U[" << i << "] " << engine.reveal(update) << std::endl);
+		DEBUG_PRINT(engine << "W[" << i << "] " << engine.reveal(w) << std::endl);
 
 
 		if (X_test && i % 1000 == 0)
@@ -252,20 +254,20 @@ void SGD_Logistic(
 		// extract the rows indexed by batchIndices and store them in XX, YY.
 		extractBatch(XX, YY, X, Y, batchIndices);
 
-		//engine << "X[" << i << "] " << engine.reveal(XX) << std::endl;
-		//engine << "Y[" << i << "] " << engine.reveal(YY) << std::endl;
-		//engine << "W[" << i << "] " << engine.reveal(w) << std::endl;
+		DEBUG_PRINT(engine << "X[" << i << "] " << engine.reveal(XX) << std::endl);
+		DEBUG_PRINT(engine << "Y[" << i << "] " << engine.reveal(YY) << std::endl);
+		DEBUG_PRINT(engine << "W[" << i << "] " << engine.reveal(w) << std::endl);
 
 		// compute the errors on the current batch.
 		Matrix xw = engine.mul(XX, w);
 		Matrix fxw = engine.logisticFunc(xw);
 
-		//engine << "P[" << i << "] " << engine.reveal(xw) << std::endl;
-		//engine << "F[" << i << "] " << engine.reveal(fxw) << std::endl;
+		DEBUG_PRINT(engine << "P[" << i << "] " << engine.reveal(xw) << std::endl);
+		DEBUG_PRINT(engine << "F[" << i << "] " << engine.reveal(fxw) << std::endl);
 
 		Matrix error = fxw - YY;
 
-		//engine << "E[" << i << "] " << engine.reveal(error) << std::endl;
+		DEBUG_PRINT(engine << "E[" << i << "] " << engine.reveal(error) << std::endl);
 
 		// compute XX = XX^T
 		XX.transposeInPlace();
@@ -276,9 +278,9 @@ void SGD_Logistic(
 		//std::cout<< "U["<<i<<"] = " << update(0) << std::endl;
 		w = w - update;
 
-		//engine << "U[" << i << "] " << engine.reveal(update) << std::endl;
+		DEBUG_PRINT(engine << "U[" << i << "] " << engine.reveal(update) << std::endl);
 
-		if (X_test && i % 1000 == 0)
+		if (X_test && i % 10 == 0)
 		{
 
 			auto now = std::chrono::system_clock::now();
