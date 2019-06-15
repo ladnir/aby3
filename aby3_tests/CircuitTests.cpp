@@ -1,6 +1,6 @@
 #include "CircuitTests.h"
 #include "aby3/Circuit/CircuitLibrary.h"
-#include "aby3/Engines/Lynx/LynxPiecewise.h"
+#include "aby3/Lagecy/Lynx/LynxPiecewise.h"
 
 #include <cryptoTools/Crypto/PRNG.h>
 #include <cryptoTools/Common/Log.h>

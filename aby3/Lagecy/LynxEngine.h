@@ -1,5 +1,5 @@
 #pragma once
-#include "aby3/Engines/Lynx/LynxDefines.h"
+#include "aby3/Lagecy/Lynx/LynxDefines.h"
 #include "aby3/OT/SharedOT.h"
 #include "aby3/Circuit/CircuitLibrary.h"
 namespace Lynx

@@ -3,9 +3,9 @@
 
 #include "cryptoTools/Common/Matrix.h"
 #include "cryptoTools/Common/Log.h"
-//#include "aby3/Engines/Lynx/LynxBinaryEngine.h"
-#include "aby3/Engines/sh3/Sh3Evaluator.h"
-#include "aby3/Engines/sh3/Sh3Encryptor.h"
+//#include "aby3/Lagecy/Lynx/LynxBinaryEngine.h"
+#include "aby3/sh3/Sh3Evaluator.h"
+#include "aby3/sh3/Sh3Encryptor.h"
 
 namespace aby3
 {

@@ -3,9 +3,9 @@
 #include <cryptoTools/Network/Channel.h>
 #include <cryptoTools/Crypto/PRNG.h>
 #include <cryptoTools/Common/MatrixView.h>
-#include "aby3/Engines/sh3/Sh3BinaryEvaluator.h"
-#include "aby3/Engines/sh3/Sh3Encryptor.h"
-#include "aby3/Engines/sh3/Sh3Evaluator.h"
+#include "aby3/sh3/Sh3BinaryEvaluator.h"
+#include "aby3/sh3/Sh3Encryptor.h"
+#include "aby3/sh3/Sh3Evaluator.h"
 #include "LowMC.h"
 #include <cryptoTools/Common/CuckooIndex.h>
 #include <cryptoTools/Common/Timer.h>

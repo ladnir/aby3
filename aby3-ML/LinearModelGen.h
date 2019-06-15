@@ -2,7 +2,7 @@
 #include <vector>
 
 #include <Eigen/Dense>
-#include <aby3/Engines/sh3/Sh3Types.h>
+#include <aby3/sh3/Sh3Types.h>
 
 namespace aby3
 {

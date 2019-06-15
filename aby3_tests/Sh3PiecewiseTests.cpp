@@ -1,7 +1,7 @@
 #include "Sh3PiecewiseTests.h"
-#include <aby3/Engines/sh3/Sh3Piecewise.h>
-#include <aby3/Engines/sh3/Sh3Encryptor.h>
-#include <aby3/Engines/sh3/Sh3Evaluator.h>
+#include <aby3/sh3/Sh3Piecewise.h>
+#include <aby3/sh3/Sh3Encryptor.h>
+#include <aby3/sh3/Sh3Evaluator.h>
 #include <random>
 #include <cryptoTools/Network/IOService.h>
 

@@ -8,7 +8,7 @@
 #include <cryptoTools/Crypto/PRNG.h>
 #include <cryptoTools/Common/Log.h>
 //#include "Engines/Lynx/LynxDefines.h"
-#include <aby3/Engines/sh3/Sh3FixedPoint.h>
+#include <aby3/sh3/Sh3FixedPoint.h>
 using namespace oc;
 
 #define DEBUG_PRINT(x)

@@ -6,8 +6,8 @@
 #include "cryptoTools/Common/Matrix.h"
 
 #include "aby3/OT/SharedOT.h"
-#include "aby3/Engines/Lynx/LynxPiecewise.h"
-#include "aby3/Engines/Lynx/LynxBinaryEngine.h"
+#include "aby3/Lagecy/Lynx/LynxPiecewise.h"
+#include "aby3/Lagecy/Lynx/LynxBinaryEngine.h"
 #include "aby3/Circuit/Garble.h"
 #include <libOTe/Tools/Tools.h>
 

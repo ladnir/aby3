@@ -3,7 +3,7 @@
 
 #include "cryptoTools/Common/Matrix.h"
 #include "cryptoTools/Common/Log.h"
-#include "aby3/Engines/Lynx/LynxBinaryEngine.h"
+#include "aby3/Lagecy/Lynx/LynxBinaryEngine.h"
 
 
 namespace Lynx

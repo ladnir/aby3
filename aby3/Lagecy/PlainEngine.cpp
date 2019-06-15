@@ -1,5 +1,6 @@
 #include "PlainEngine.h"
 
+#ifdef LEGACY_ABY3
 
 
 PlainEngine::PlainEngine()
@@ -80,3 +81,4 @@ PlainEngine::Matrix PlainEngine::argMax(const Matrix & Y)
 
 	return ret;
 }
+#endif

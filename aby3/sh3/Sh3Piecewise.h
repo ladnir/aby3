@@ -1,11 +1,11 @@
 #pragma once
 
-#include "aby3/Engines/sh3/Sh3Runtime.h"
-#include "aby3/Engines/sh3/Sh3Encryptor.h"
-#include "aby3/Engines/sh3/Sh3Evaluator.h"
-#include "aby3/Engines/sh3/Sh3BinaryEvaluator.h"
-#include <aby3/Engines/sh3/Sh3Types.h>
-#include <aby3/Engines/sh3/Sh3FixedPoint.h>
+#include "aby3/sh3/Sh3Runtime.h"
+#include "aby3/sh3/Sh3Encryptor.h"
+#include "aby3/sh3/Sh3Evaluator.h"
+#include "aby3/sh3/Sh3BinaryEvaluator.h"
+#include <aby3/sh3/Sh3Types.h>
+#include <aby3/sh3/Sh3FixedPoint.h>
 #include <cryptoTools/Common/Matrix.h>
 #include <aby3/Circuit/CircuitLibrary.h>
 

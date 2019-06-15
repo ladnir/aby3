@@ -1,5 +1,5 @@
 #include "Sh3EncryptorTests.h"
-#include "aby3/Engines/sh3/Sh3Encryptor.h"
+#include "aby3/sh3/Sh3Encryptor.h"
 #include <cryptoTools/Network/Channel.h>
 #include <cryptoTools/Network/IOService.h>
 #include <cryptoTools/Crypto/PRNG.h>

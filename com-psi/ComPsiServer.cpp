@@ -2,7 +2,7 @@
 #include "OblvPermutation.h"
 #include <iomanip>
 #include "OblvSwitchNet.h"
-#include "aby3/Engines/sh3/Sh3Converter.h"
+#include "aby3/sh3/Sh3Converter.h"
 
 namespace osuCrypto
 {

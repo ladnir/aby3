@@ -1,11 +1,11 @@
 #include "Sh3EvaluatorTests.h"
-#include "aby3/Engines/sh3/Sh3Evaluator.h"
-#include "aby3/Engines/sh3/Sh3Encryptor.h"
+#include "aby3/sh3/Sh3Evaluator.h"
+#include "aby3/sh3/Sh3Encryptor.h"
 #include <cryptoTools/Network/Channel.h>
 #include <cryptoTools/Network/IOService.h>
 #include <cryptoTools/Crypto/PRNG.h>
 #include <cryptoTools/Common/BitVector.h>
-#include "aby3/Engines/sh3/Sh3FixedPoint.h"
+#include "aby3/sh3/Sh3FixedPoint.h"
 #include <iomanip>
 
 using namespace aby3;

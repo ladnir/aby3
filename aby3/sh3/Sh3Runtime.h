@@ -1,6 +1,6 @@
 #pragma once
 #include "aby3/Common/Defines.h"
-#include "aby3/Engines/sh3/Sh3Types.h"
+#include "aby3/sh3/Sh3Types.h"
 #include <cryptoTools/Network/Session.h>
 #include <boost/variant.hpp>
 #include <function2/function2.hpp>

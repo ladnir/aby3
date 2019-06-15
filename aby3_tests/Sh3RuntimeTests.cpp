@@ -1,5 +1,5 @@
 #include "Sh3RuntimeTests.h"
-#include <aby3/Engines/sh3/Sh3Runtime.h>
+#include <aby3/sh3/Sh3Runtime.h>
 
 using namespace aby3;
 using namespace oc;

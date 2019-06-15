@@ -1,6 +1,6 @@
 #pragma once
 
-#include "aby3/Engines/LynxEngine.h"
+#include "aby3/Lagecy/LynxEngine.h"
 #include <exception>
 #include <cryptoTools/Common/Matrix.h>
 

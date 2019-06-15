@@ -1,6 +1,6 @@
 #include "Sh3ConverterTests.h"
-#include "aby3/Engines/sh3/Sh3Converter.h"
-#include "aby3/Engines/sh3/Sh3Encryptor.h"
+#include "aby3/sh3/Sh3Converter.h"
+#include "aby3/sh3/Sh3Encryptor.h"
 #include <cryptoTools/Crypto/PRNG.h>
 #include <cryptoTools/Common/BitIterator.h>
 #include <cryptoTools/Common/Log.h>

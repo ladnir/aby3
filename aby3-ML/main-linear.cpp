@@ -14,9 +14,9 @@
 #include "aby3-ML/aby3ML.h"
 #include "aby3-ML/Regression.h"
 #include "aby3-ML/LinearModelGen.h"
-#include "aby3/Engines/sh3/Sh3Runtime.h"
-#include "aby3/Engines/sh3/Sh3Types.h"
-#include "aby3/Engines/sh3/Sh3FixedPoint.h"
+#include "aby3/sh3/Sh3Runtime.h"
+#include "aby3/sh3/Sh3Types.h"
+#include "aby3/sh3/Sh3FixedPoint.h"
 
 //
 //#include "Engines/LynxEngine.h"

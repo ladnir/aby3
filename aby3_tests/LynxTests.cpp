@@ -1,8 +1,8 @@
 #include "LynxTests.h"
 
-#include "aby3/Engines/Lynx/LynxPiecewise.h"
-#include "aby3/Engines/LynxEngine.h"
-#include "aby3/Engines/Lynx/LynxBinaryEngine.h"
+#include "aby3/Lagecy/Lynx/LynxPiecewise.h"
+#include "aby3/Lagecy/LynxEngine.h"
+#include "aby3/Lagecy/Lynx/LynxBinaryEngine.h"
 #include "cryptoTools/Network/IOService.h"
 #include "cryptoTools/Common/Log.h"
 #include <random>
