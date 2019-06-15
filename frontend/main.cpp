@@ -4,7 +4,7 @@
 #include "aby3_tests/aby3_tests.h"
 #include "eric.h"
 #include "aby3-DB-main.h"
-#include "com-psi_tests/UnitTests.h"
+#include "aby3-DB_tests/UnitTests.h"
 #include <tests_cryptoTools/UnitTests.h>
 #include <aby3-ML/main-linear.h>
 #include <aby3-ML/main-logistic.h>
@@ -42,7 +42,7 @@ int main(int argc, char** argv)
 		{
 			auto tests = tests_cryptoTools::Tests;
 			tests += aby3_tests;
-			tests += ComPsi_tests;
+			tests += DB_tests;
 
 			tests.runIf(cmd);
 			return 0;
@@ -98,7 +98,7 @@ int main(int argc, char** argv)
 			for (auto n : nn)
 			{
 				auto size = 1 << n;
-				ComPsi_Intersect(size, c, cmd.isSet("sum"));
+				DB_Intersect(size, c, cmd.isSet("sum"));
 			}
 		}
 
@@ -115,7 +115,7 @@ int main(int argc, char** argv)
 			for (auto n : nn)
 			{
 				auto size = 1 << n;
-				ComPsi_threat(size, c);
+				DB_threat(size, c);
 			}
 		}
 
@@ -132,7 +132,7 @@ int main(int argc, char** argv)
 			for (auto n : nn)
 			{
 				auto size = 1 << n;
-				ComPsi_cardinality(size);
+				DB_cardinality(size);
 			}
 		}
 		

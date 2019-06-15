@@ -6,13 +6,13 @@
 #include "cryptoTools/Crypto/PRNG.h"
 #include <cryptoTools/Network/IOService.h>
 #include <atomic>
-#include "com-psi/ComPsiServer.h"
+#include "aby3-DB/DBServer.h"
 #include <unordered_set>
 
 using namespace oc; 
 
 
-void ComPsi_Intersect(u32 rows, u32 cols, bool sum)
+void DB_Intersect(u32 rows, u32 cols, bool sum)
 {
 	using namespace aby3;
 	IOService ios;
@@ -23,8 +23,8 @@ void ComPsi_Intersect(u32 rows, u32 cols, bool sum)
 	Session s12(ios, "127.0.0.1", SessionMode::Server, "12");
 	Session s21(ios, "127.0.0.1", SessionMode::Client, "12");
 
-
-	ComPsiServer srvs[3];
+	 
+	DBServer srvs[3];
 	srvs[0].init(0, s02, s01);
 	srvs[1].init(1, s10, s12);
 	srvs[2].init(2, s21, s20);
@@ -159,7 +159,7 @@ void ComPsi_Intersect(u32 rows, u32 cols, bool sum)
 }
 
 
-void ComPsi_cardinality(u32 rows)
+void DB_cardinality(u32 rows)
 {
 
 	IOService ios;
@@ -171,7 +171,7 @@ void ComPsi_cardinality(u32 rows)
 	Session s21(ios, "127.0.0.1", SessionMode::Client, "12");
 
 
-	ComPsiServer srvs[3];
+	DBServer srvs[3];
 	srvs[0].init(0, s02, s01);
 	srvs[1].init(1, s10, s12);
 	srvs[2].init(2, s21, s20);
@@ -298,7 +298,7 @@ void ComPsi_cardinality(u32 rows)
 
 
 
-void ComPsi_threat(u32 rows, u32 setCount)
+void DB_threat(u32 rows, u32 setCount)
 {
 	using namespace aby3;
 
@@ -311,7 +311,7 @@ void ComPsi_threat(u32 rows, u32 setCount)
 	Session s21(ios, "127.0.0.1", SessionMode::Client, "12");
 
 
-	ComPsiServer srvs[3];
+	DBServer srvs[3];
 	srvs[0].init(0, s02, s01);
 	srvs[1].init(1, s10, s12);
 	srvs[2].init(2, s21, s20);

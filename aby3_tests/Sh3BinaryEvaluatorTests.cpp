@@ -1,4 +1,3 @@
-#include "aby3/Lagecy/Lynx/LynxBinaryEngine.h"
 #include "aby3/sh3/Sh3Encryptor.h"
 #include "aby3/sh3/Sh3BinaryEvaluator.h"
 #include "aby3/Circuit/CircuitLibrary.h"

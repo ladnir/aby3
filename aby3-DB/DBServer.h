@@ -10,14 +10,14 @@
 #include <cryptoTools/Common/CuckooIndex.h>
 #include <cryptoTools/Common/Timer.h>
 
-#include "com-psi/Table.h"
+#include "aby3-DB/Table.h"
 
 namespace osuCrypto
 {
     using CommPkg = aby3::CommPkg;
 
 
-    class ComPsiServer :public TimerAdapter
+    class DBServer :public TimerAdapter
     {
     public:
         u64 mIdx, mKeyBitCount = 80;

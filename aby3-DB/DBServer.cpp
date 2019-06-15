@@ -1,4 +1,4 @@
-#include "ComPsiServer.h"
+#include "DBServer.h"
 #include "OblvPermutation.h"
 #include <iomanip>
 #include "OblvSwitchNet.h"
@@ -6,10 +6,10 @@
 
 namespace osuCrypto
 {
-    int ComPsiServer_ssp = 40;
-    bool ComPsiServer_debug = false;
+    int DBServer_ssp = 40;
+    bool DBServer_debug = false;
     bool debug_print = false;
-    void ComPsiServer::init(u64 idx, Session & prev, Session & next)
+    void DBServer::init(u64 idx, Session & prev, Session & next)
     {
         mIdx = idx;
 
@@ -56,7 +56,7 @@ namespace osuCrypto
         }
     }
 
-    SharedTable ComPsiServer::localInput(Table & t)
+    SharedTable DBServer::localInput(Table & t)
     {
         SharedTable ret;
         ret.mColumns.resize(t.mColumns.size());
@@ -90,7 +90,7 @@ namespace osuCrypto
         return ret;
     }
 
-    SharedTable ComPsiServer::remoteInput(u64 partyIdx)
+    SharedTable DBServer::remoteInput(u64 partyIdx)
     {
         SharedTable ret;
         auto chl = ((mIdx + 1) % 3 == partyIdx) ? mRt.mComm.mNext : mRt.mComm.mPrev;
@@ -118,7 +118,7 @@ namespace osuCrypto
     }
 
 
-    void ComPsiServer::p0CheckSelect(MatrixView<u8> cuckooTable, span<Matrix<u8>> a2)
+    void DBServer::p0CheckSelect(MatrixView<u8> cuckooTable, span<Matrix<u8>> a2)
     {
         mRt.mComm.mNext.send(cuckooTable.data(), cuckooTable.size());
         mRt.mComm.mNext.send(a2[0].data(), a2[0].size());
@@ -136,7 +136,7 @@ namespace osuCrypto
         return ss.str();
     }
 
-    void ComPsiServer::p1CheckSelect(Matrix<u8> cuckooTable, span<Matrix<u8>> a2, aby3::i64Matrix& keys)
+    void DBServer::p1CheckSelect(Matrix<u8> cuckooTable, span<Matrix<u8>> a2, aby3::i64Matrix& keys)
     {
 
         Matrix<u8> c2(cuckooTable.rows(), cuckooTable.cols());
@@ -184,7 +184,7 @@ namespace osuCrypto
 
         span<block> view((block*)keys.data(), keys.rows());
 
-        auto cuckooParams = CuckooIndex<>::selectParams(keys.rows(), ComPsiServer_ssp, 0, 3);
+        auto cuckooParams = CuckooIndex<>::selectParams(keys.rows(), DBServer_ssp, 0, 3);
         auto numBins = cuckooParams.numBins();
 
 
@@ -233,7 +233,7 @@ namespace osuCrypto
             throw RTE_LOC;
     }
 
-    SharedTable ComPsiServer::intersect(SharedTable & A, SharedTable & B)
+    SharedTable DBServer::intersect(SharedTable & A, SharedTable & B)
     {
         auto aa = A[A.mColumns[0].mName];
         auto bb = B[B.mColumns[0].mName];
@@ -242,7 +242,7 @@ namespace osuCrypto
 
 	// join on leftJoinCol == rightJoinCol and select the select values.
 
-	SharedTable ComPsiServer::join(SharedTable::ColRef leftJoinCol, SharedTable::ColRef rightJoinCol, std::vector<SharedTable::ColRef> selects)
+	SharedTable DBServer::join(SharedTable::ColRef leftJoinCol, SharedTable::ColRef rightJoinCol, std::vector<SharedTable::ColRef> selects)
 	{
 		SelectQuery query;
 		//query.noReveal("nr");
@@ -264,7 +264,7 @@ namespace osuCrypto
 	}
 
 
-    SharedTable ComPsiServer::joinImpl(
+    SharedTable DBServer::joinImpl(
         const SelectQuery& query)
     {
 
@@ -406,7 +406,7 @@ namespace osuCrypto
 
 
 
-    SharedTable ComPsiServer::rightUnion(
+    SharedTable DBServer::rightUnion(
         SharedTable::ColRef leftJoinCol,
         SharedTable::ColRef rightJoinCol,
         std::vector<SharedTable::ColRef> leftSelects,
@@ -532,14 +532,14 @@ namespace osuCrypto
 
 
 
-    std::array<Matrix<u8>, 3> ComPsiServer::mapRightTableToLeft(
+    std::array<Matrix<u8>, 3> DBServer::mapRightTableToLeft(
         aby3::i64Matrix& keys,
         span<SharedColumn*> circuitInputCols,
         SharedTable& leftTable,
         SharedTable& rightTable)
     {
 
-        auto cuckooParams = CuckooIndex<>::selectParams(rightTable.rows(), ComPsiServer_ssp, 0, 3);
+        auto cuckooParams = CuckooIndex<>::selectParams(rightTable.rows(), DBServer_ssp, 0, 3);
 
         std::array<Matrix<u8>, 3> circuitInputShare;
         switch (mIdx)
@@ -560,7 +560,7 @@ namespace osuCrypto
             setTimePoint("intersect_select_cuckoo");
 
             // debug check to see if this is done correctly.
-            if (ComPsiServer_debug)
+            if (DBServer_debug)
                 p0CheckSelect(cuckooTable, circuitInputShare);
 
             break;
@@ -579,7 +579,7 @@ namespace osuCrypto
             setTimePoint("intersect_select_cuckoo");
 
             // debug check to see if this is done correctly.
-            if (ComPsiServer_debug)
+            if (DBServer_debug)
                 p1CheckSelect(cuckooTable, circuitInputShare, keys);
             break;
         }
@@ -608,7 +608,7 @@ namespace osuCrypto
     }
 
 
-    void ComPsiServer::constructOutTable(
+    void DBServer::constructOutTable(
         std::vector<SharedColumn*> &leftCircuitInput,
         std::vector<SharedColumn*> &rightCircuitInput,
         std::vector<SharedColumn*> &circuitOutCols,
@@ -677,7 +677,7 @@ namespace osuCrypto
 
 
 
-    Matrix<u8> ComPsiServer::cuckooHash(span<SharedColumn*> selects, CuckooParam& params, aby3::i64Matrix& keys)
+    Matrix<u8> DBServer::cuckooHash(span<SharedColumn*> selects, CuckooParam& params, aby3::i64Matrix& keys)
     {
         if (mIdx != 0)
             throw std::runtime_error(LOCATION);
@@ -691,7 +691,7 @@ namespace osuCrypto
             throw std::runtime_error(LOCATION);
         span<block> view((block*)keys.data(), keys.rows());
 
-        if (debug_print && ComPsiServer_debug)
+        if (debug_print && DBServer_debug)
         {
             auto numBins = cuckoo.mBins.size();
             ostreamLock o(std::cout);
@@ -713,7 +713,7 @@ namespace osuCrypto
 
 
 
-        if (debug_print && ComPsiServer_debug)
+        if (debug_print && DBServer_debug)
             cuckoo.print();
 
 
@@ -739,7 +739,7 @@ namespace osuCrypto
                 perm[inputIdx] = i;
                 auto dest = &share0(i, 0);
 
-                if (debug_print && ComPsiServer_debug)
+                if (debug_print && DBServer_debug)
                     std::cout << "in[" << inputIdx << "] -> cuckoo[" << i << "]" << std::endl;
 
                 for (u64 j = 0; j < selects.size(); ++j)
@@ -785,7 +785,7 @@ namespace osuCrypto
     }
 
 
-    void ComPsiServer::cuckooHashSend(span<SharedColumn*> selects, CuckooParam& cuckooParams)
+    void DBServer::cuckooHashSend(span<SharedColumn*> selects, CuckooParam& cuckooParams)
     {
         if (mIdx != 2)
             throw std::runtime_error(LOCATION);
@@ -830,7 +830,7 @@ namespace osuCrypto
         //mEnc.reveal(mRt.mComm, 0, leftTable.mKeys);
     }
 
-    Matrix<u8> ComPsiServer::cuckooHashRecv(span<SharedColumn*> selects)
+    Matrix<u8> DBServer::cuckooHashRecv(span<SharedColumn*> selects)
     {
 
         if (mIdx != 1)
@@ -845,7 +845,7 @@ namespace osuCrypto
         }
 
         auto rows = selects[0]->rows();
-        auto cuckooParams = CuckooIndex<>::selectParams(rows, ComPsiServer_ssp, 0, 3);
+        auto cuckooParams = CuckooIndex<>::selectParams(rows, DBServer_ssp, 0, 3);
         Matrix<u8> share1(cuckooParams.numBins(), totalBytes);
 
         share1.setZero();
@@ -870,7 +870,7 @@ namespace osuCrypto
 
         //mEnc.reveal(mRt.mComm, 0, leftTable.mKeys);
 
-        //if (ComPsiServer_debug)
+        //if (DBServer_debug)
         //    mComm.mPrev.asyncSendCopy(share1.data(), share1.size());
 
 
@@ -878,7 +878,7 @@ namespace osuCrypto
         return std::move(share1);
     }
 
-    std::array<Matrix<u8>, 3> ComPsiServer::selectCuckooPos(MatrixView<u8> cuckooHashTable, u64 rows)
+    std::array<Matrix<u8>, 3> DBServer::selectCuckooPos(MatrixView<u8> cuckooHashTable, u64 rows)
     {
         if (mIdx != 0)
             throw std::runtime_error("");
@@ -899,7 +899,7 @@ namespace osuCrypto
         return std::move(dest);
     }
 
-    void ComPsiServer::selectCuckooPos(u64 destRows, u64 srcRows, u64 bytes)
+    void DBServer::selectCuckooPos(u64 destRows, u64 srcRows, u64 bytes)
     {
         OblvSwitchNet snet(std::to_string(mIdx));
         for (u64 h = 0; h < 3; ++h)
@@ -911,7 +911,7 @@ namespace osuCrypto
         }
     }
 
-    std::array<Matrix<u8>, 3> ComPsiServer::selectCuckooPos(
+    std::array<Matrix<u8>, 3> DBServer::selectCuckooPos(
         MatrixView<u8> cuckooHashTable,
         u64 destRows,
         CuckooParam& cuckooParams,
@@ -920,7 +920,7 @@ namespace osuCrypto
         if (mIdx != 1)
             throw std::runtime_error("");
 
-        //auto cuckooParams = CuckooIndex<>::selectParams(keys.rows(), ComPsiServer_ssp, 0, 3);
+        //auto cuckooParams = CuckooIndex<>::selectParams(keys.rows(), DBServer_ssp, 0, 3);
         auto numBins = cuckooParams.numBins();
 
         span<block> view((block*)keys.data(), keys.rows());
@@ -990,7 +990,7 @@ namespace osuCrypto
         return std::move(dest);
     }
 
-    aby3::sPackedBin ComPsiServer::compare(
+    aby3::sPackedBin DBServer::compare(
         span<SharedColumn*> leftCircuitInput,
         span<SharedColumn*> rightCircuitInput,
         span<SharedColumn*> circuitOutput,
@@ -1040,7 +1040,7 @@ namespace osuCrypto
 
         aby3::Sh3BinaryEvaluator eval;
 
-        if (ComPsiServer_debug)
+        if (DBServer_debug)
             eval.enableDebug(mIdx, mRt.mComm.mPrev, mRt.mComm.mNext);
 
         eval.setCir(&cir, size);
@@ -1059,7 +1059,7 @@ namespace osuCrypto
         std::vector<std::vector<aby3::Sh3BinaryEvaluator::DEBUG_Triple>>plainWires;
         eval.distributeInputs();
 
-        if (ComPsiServer_debug)
+        if (DBServer_debug)
             plainWires = eval.mPlainWires_DEBUG;
 
         mRt.runAll();
@@ -1072,7 +1072,7 @@ namespace osuCrypto
         for (u64 i = 0; i < circuitOutput.size(); ++i)
             eval.getOutput(i + 1, *circuitOutput[i]);
 
-        //if (ComPsiServer_debug)
+        //if (DBServer_debug)
         //{
 
 
@@ -1228,7 +1228,7 @@ namespace osuCrypto
         return std::move(outFlags);
     }
 
-    aby3::sPackedBin ComPsiServer::unionCompare(
+    aby3::sPackedBin DBServer::unionCompare(
         SharedTable::ColRef leftJoinCol,
         SharedTable::ColRef rightJoinCol,
         span<Matrix<u8>> inShares)
@@ -1263,7 +1263,7 @@ namespace osuCrypto
 
         aby3::Sh3BinaryEvaluator eval;
 
-        if (ComPsiServer_debug)
+        if (DBServer_debug)
             eval.enableDebug(mIdx, mRt.mComm.mPrev, mRt.mComm.mNext);
 
         eval.setCir(&cir, size);
@@ -1278,7 +1278,7 @@ namespace osuCrypto
         std::vector<std::vector<aby3::Sh3BinaryEvaluator::DEBUG_Triple>>plainWires;
         eval.distributeInputs();
 
-        if (ComPsiServer_debug)
+        if (DBServer_debug)
             plainWires = eval.mPlainWires_DEBUG;
 
         mRt.runAll();
@@ -1291,7 +1291,7 @@ namespace osuCrypto
         return std::move(outFlags);
     }
 
-    aby3::i64Matrix ComPsiServer::computeKeys(span<SharedTable::ColRef> cols, span<u64> reveals)
+    aby3::i64Matrix DBServer::computeKeys(span<SharedTable::ColRef> cols, span<u64> reveals)
     {
         aby3::i64Matrix ret;
         std::vector<aby3::Sh3BinaryEvaluator> binEvals(cols.size());
@@ -1376,7 +1376,7 @@ namespace osuCrypto
         return ret;
     }
 
-    BetaCircuit ComPsiServer::getQueryCircuit(
+    BetaCircuit DBServer::getQueryCircuit(
         span<SharedColumn*> leftCircuitInput,
         span<SharedColumn*> rightCircuitInput,
         span<SharedColumn*> circuitOutput,
@@ -1558,7 +1558,7 @@ namespace osuCrypto
     }
 
 
-    BetaCircuit ComPsiServer::getBasicCompareCircuit(
+    BetaCircuit DBServer::getBasicCompareCircuit(
         SharedTable::ColRef leftJoinCol,
         span<SharedTable::ColRef> cols)
     {
@@ -1594,7 +1594,7 @@ namespace osuCrypto
             r.addOutputBundle(*iterW++);
         }
 
-        if (ComPsiServer_debug)
+        if (DBServer_debug)
         {
             r.addOutputBundle(c0);
             r.addOutputBundle(c1);
@@ -1661,7 +1661,7 @@ namespace osuCrypto
         }
 
         // output the match bits if we are debugging.
-        if (ComPsiServer_debug)
+        if (DBServer_debug)
         {
             r.addCopy(t0[0], c0[0]);
             r.addCopy(t1[0], c1[0]);

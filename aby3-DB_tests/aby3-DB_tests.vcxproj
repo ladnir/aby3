@@ -123,13 +123,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ComPsiServerTests.cpp" />
+    <ClCompile Include="DBServerTests.cpp" />
     <ClCompile Include="lowMC.cpp" />
     <ClCompile Include="PermutaitonTests.cpp" />
     <ClCompile Include="UnitTests.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ComPsiServerTests.h" />
+    <ClInclude Include="DBServerTests.h" />
     <ClInclude Include="LowMC.h" />
     <ClInclude Include="PermutaitonTests.h" />
     <ClInclude Include="UnitTests.h" />

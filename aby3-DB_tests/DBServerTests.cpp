@@ -1,14 +1,14 @@
 
-#include "com-psi/ComPsiServer.h"
+#include "aby3-DB/DBServer.h"
 #include <cryptoTools/Network/IOService.h>
-#include "ComPsiServerTests.h"
+#include "DBServerTests.h"
 #include <unordered_map>
 #include <iomanip>
 using namespace oc;
 
 namespace osuCrypto
 {
-    extern int ComPsiServer_ssp;
+    extern int DBServer_ssp;
 }
 
 
@@ -23,7 +23,7 @@ std::string hexString(u8* ptr, u32 size)
     return ss.str();
 }
 
-void ComPsi_computeKeys_test()
+void DB_computeKeys_test()
 {
 
     IOService ios;
@@ -35,7 +35,7 @@ void ComPsi_computeKeys_test()
     Session s21(ios, "127.0.0.1", SessionMode::Client, "12");
 
 
-    ComPsiServer srvs[3];
+    DBServer srvs[3];
     srvs[0].init(0, s02, s01);
     srvs[1].init(1, s10, s12);
     srvs[2].init(2, s21, s20);
@@ -124,7 +124,7 @@ void ComPsi_computeKeys_test()
     }
 }
 
-void ComPsi_cuckooHash_test()
+void DB_cuckooHash_test()
 {
 
     IOService ios;
@@ -136,7 +136,7 @@ void ComPsi_cuckooHash_test()
     Session s21(ios, "127.0.0.1", SessionMode::Client, "12");
 
 
-    ComPsiServer srvs[3];
+    DBServer srvs[3];
     srvs[0].init(0, s02, s01);
     srvs[1].init(1, s10, s12);
     srvs[2].init(2, s21, s20);
@@ -155,7 +155,7 @@ void ComPsi_cuckooHash_test()
         ColumnInfo{ "key", TypeID::IntID, keyBitCount } ,
         ColumnInfo{ "data", TypeID::IntID, 64 }
         });
-    auto cuckooParams = CuckooIndex<>::selectParams(rows, ComPsiServer_ssp, 0, 3);
+    auto cuckooParams = CuckooIndex<>::selectParams(rows, DBServer_ssp, 0, 3);
 
     for (u64 i = 0; i < rows; ++i)
     {
@@ -238,7 +238,7 @@ void ComPsi_cuckooHash_test()
 
 }
 
-void ComPsi_compare_test()
+void DB_compare_test()
 {
 
     IOService ios;
@@ -250,7 +250,7 @@ void ComPsi_compare_test()
     Session s21(ios, "127.0.0.1", SessionMode::Client, "12");
 
 
-    ComPsiServer srvs[3];
+    DBServer srvs[3];
     srvs[0].init(0, s02, s01);
     srvs[1].init(1, s10, s12);
     srvs[2].init(2, s21, s20);
@@ -459,26 +459,26 @@ void ComPsi_compare_test()
     if (failed)
         throw RTE_LOC;
 }
-void ComPsi_Intersect_test(u32 rows, u32 rows2);
+void DB_Intersect_test(u32 rows, u32 rows2);
 
-void ComPsi_Intersect_test()
+void DB_Intersect_test()
 {
-    ComPsi_Intersect_test(1 << 12, 1 << 12);
+    DB_Intersect_test(1 << 12, 1 << 12);
 }
 
 
-void ComPsi_Intersect_sl_test()
+void DB_Intersect_sl_test()
 {
-    ComPsi_Intersect_test(1 << 5, 1 << 12);
+    DB_Intersect_test(1 << 5, 1 << 12);
 }
 
-void ComPsi_Intersect_ls_test()
+void DB_Intersect_ls_test()
 {
-    ComPsi_Intersect_test(1 << 12, 1 << 5);
+    DB_Intersect_test(1 << 12, 1 << 5);
 }
 
 
-void ComPsi_Intersect_test(u32 rows, u32 rows2)
+void DB_Intersect_test(u32 rows, u32 rows2)
 {
 
     IOService ios;
@@ -490,7 +490,7 @@ void ComPsi_Intersect_test(u32 rows, u32 rows2)
     Session s21(ios, "127.0.0.1", SessionMode::Client, "12");
 
 
-    ComPsiServer srvs[3];
+    DBServer srvs[3];
     srvs[0].init(0, s02, s01);
     srvs[1].init(1, s10, s12);
     srvs[2].init(2, s21, s20);
@@ -645,7 +645,7 @@ void ComPsi_Intersect_test(u32 rows, u32 rows2)
 
 
 
-void ComPsi_leftUnion_test()
+void DB_leftUnion_test()
 {
 
     IOService ios;
@@ -657,7 +657,7 @@ void ComPsi_leftUnion_test()
     Session s21(ios, "127.0.0.1", SessionMode::Client, "12");
 
 
-    ComPsiServer srvs[3];
+    DBServer srvs[3];
     srvs[0].init(0, s02, s01);
     srvs[1].init(1, s10, s12);
     srvs[2].init(2, s21, s20);

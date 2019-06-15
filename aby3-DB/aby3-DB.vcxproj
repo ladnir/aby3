@@ -127,14 +127,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="ComPsiServer.h" />
+    <ClInclude Include="DBServer.h" />
     <ClInclude Include="LowMC.h" />
     <ClInclude Include="OblvPermutation.h" />
     <ClInclude Include="OblvSwitchNet.h" />
     <ClInclude Include="Table.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ComPsiServer.cpp" />
+    <ClCompile Include="DBServer.cpp" />
     <ClCompile Include="OblvPermutation.cpp" />
     <ClCompile Include="OblvSwitchNet.cpp" />
     <ClCompile Include="Table.cpp" />

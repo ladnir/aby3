@@ -4,8 +4,8 @@
 #include <cryptoTools/Network/Session.h>
 #include <cryptoTools/Network/Channel.h>
 #include <cryptoTools/Common/Matrix.h>
-#include <com-psi/OblvPermutation.h>
-#include <com-psi/OblvSwitchNet.h>
+#include <aby3-DB/OblvPermutation.h>
+#include <aby3-DB/OblvSwitchNet.h>
 #include <cryptoTools/Crypto/PRNG.h>
 #include "PermutaitonTests.h"
 #include <iomanip>

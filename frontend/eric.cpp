@@ -1,5 +1,5 @@
 
-#include "com-psi/ComPsiServer.h"
+#include "aby3-DB/DBServer.h"
 #include <cryptoTools/Network/IOService.h>
 #include <unordered_map>
 #include <iomanip>
@@ -23,7 +23,7 @@ void eric(int n)
     Session s21(ios, "127.0.0.1", SessionMode::Client, "12");
 
 
-    ComPsiServer srvs[3];
+    DBServer srvs[3];
     srvs[0].init(0, s02, s01);
     srvs[1].init(1, s10, s12);
     srvs[2].init(2, s21, s20);

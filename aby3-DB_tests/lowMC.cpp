@@ -1,4 +1,4 @@
-#include "com-psi/LowMC.h"
+#include "aby3-DB/LowMC.h"
 #include <iostream>
 #include <cryptoTools/Common/Timer.h>
 #include <cryptoTools/Common/TestCollection.h>

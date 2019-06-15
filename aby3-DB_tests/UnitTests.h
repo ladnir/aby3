@@ -2,6 +2,6 @@
 #include <cryptoTools/Common/TestCollection.h>
 
 #include "LowMC.h"
-#include "ComPsiServerTests.h"
+#include "DBServerTests.h"
 #include "PermutaitonTests.h"
-extern oc::TestCollection ComPsi_tests;
+extern oc::TestCollection DB_tests;
