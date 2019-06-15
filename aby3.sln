@@ -17,12 +17,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "frontend", "frontend\fronte
 		{FD60CAE8-ABAB-433C-BC50-D867DE0234B1} = {FD60CAE8-ABAB-433C-BC50-D867DE0234B1}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "com-psi", "com-psi\com-psi.vcxproj", "{FA9F5640-AA66-4D41-AFC6-50282C31C866}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "aby3-DB", "aby3-DB\aby3-DB.vcxproj", "{FA9F5640-AA66-4D41-AFC6-50282C31C866}"
 	ProjectSection(ProjectDependencies) = postProject
 		{FD60CAE8-ABAB-433C-BC50-D867DE0234B1} = {FD60CAE8-ABAB-433C-BC50-D867DE0234B1}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "com-psi_tests", "com-psi_tests\com-psi_tests.vcxproj", "{A9913C31-C04E-4866-B55A-6FB2EBEB4DA2}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "aby3-DB_tests", "aby3-DB_tests\aby3-DB_tests.vcxproj", "{A9913C31-C04E-4866-B55A-6FB2EBEB4DA2}"
 	ProjectSection(ProjectDependencies) = postProject
 		{FA9F5640-AA66-4D41-AFC6-50282C31C866} = {FA9F5640-AA66-4D41-AFC6-50282C31C866}
 	EndProjectSection

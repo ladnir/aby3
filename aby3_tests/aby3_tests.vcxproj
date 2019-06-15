@@ -125,7 +125,6 @@
   <ItemGroup>
     <ClCompile Include="aby3_tests.cpp" />
     <ClCompile Include="CircuitTests.cpp" />
-    <ClCompile Include="LynxTests.cpp" />
     <ClCompile Include="Sh3BinaryEvaluatorTests.cpp" />
     <ClCompile Include="Sh3ConverterTests.cpp" />
     <ClCompile Include="Sh3EncryptorTests.cpp" />
@@ -137,7 +136,6 @@
   <ItemGroup>
     <ClInclude Include="aby3_tests.h" />
     <ClInclude Include="CircuitTests.h" />
-    <ClInclude Include="LynxTests.h" />
     <ClInclude Include="Sh3BinaryEvaluatorTests.h" />
     <ClInclude Include="Sh3ConverterTests.h" />
     <ClInclude Include="Sh3EncryptorTests.h" />

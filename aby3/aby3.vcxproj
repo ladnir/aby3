@@ -13,9 +13,6 @@
   <ItemGroup>
     <ClCompile Include="Circuit\CircuitLibrary.cpp" />
     <ClCompile Include="Circuit\Garble.cpp" />
-    <ClCompile Include="Lagecy\Lynx\LynxBinaryEngine.cpp" />
-    <ClCompile Include="Lagecy\Lynx\LynxEncryptor.cpp" />
-    <ClCompile Include="Lagecy\Lynx\LynxPiecewise.cpp" />
     <ClCompile Include="sh3\Sh3BinaryEvaluator.cpp" />
     <ClCompile Include="sh3\Sh3Converter.cpp" />
     <ClCompile Include="sh3\Sh3Evaluator.cpp" />
@@ -24,18 +21,12 @@
     <ClCompile Include="sh3\Sh3Runtime.cpp" />
     <ClCompile Include="sh3\Sh3Types.cpp" />
     <ClCompile Include="OT\SharedOT.cpp" />
-    <ClCompile Include="Lagecy\LynxEngine.cpp" />
-    <ClCompile Include="Lagecy\PlainEngine.cpp" />
     <ClCompile Include="sh3\Sh3Encryptor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Circuit\CircuitLibrary.h" />
     <ClInclude Include="Circuit\Garble.h" />
     <ClInclude Include="Common\Defines.h" />
-    <ClInclude Include="Lagecy\Lynx\LynxBinaryEngine.h" />
-    <ClInclude Include="Lagecy\Lynx\LynxDefines.h" />
-    <ClInclude Include="Lagecy\Lynx\LynxEncryptor.h" />
-    <ClInclude Include="Lagecy\Lynx\LynxPiecewise.h" />
     <ClInclude Include="sh3\Sh3BinaryEvaluator.h" />
     <ClInclude Include="sh3\Sh3Converter.h" />
     <ClInclude Include="sh3\Sh3Evaluator.h" />
@@ -45,8 +36,6 @@
     <ClInclude Include="sh3\Sh3Types.h" />
     <ClInclude Include="sh3\Sh3Runtime.h" />
     <ClInclude Include="OT\SharedOT.h" />
-    <ClInclude Include="Lagecy\LynxEngine.h" />
-    <ClInclude Include="Lagecy\PlainEngine.h" />
     <ClInclude Include="sh3\Sh3Encryptor.h" />
   </ItemGroup>
   <ItemGroup>
