@@ -463,7 +463,7 @@ namespace Lynx
 
             auto fu1 = mPrev.asyncRecv(c.mShares[0].data(), c.size()).share();
             Word* dd = c.mShares[1].data();
-            auto fu2 = SharedOT::asyncRecv(mNext, mPrev, c1, { dd, i64(c.size()) }).share();
+            auto fu2 = SharedOT::asyncRecv(mNext, mPrev, std::move(c1), { dd, i64(c.size()) }).share();
 
             return { [fu1 = std::move(fu1), fu2 = std::move(fu2)]() mutable {
                 fu1.get();
@@ -500,7 +500,7 @@ namespace Lynx
 
             // share 0: from p0 to p1,p2
             Word* dd = c.mShares[0].data();
-            auto fu1 = SharedOT::asyncRecv(mPrev, mNext, c0, { dd, i64(c.size()) }).share();
+            auto fu1 = SharedOT::asyncRecv(mPrev, mNext, std::move(c0), { dd, i64(c.size()) }).share();
 
             // share 1:
             auto fu2 = mNext.asyncRecv(c.mShares[1].data(), c.size()).share();
@@ -532,11 +532,11 @@ namespace Lynx
 
             // share 0: from p0 to p1,p2
             Word* dd0 = c.mShares[1].data();
-            auto fu1 = SharedOT::asyncRecv(mNext, mPrev, c0, { dd0, i64(c.size()) }).share();
+            auto fu1 = SharedOT::asyncRecv(mNext, mPrev, std::move(c0), { dd0, i64(c.size()) }).share();
 
             // share 1: from p1 to p0,p2
             Word* dd1 = c.mShares[0].data();
-            auto fu2 = SharedOT::asyncRecv(mPrev, mNext, c1, { dd1, i64(c.size()) }).share();
+            auto fu2 = SharedOT::asyncRecv(mPrev, mNext, std::move(c1), { dd1, i64(c.size()) }).share();
 
             return { [fu1 = std::move(fu1), fu2 = std::move(fu2)]() mutable {
                 fu1.get();
@@ -593,7 +593,7 @@ namespace Lynx
             mPrev.asyncSendCopy(c.mShares[1].data(), c.size());
 
             Word* dd = c.mShares[0].data();
-            auto fu1 = SharedOT::asyncRecv(mPrev, mNext, c0, { dd, i64(c.size()) }).share();
+            auto fu1 = SharedOT::asyncRecv(mPrev, mNext, std::move(c0), { dd, i64(c.size()) }).share();
             return { [fu1 = std::move(fu1)]() mutable {
                 fu1.get();
             } };
@@ -613,7 +613,7 @@ namespace Lynx
             mNext.asyncSendCopy(c.mShares[0].data(), c.size());
 
             Word* dd0 = c.mShares[1].data();
-            auto fu1 = SharedOT::asyncRecv(mNext, mPrev, c0, { dd0, i64(c.size()) }).share();
+            auto fu1 = SharedOT::asyncRecv(mNext, mPrev, std::move(c0), { dd0, i64(c.size()) }).share();
 
             return { [fu1 = std::move(fu1)]() mutable {
                 fu1.get();

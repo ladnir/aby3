@@ -1,6 +1,6 @@
 #pragma once
 #include "Sh3Types.h"
-#include <cryptoTools/Crypto/AES.h>
+#include <cryptoTools/Crypto/PRNG.h>
 
 namespace aby3
 {
@@ -8,13 +8,16 @@ namespace aby3
     {
         void init(block prevSeed, block nextSeed, u64 buffSize = 256)
         {
+			mCommon.SetSeed(oc::toBlock(3488535245, 2454523));
+			mNextCommon.SetSeed(nextSeed);
+			mPrevCommon.SetSeed(prevSeed);
 
             mShareGenIdx = 0;
             mShareBuff[0].resize(buffSize);
             mShareBuff[1].resize(buffSize);
 
-            mShareGen[0].setKey(prevSeed);
-            mShareGen[1].setKey(nextSeed);
+            mShareGen[0].setKey(mPrevCommon.get<block>());
+            mShareGen[1].setKey(mNextCommon.get<block>());
 
             refillBuffer();
         }
@@ -29,6 +32,7 @@ namespace aby3
 
 
         u64 mShareIdx = 0, mShareGenIdx = 0;
+		oc::PRNG mNextCommon, mPrevCommon, mCommon;
         std::array<oc::AES, 2> mShareGen;
         std::array<std::vector<block>, 2> mShareBuff;
         void refillBuffer()

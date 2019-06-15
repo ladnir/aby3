@@ -277,10 +277,10 @@ void Sh3_Piecewise_test(const oc::CLP& cmd)
 				auto diff = std::abs(actual - exp);
 
 
-				std::cout << t << " " << t2 << " " << i << ": "
-					<< output0.mShares[0](i) << " "
-					<< output0.mShares[1](i) << " "
-					<< output1.mShares[0](i) << std::endl;
+				//std::cout << t << " " << t2 << " " << i << ": "
+				//	<< output0.mShares[0](i) << " "
+				//	<< output0.mShares[1](i) << " "
+				//	<< output1.mShares[0](i) << std::endl;
 
 				if (diff > 100)
 				{

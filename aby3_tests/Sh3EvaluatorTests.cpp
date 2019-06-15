@@ -437,13 +437,13 @@ void Sh3_Evaluator_asyncMul_matrixFixed_test(const oc::CLP & cmd)
 				//	<< c(0,1).mValue << "\n ~ " <<vv << " " << vv2<< " " << (vv >> 8)<< std::endl;
 				//lout << a(1) << " * " << b(1) << " -> " << c(1) << std::endl;
 
-					enc.localFixedMatrix(rt, a, A);
-					enc.localFixedMatrix(rt, b, B).get();
+				enc.localFixedMatrix(rt, a, A);
+				enc.localFixedMatrix(rt, b, B).get();
 			}
 			else
 			{
-					enc.remoteFixedMatrix(rt, A);
-					enc.remoteFixedMatrix(rt, B).get();
+				enc.remoteFixedMatrix(rt, A);
+				enc.remoteFixedMatrix(rt, B).get();
 			}
 
 			auto task = rt.noDependencies();
@@ -639,19 +639,19 @@ void Sh3_f64_basics_test()
 }
 
 void createSharing(
-	PRNG& prng,
-	i64Matrix& value,
-	si64Matrix& s0,
-	si64Matrix& s1,
-	si64Matrix& s2);
+	PRNG & prng,
+	i64Matrix & value,
+	si64Matrix & s0,
+	si64Matrix & s1,
+	si64Matrix & s2);
 
 
 void createSharing(
-	PRNG& prng,
-	i64Matrix& value,
-	sbMatrix& s0,
-	sbMatrix& s1,
-	sbMatrix& s2)
+	PRNG & prng,
+	i64Matrix & value,
+	sbMatrix & s0,
+	sbMatrix & s1,
+	sbMatrix & s2)
 {
 
 	//s0.mShares[0] = value;
@@ -681,10 +681,9 @@ void createSharing(
 	s2.mShares[1] = s1.mShares[0];
 }
 
-void sh3_asyncArithBinMul_test()
+void sh3_asyncArithBinMul_test(const oc::CLP& cmd)
 {
 	IOService ios;
-
 	auto chl01 = Session(ios, "127.0.0.1:1313", SessionMode::Server, "01").addChannel();
 	auto chl10 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "01").addChannel();
 	auto chl02 = Session(ios, "127.0.0.1:1313", SessionMode::Server, "02").addChannel();
@@ -693,8 +692,9 @@ void sh3_asyncArithBinMul_test()
 	auto chl21 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "12").addChannel();
 
 
-	PRNG prng(ZeroBlock);
-	u64 size = 100;
+	PRNG prng(ZeroBlock);	
+	u64 size = cmd.getOr("size", 100);
+	u64 trials = cmd.getOr("t", 10);;
 	u64 dec = 16;
 
 	CommPkg comms[3];
@@ -716,7 +716,7 @@ void sh3_asyncArithBinMul_test()
 	evals[0].init(0, toBlock(1, 0), toBlock(1, 1));
 	evals[1].init(1, toBlock(1, 1), toBlock(1, 2));
 	evals[2].init(2, toBlock(1, 2), toBlock(1, 0));
-	
+
 	//const Decimal D = Decimal::D8;
 	eMatrix<i64> a(size, 1), b(size, 1), c(size, 1), cc(size, 1);
 
@@ -733,7 +733,6 @@ void sh3_asyncArithBinMul_test()
 		b1(size, 1),
 		b2(size, 1);
 
-	u64 trials = 10;
 	for (u64 t = 0; t < trials; ++t)
 	{
 		for (u64 i = 0; i < size; ++i)
@@ -769,7 +768,7 @@ void sh3_asyncArithBinMul_test()
 		auto as2 = evals[2].asyncMul(p2, a2, b2, c2);
 
 		p0.runNext();
-		p1.runNext();
+		p1.runNext(); 
 		p2.runNext();
 
 		as0.get();
@@ -783,16 +782,30 @@ void sh3_asyncArithBinMul_test()
 		//t1.join();
 		//t2.join();
 
+
+		//std::cout << "c0.0 " << c0.mShares[0] << std::endl;
+		//std::cout << "c0.1 " << c1.mShares[1] << std::endl;
+
+		//std::cout << "c1.0 " << c1.mShares[0] << std::endl;
+		//std::cout << "c1.1 " << c2.mShares[1] << std::endl;
+
+		//std::cout << "c2.0 " << c2.mShares[0] << std::endl;
+		//std::cout << "c2.1 " << c0.mShares[1] << std::endl;
+
 		//typedef LynxEngine::Word Word;
+		if (c0.mShares[0] != c1.mShares[1])
+			throw std::runtime_error(LOCATION);
+		if (c1.mShares[0] != c2.mShares[1])
+		{
+			throw std::runtime_error(LOCATION);
+		}
+		if (c2.mShares[0] != c0.mShares[1])
+			throw std::runtime_error(LOCATION);
+
+
 		for (u64 i = 0; i < size; ++i)
 		{
 
-			if (c0.mShares[0] != c1.mShares[1])
-				throw std::runtime_error(LOCATION);
-			if (c1.mShares[0] != c2.mShares[1])
-				throw std::runtime_error(LOCATION);
-			if (c2.mShares[0] != c0.mShares[1])
-				throw std::runtime_error(LOCATION);
 			auto ci0 = c0.mShares[0](i);
 			auto ci1 = c1.mShares[0](i);
 			auto ci2 = c2.mShares[0](i);
@@ -817,7 +830,7 @@ void sh3_asyncArithBinMul_test()
 	}
 }
 
-void sh3_asyncPubArithBinMul_test()
+void sh3_asyncPubArithBinMul_test(const oc::CLP& cmd)
 {
 
 	IOService ios;
@@ -830,7 +843,8 @@ void sh3_asyncPubArithBinMul_test()
 	auto chl21 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "12").addChannel();
 
 	PRNG prng(ZeroBlock);
-	u64 size = 100;
+	u64 size = cmd.getOr("size", 100);
+	//u64 trials = cmd.getOr("t", 10);;
 
 	CommPkg comms[3];
 	comms[0] = { chl02, chl01 };

@@ -11,5 +11,6 @@
 #include "Sh3ConverterTests.h"
 #include "Sh3RuntimeTests.h"
 #include "Sh3PiecewiseTests.h"
+#include "SharedOTTests.h"
 
 extern oc::TestCollection aby3_tests;

@@ -30,6 +30,6 @@ public:
 	static std::future<void> asyncRecv(
 		oc::Channel& sender,
 		oc::Channel & helper,
-		const oc::BitVector& choices,
+		oc::BitVector&& choices,
 		oc::span<oc::i64> recvMsgs);
 };

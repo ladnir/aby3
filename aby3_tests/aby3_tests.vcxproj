@@ -132,6 +132,7 @@
     <ClCompile Include="Sh3EvaluatorTests.cpp" />
     <ClCompile Include="Sh3PiecewiseTests.cpp" />
     <ClCompile Include="Sh3RuntimeTests.cpp" />
+    <ClCompile Include="SharedOTTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aby3_tests.h" />
@@ -143,6 +144,7 @@
     <ClInclude Include="Sh3EvaluatorTests.h" />
     <ClInclude Include="Sh3PiecewiseTests.h" />
     <ClInclude Include="Sh3RuntimeTests.h" />
+    <ClInclude Include="SharedOTTests.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

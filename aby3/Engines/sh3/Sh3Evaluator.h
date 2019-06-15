@@ -22,8 +22,8 @@ namespace aby3
     {
     public:
 
-        void init(u64 partyIdx, block prevSeed, block nextSeed, u64 buffSize = 256) { mShareGen.init(prevSeed, nextSeed, buffSize); mPartyIdx = partyIdx; }
-        void init(u64 partyIdx, CommPkg& comm, block seed, u64 buffSize = 256) { mShareGen.init(comm, seed, buffSize); mPartyIdx = partyIdx; }
+		void init(u64 partyIdx, block prevSeed, block nextSeed, u64 buffSize = 256);
+		void init(u64 partyIdx, CommPkg& comm, block seed, u64 buffSize = 256);
 
 		bool DEBUG_disable_randomization = false;
 
@@ -109,7 +109,7 @@ namespace aby3
 
         u64 mPartyIdx = -1, mTruncationIdx = 0;
         Sh3ShareGen mShareGen;
-		SharedOT mOtP02, mOtP01, mOtP10, mOtP12;
+		SharedOT mOtPrev, mOtNext;
     };
 
 
