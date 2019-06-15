@@ -7,13 +7,20 @@ This library provides the semi-honest implementation of [ABY 3](https://eprint.i
 The repo includes the following application:
  * Linear Regression (training/inference)
  * Logistic Regression (training/inference)
- * Database Inner and Left Joins
+ * Database Inner, Left and Full Joins
  * Database Union
- * Threat Log comparison ([see Section 5](https://eprint.iacr.org/2019/518.pdf))
- * ERIC application ([see Section 5](https://eprint.iacr.org/2019/518.pdf))
+ * Set Cardinality
+ * Threat Log Comparison ([see Section 5](https://eprint.iacr.org/2019/518.pdf))
+ * ERIC Application ([see Section 5](https://eprint.iacr.org/2019/518.pdf))
 
 
 Note that this is *not* the same implementation provided in the publication [ABY3: A Mixed Protocol Framework for Machine Learning](https://eprint.iacr.org/2018/403.pdf), however it is very similar. Basicly this a much more usable reimplementation by me that was done for the database paper. If you wish to have the original ABY3 implementation, please contact me.
+
+## Warning 
+
+This codebase should **NOT** be considered fully secure. It has not has a security review and there are still several security related issues that have not been fully implemented. Only use this casebase as a proof-of-concept or to benchmark the perfromance. Future work is required for this implementation to be considered secure. 
+
+As such, this work in licensed under Creative Commons Attribution NonCommercial.
 
 ## Install
  
@@ -98,7 +105,7 @@ Contact Peter Rindal peterrindal@gmail.com for any assistance on building  or ru
 ```
 @misc{aby3,
     author = {Peter Rindal},
-    title = {{The ABY3 framework for machine learning and Database Operations.}},
+    title = {{The ABY3 Framework for Machine Learning and Database Operations.}},
     howpublished = {\url{https://github.com/ladnir/aby3}},
 }
 ```
