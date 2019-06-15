@@ -20,8 +20,6 @@ Note that this is *not* the same implementation provided in the publication [ABY
 
 This codebase should **NOT** be considered fully secure. It has not has a security review and there are still several security related issues that have not been fully implemented. Only use this casebase as a proof-of-concept or to benchmark the perfromance. Future work is required for this implementation to be considered secure. 
 
-As such, this work in licensed under Creative Commons Attribution NonCommercial.
-
 ## Install
  
 The library is *cross platform* and has been tested on Windows and Linux. The dependencies are:
