@@ -2,7 +2,7 @@
  
 ## Introduction
  
-This library provides the semi-honest implementation of [ABY 3](https://eprint.iacr.org/2018/403.pdf) and [Fast Database Joins for Secret Shared Data](https://eprint.iacr.org/2019/518.pdf). I
+This library provides the semi-honest implementation of [ABY 3](https://eprint.iacr.org/2018/403.pdf) and [Fast Database Joins for Secret Shared Data](https://eprint.iacr.org/2019/518.pdf).
 
 The repo includes the following application:
  * Linear Regression (training/inference)
@@ -98,7 +98,7 @@ Contact Peter Rindal peterrindal@gmail.com for any assistance on building  or ru
 ```
 @misc{aby3,
     author = {Peter Rindal},
-    title = {{Implemnation}},
-    howpublished = {\url{https://github.com/osu-crypto/libOTe}},
+    title = {{The ABY3 framework for machine learning and Database Operations.}},
+    howpublished = {\url{https://github.com/ladnir/aby3}},
 }
 ```
