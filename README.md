@@ -74,8 +74,7 @@ To see all the command line options, execute the program
 
 ### Linking
 
- You can either `make install` on linux or link libOTe's source tree. In the latter 
- case, you will need to include the following:
+ To use the library in your project, you will need to link the following:
 
 1) .../libOTe
 2) .../libOTe/cryptoTools
