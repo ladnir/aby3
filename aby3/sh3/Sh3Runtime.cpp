@@ -47,6 +47,12 @@ namespace aby3
 		return getRuntime().addAnd(deps, {});
 	}
 
+	Sh3Task Sh3Task::operator&=(const Sh3Task& o)
+	{
+		*this = *this && o;
+		return *this;
+	}
+
 	void Sh3Task::get()
 	{
 		getRuntime().runUntilTaskCompletes(*this);

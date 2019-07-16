@@ -211,5 +211,53 @@ namespace aby3
 
 	}
 
+    oc::BetaCircuit* CircuitLibrary::convert_arith_to_bin(u64 n, u64 bits)
+    {
+        auto key = "convert_arith_to_bin" + std::to_string(n) + "_" + std::to_string(bits);
+
+        auto iter = mCirMap.find(key);
+
+        if (iter == mCirMap.end())
+        {
+            auto* cd = new BetaCircuit;
+
+            std::array<oc::BetaBundle, 2> inputs, inSubs;
+            oc::BetaBundle outputs, outSub;
+
+            inputs[0].mWires.resize(bits * n);
+            inputs[1].mWires.resize(bits * n);
+            outputs.mWires.resize(bits * n);
+            cd->addInputBundle(inputs[0]);
+            cd->addInputBundle(inputs[1]);
+            cd->addOutputBundle(outputs);
+
+            BetaBundle temp(bits * 2);
+            auto iter0 = inputs[0].mWires.begin();
+            auto iter1 = inputs[1].mWires.begin();
+            auto iter2 = outputs.mWires.begin();
+            for (u64 i = 0; i < inputs.size(); ++i)
+            {
+                inSubs[0].mWires.clear();
+                inSubs[1].mWires.clear();
+                outSub.mWires.clear();
+
+                inSubs[0].mWires.insert(inSubs[0].mWires.end(), iter0, iter0 + bits);
+                inSubs[1].mWires.insert(inSubs[1].mWires.end(), iter1, iter1 + bits);
+                outSub.mWires.insert(   outSub.mWires.end(),    iter2, iter2 + bits);
+
+                iter0 += bits;
+                iter1 += bits;
+                iter2 += bits;
+
+                cd->addTempWireBundle(temp);
+                int_int_add_build_do(*cd, inSubs[0], inSubs[1], outSub, temp);
+            }
+
+            iter = mCirMap.insert(std::make_pair(key, cd)).first;
+        }
+
+        return iter->second;
+    }
+
 
 }

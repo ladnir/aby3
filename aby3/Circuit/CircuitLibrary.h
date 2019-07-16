@@ -24,6 +24,7 @@ namespace aby3
 
 		BetaCircuit* int_Sh3Piecewise_helper(u64 aSize, u64 numThesholds);
 
+        BetaCircuit* convert_arith_to_bin(u64 n, u64 bits);
 
 		static void int_Sh3Piecewise_build_do(
 			BetaCircuit& cd,
@@ -33,6 +34,7 @@ namespace aby3
 
 		static void Preproc_build(BetaCircuit& cd, u64 dec);
 		static void argMax_build(BetaCircuit& cd, u64 dec, u64 numArgs);
+
     };
 
 }

@@ -14,11 +14,13 @@ The repo includes the following application:
  * ERIC Application ([see Section 5](https://eprint.iacr.org/2019/518.pdf))
 
 
-Note that this is *not* the same implementation provided in the publication [ABY3: A Mixed Protocol Framework for Machine Learning](https://eprint.iacr.org/2018/403.pdf), however it is very similar. Basicly this a much more usable reimplementation by me that was done for the database paper. If you wish to have the original ABY3 implementation, please contact me.
+Note that this is *not* the same implementation provided in the publication [ABY3: A Mixed Protocol Framework for Machine Learning](https://eprint.iacr.org/2018/403.pdf), however it is very similar. Basicly a less optimized but more usable reimplementation by that was done for the database paper. If you wish to have the original ABY3 implementation, please contact the authors.
 
 ## Warning 
 
 This codebase should **NOT** be considered fully secure. It has not had a security review and there are still several security related issues that have not been fully implemented. Only use this casebase as a proof-of-concept or to benchmark the perfromance. Future work is required for this implementation to be considered secure. 
+
+Moreover, some features have not been fully developed and contains bugs. For example, the task scheduler sometime fails. This is a known issue.
 
 ## Install
  

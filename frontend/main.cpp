@@ -10,6 +10,7 @@
 #include <aby3-ML/main-logistic.h>
 
 #include "cryptoTools/tests_cryptoTools/UnitTests.h"
+#include "cryptoTools/Crypto/PRNG.h"
 
 using namespace oc;
 using namespace aby3;
@@ -26,6 +27,7 @@ void help()
 	std::cout << "-eric -nn NN        ~~ to run the eric benchmark with 2^NN set sizes" << std::endl;
 	std::cout << "-threat -nn NN -s S ~~ to run the threat log benchmark with 2^NN set sizes and S sets" << std::endl;
 }
+
 
 int main(int argc, char** argv)
 {

@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="aby3-DB-main.cpp" />
+    <ClCompile Include="aby3Tutorial.cpp" />
     <ClCompile Include="eric.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="aby3-DB-main.h" />

@@ -27,17 +27,23 @@ namespace aby3
 
 		bool DEBUG_disable_randomization = false;
 
-        void mul(
-            CommPkg& comm,
-            const si64Matrix & A,
-            const si64Matrix & B,
-            si64Matrix& C);
+        //void mul(
+        //    CommPkg& comm,
+        //    const si64Matrix & A,
+        //    const si64Matrix & B,
+        //    si64Matrix& C);
 
         //CompletionHandle asyncMul(
         //    CommPkg& comm,
         //    const si64Matrix& A,
         //    const si64Matrix& B,
         //    si64Matrix& C);
+
+		Sh3Task asyncMul(
+			Sh3Task dependency,
+			const si64& A,
+			const si64& B,
+			si64& C);
 
         Sh3Task asyncMul(
             Sh3Task dependency,

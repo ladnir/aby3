@@ -5,6 +5,7 @@
 #include <cryptoTools/Network/IOService.h>
 #include <cryptoTools/Crypto/PRNG.h>
 #include <cryptoTools/Common/BitVector.h>
+#include <cryptoTools/Common/TestCollection.h>
 #include "aby3/sh3/Sh3FixedPoint.h"
 #include <iomanip>
 
@@ -510,6 +511,8 @@ void Sh3_Evaluator_asyncMul_matrixFixed_test(const oc::CLP & cmd)
 
 void Sh3_Evaluator_mul_test()
 {
+    
+    throw UnitTestFail("known issue. " LOCATION);
 
 	IOService ios;
 	auto chl01 = Session(ios, "127.0.0.1:1313", SessionMode::Server, "01").addChannel();
@@ -542,6 +545,8 @@ void Sh3_Evaluator_mul_test()
 		auto& enc = encs[0];
 		auto& eval = evals[0];
 		auto& comm = comms[0];
+		Sh3Runtime rt;
+		rt.init(0, comm);
 		PRNG prng(ZeroBlock);
 
 		for (u64 i = 0; i < trials; ++i)
@@ -551,14 +556,13 @@ void Sh3_Evaluator_mul_test()
 			rand(b, prng);
 			si64Matrix A(trials, trials), B(trials, trials), C(trials, trials);
 
-			enc.localIntMatrix(comm, a, A);
-			enc.localIntMatrix(comm, b, B);
-
-			eval.mul(comm, A, B, C);
+			auto i0 = enc.localIntMatrix(rt, a, A);
+			auto i1 = enc.localIntMatrix(rt, b, B);
+			auto m = eval.asyncMul(i0 && i1, A, B, C);
+			enc.reveal(m, C, cc).get();
 
 			c = a * b;
 
-			enc.reveal(comm, C, cc);
 
 			if (c != cc)
 			{
@@ -575,16 +579,20 @@ void Sh3_Evaluator_mul_test()
 		auto& enc = encs[i];
 		auto& eval = evals[i];
 		auto& comm = comms[i];
+		Sh3Runtime rt;
+		rt.init(i, comm);
 
 		for (u64 i = 0; i < trials; ++i)
 		{
 			si64Matrix A(trials, trials), B(trials, trials), C(trials, trials);
-			enc.remoteIntMatrix(comm, A);
-			enc.remoteIntMatrix(comm, B);
+			auto i0 = enc.remoteIntMatrix(rt, A);
+			auto i1 = enc.remoteIntMatrix(rt, B);
 
-			eval.mul(comm, A, B, C);
+			auto m = eval.asyncMul(i0 && i1, A, B, C);
 
-			enc.reveal(comm, 0, C);
+			auto r = enc.reveal(m, 0, C);
+
+            r.get();
 		}
 	};
 

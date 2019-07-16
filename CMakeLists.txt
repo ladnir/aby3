@@ -52,11 +52,11 @@ set(BOOST_ROOT "${libOTe_Dirs}/cryptoTools/thirdparty/linux/boost/")
 #        Build aby3, com-psi, tests         #
 #############################################
 add_subdirectory(aby3)
-add_subdirectory(com-psi)
+add_subdirectory(aby3-DB)
 
 add_subdirectory(aby3-ML)
+add_subdirectory(aby3-DB_tests)
 add_subdirectory(aby3_tests)
-add_subdirectory(com-psi_tests)
 
 add_subdirectory(frontend)
 

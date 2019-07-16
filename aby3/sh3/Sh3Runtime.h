@@ -49,6 +49,8 @@ namespace aby3
 
 		Sh3Task operator&&(const Sh3Task& o)const;
 
+		Sh3Task operator&=(const Sh3Task& o);
+
         // blocks until this task is completed. 
         void get();
 

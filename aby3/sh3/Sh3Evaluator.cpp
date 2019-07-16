@@ -21,27 +21,27 @@ namespace aby3
 		mOtNext.setSeed(mShareGen.mPrevCommon.get<block>());
 	}
 
-	void Sh3Evaluator::mul(
-		CommPkg& comm,
-		const si64Matrix& A,
-		const si64Matrix& B,
-		si64Matrix& C)
-	{
-		C.mShares[0]
-			= A.mShares[0] * B.mShares[0]
-			+ A.mShares[0] * B.mShares[1]
-			+ A.mShares[1] * B.mShares[0];
+	//void Sh3Evaluator::mul(
+	//	CommPkg& comm,
+	//	const si64Matrix& A,
+	//	const si64Matrix& B,
+	//	si64Matrix& C)
+	//{
+	//	C.mShares[0]
+	//		= A.mShares[0] * B.mShares[0]
+	//		+ A.mShares[0] * B.mShares[1]
+	//		+ A.mShares[1] * B.mShares[0];
 
-		for (u64 i = 0; i < C.size(); ++i)
-		{
-			C.mShares[0](i) += mShareGen.getShare();
-		}
+	//	for (u64 i = 0; i < C.size(); ++i)
+	//	{
+	//		C.mShares[0](i) += mShareGen.getShare();
+	//	}
 
-		C.mShares[1].resizeLike(C.mShares[0]);
+	//	C.mShares[1].resizeLike(C.mShares[0]);
 
-		comm.mNext.asyncSendCopy(C.mShares[0].data(), C.mShares[0].size());
-		comm.mPrev.recv(C.mShares[1].data(), C.mShares[1].size());
-	}
+	//	comm.mNext.asyncSendCopy(C.mShares[0].data(), C.mShares[0].size());
+	//	comm.mPrev.recv(C.mShares[1].data(), C.mShares[1].size());
+	//}
 
 	//CompletionHandle Sh3Evaluator::asyncMul(
 	//    CommPkg& comm, 
@@ -67,7 +67,28 @@ namespace aby3
 	//    return { [fu = std::move(fu)](){ fu.get(); } };
 	//}
 
-	Sh3Task Sh3Evaluator::asyncMul(Sh3Task  dependency, const si64Matrix& A, const si64Matrix& B, si64Matrix& C)
+
+	Sh3Task Sh3Evaluator::asyncMul(Sh3Task dependency, const si64& A, const si64& B, si64& C)
+	{
+		return dependency.then([&](CommPkg & comm, Sh3Task self)
+			{
+				C[0]
+					= A[0] * B[0]
+					+ A[0] * B[1]
+					+ A[1] * B[0]
+					+ mShareGen.getShare();
+
+				comm.mNext.asyncSendCopy(C[0]);
+				auto fu = comm.mPrev.asyncRecv(C[1]).share();
+
+				self.then([fu = std::move(fu)](CommPkg & comm, Sh3Task & self){
+					fu.get();
+				});
+			}).getClosure();
+	}
+
+
+	Sh3Task Sh3Evaluator::asyncMul(Sh3Task dependency, const si64Matrix& A, const si64Matrix& B, si64Matrix& C)
 	{
 		return dependency.then([&](CommPkg & comm, Sh3Task self)
 			{
