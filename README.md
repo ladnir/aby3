@@ -39,7 +39,7 @@ The library is *cross platform* and has been tested on Windows and Linux. The de
  4) `cd C:\`
  5) `mkdir libs`
  6) Download [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) to `C:\libs\eigen`.
- 7) `git clone https://github.com/Naios/function2.git`  to `C:\libs\eigen`.
+ 7) `git clone https://github.com/Naios/function2.git`  to `C:\libs\function2`.
 
 Open `aby3.sln` in visual studio and build it. Note, you can place Eigen and function2 in a different location and update the aby3 project files to reference this location.
 
@@ -76,8 +76,7 @@ To see all the command line options, execute the program
 
 ### Linking
 
- You can either `make install` on linux or link libOTe's source tree. In the latter 
- case, you will need to include the following:
+ To use the library in your project, you will need to link the following:
 
 1) .../libOTe
 2) .../libOTe/cryptoTools
