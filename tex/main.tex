@@ -1,35 +1,35 @@
 \newif\iffullversion
-%\fullversionfalse
-\fullversiontrue
+\fullversionfalse
+%\fullversiontrue
 
 \iffullversion
 	\documentclass[11pt,letterpaper]{article}
 	\usepackage[paper=letterpaper,margin=1in]{geometry}
 \else
-	%\documentclass[10pt]{IEEEtran}
-	\documentclass[sigconf]{acmart}	
+	\documentclass[conference]{IEEEtran}
+	%\documentclass[sigconf]{acmart}	
 	%%
 	%% \BibTeX command to typeset BibTeX logo in the docs
-	\AtBeginDocument{%
-		\providecommand\BibTeX{{%
-				\normalfont B\kern-0.5em{\scshape i\kern-0.25em b}\kern-0.8em\TeX}}}
-	
-	%% Rights management information.  This information is sent to you
-	%% when you complete the rights form.  These commands have SAMPLE
-	%% values in them; it is your responsibility as an author to replace
-	%% the commands and values with those provided to you when you
-	%% complete the rights form.
-	\setcopyright{acmcopyright}
-	\copyrightyear{2019}
-	\acmYear{2019}
-	\acmDOI{10.1145/1122445.1122456}
-	
-	%% These commands are for a PROCEEDINGS abstract or paper.
-	\acmConference[CCS '19]{CCS '19: ACM Conference on Computer and Communications Security }{November 11--15, 2019}{London, UK}
-	\acmBooktitle{CCS '19: ACM Conference on Computer and Communications Security, November 11--15, 2019, London, UK}
-	\acmPrice{15.00}
-	\acmISBN{978-1-4503-9999-9/18/06}
-	
+%	\AtBeginDocument{%
+%		\providecommand\BibTeX{{%
+%				\normalfont B\kern-0.5em{\scshape i\kern-0.25em b}\kern-0.8em\TeX}}}
+%	
+%	%% Rights management information.  This information is sent to you
+%	%% when you complete the rights form.  These commands have SAMPLE
+%	%% values in them; it is your responsibility as an author to replace
+%	%% the commands and values with those provided to you when you
+%	%% complete the rights form.
+%	\setcopyright{acmcopyright}
+%	\copyrightyear{2019}
+%	\acmYear{2019}
+%	\acmDOI{10.1145/1122445.1122456}
+%	
+%	%% These commands are for a PROCEEDINGS abstract or paper.
+%	\acmConference[CCS '19]{CCS '19: ACM Conference on Computer and Communications Security }{November 11--15, 2019}{London, UK}
+%	\acmBooktitle{CCS '19: ACM Conference on Computer and Communications Security, November 11--15, 2019, London, UK}
+%	\acmPrice{15.00}
+%	\acmISBN{978-1-4503-9999-9/18/06}
+%	
 \fi 
 
 \input{headers}
@@ -38,9 +38,8 @@
 
 \begin{document}
 
-\iffullversion
 \maketitle
-\fi
+
 
 
 
@@ -50,10 +49,10 @@ We present a scalable database join protocol for secret shared data in the hones
 In addition to performing database joins our protocol, we implement two applications on top of our framework. The first performs joins between different governmental agencies to identify voter registration errors in a privacy-preserving manner. The second application considers the scenario where several organizations wish to compare network security logs to more accurately identify common security threats, e.g. the IP addresses of a bot net. In both, cases the practicality of these applications depends on efficiently performing joins on millions of secret shared records. For example, our three party protocol can perform a join on two sets of 1 million records in 4.9 seconds or, alternatively, compute the cardinality of this join in just 3.1 seconds. 
 \end{abstract}
 
-\iffullversion
-\else
-\maketitle
-\fi
+%\iffullversion
+%\else
+%\maketitle
+%\fi
 
 \input{intro}
 
