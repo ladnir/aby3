@@ -56,7 +56,7 @@ Left joins work in a similar way except that all rows of $X$ are output and mark
 
 \subsection{Randomized Encodings}
 
-The randomized encoding functionality \f{encode} of \figureref{fig:randomized-encode-ideal} enables the parties to coordinate their secret shares without revealing the underlying values. In particular, the parties will construct a cuckoo hash table using these encodings. The functionality takes as input several tuples $(\share{B_i},\share{X_i},\Party{i})$ where $B_i\in\{0,1\}^d$ is an array of $d$ bits, $ X_i\in(\{0,1\}^\sigma)^{d}$ is a array of $d$ strings and  $\Party{i}$ that denotes that party $\Party{i}$ should be output the encodings for this tuple. The functionality assigns a random $\ell$ bit encoding for each input $x\in \{0,1\}^\sigma$. For $j\in[d]$, if the bit $B_i[j]=0$ then the functionality outputs the encoding for $X_i[j]$ and otherwise a random $\ell$ bit string.
+The randomized encoding functionality \f{encode} of \figureref{fig:randomized-encode-ideal} enables the parties to coordinate their secret shares without revealing the underlying values. In particular, the parties will construct a cuckoo hash table using these encodings. The functionality takes as input several tuples $(\share{B_i},\share{X_i},\Party{i})$ where $B_i\in\{0,1\}^d$ is an array of $d$ bits, $ X_i\in(\{0,1\}^\sigma)^{d}$ is a array of $d$ strings and  $\Party{i}$ that denotes that party $\Party{i}$ should be output the encodings for this tuple. The functionality assigns a random $\ell$ bit encoding for each input $x\in \{0,1\}^\sigma$. For $j\in[d]$, if the bit $B_i[j]=0$ then the functionality outputs the encoding for $X_i[j]$ and otherwise a random $\ell$ bit string. Looking forward, $B_i[j]=0$ will mean that the key $X_i[j]$ is actually set to \Null and a random encoding should be returned.
 
 
 
@@ -77,7 +77,7 @@ The randomized encoding functionality \f{encode} of \figureref{fig:randomized-en
 
 
 \paragraph{LowMC Encodings}
-We realize this functionality using the LowMC block cipher\cite{lowmc}. When implemented with the honest majority MPC protocols\cite{aby3, highthroughput}, this approach results in extremely high throughput, computing up to one million encodings per second. Once the parties have their secret shared inputs, they sample a secret shared LowMC key uniformly and encrypt each input under that key using the MPC protocol. These encryptions are revealed as the encodings to the appropriate party.
+We realize this functionality using the LowMC block cipher\cite{lowmc}. When implemented with the honest majority MPC protocols\cite{highthroughput}, this approach results in extremely high throughput, computing up to one million encodings per second. Once the parties have their secret shared inputs, they sample a secret shared LowMC key uniformly and encrypt each input under that key using the MPC protocol. These encryptions are revealed as the encodings to the appropriate party.
 
 
 The LowMC cipher is parameterized by a block size $\ell$, keys size $\kappa$, s-boxes per layer $m$ and the desired data complexity $d$. To set these parameters, observe that the adversary only sees a bounded number of block cipher outputs (encodings) per key. As such, the data complexity can be bounded by this value. For our implementation we upper bound the number of outputs by $d= 2^{30}$. The remaining parameters are set to be $\ell\in\{80, 100\}$ and $m=14$ which results in $r=13$ rounds and computational security of $\kappa=128$ bits\cite{lowmc}. The circuit for $\ell=80$ contains 546 \textsc{and} gates (bits of communication).
@@ -141,7 +141,7 @@ This switching network require  $O(n\log n)$ cryptographic operations. Building 
 \else 
 We
 \fi
-introduce a \emph{new} oblivious switching network protocol tailored for the honest majority setting with significantly efficiency improves. Our protocol has $O(n)$ overhead and is constant round. \cite{MS13} requires $O(n\log n)$ communication/computation and log rounds. Moreover, our protocol can be instantiated with information theoretic security. 
+introduce a \emph{new} oblivious switching network protocol tailored for the honest majority setting with significantly efficiency improves. Our protocol has $O(n)$ overhead and is constant round. \cite{MS13} requires $O(n\log n)$ communication/computation and log rounds. %Moreover, our protocol can be instantiated with information theoretic security. 
 
 \newcommand{\programmer}{\ensuremath{P_{\textsf{p}}}\xspace}
 \newcommand{\sender}{\ensuremath{P_{\textsf{s}}}\xspace}
@@ -173,7 +173,7 @@ We begin with a restricted class of switching networks where the programming fun
 
 The simulation of this protocol is perfect. The view of \sender contains a uniform permutation $\pi_0$ and vector $S$.  Similarly, the view of  \receiver contains $\pi_1$ which is uniformly distributed (when $\pi_0$ is unobserved) and the uniform vector $B$. A simulator can sample these directly on behalf of the honest parties.
 
-In the computational secure setting,  $\pi_0,S$ can be generated locally by \Party{0} and \Party{1} using a common source of randomness, e.g. a seeded PRG. This reduces the rounds to 1.  
+In our computational secure setting,  $\pi_0,S$ can be generated locally by \Party{0} and \Party{1} using a common source of randomness, e.g. a seeded PRG. This reduces the rounds to 1.  
 
 \paragraph{Duplication Network}\label{sec:dup}
 
@@ -186,7 +186,7 @@ This observation gives rise to a natural protocol: for $i=1,...,m$, if $b_i=1$ t
 As a warm-up, suppose that the \sender inputs $A_{i-1},A_{i}$ and that  \programmer  \& \sender should receive a share of $\shareTwo{B_{i}}$ such that $B_{i}:=A_{i-b_i}$. \sender samples three uniform strings $\shareTwo{B_{i}}_1, w_0,w_1\gets \{0,1\}^\sigma$ and a uniform bit $\phi\gets \{0,1\}$. \sender constructs two messages $m_0=A_{i}^1\oplus \shareTwo{B_{i}}_1\oplus w_\phi$ and $m_1= A_{i-1}\oplus \shareTwo{B_{i}}_1 \oplus w_{\phi\oplus 1}$.  \sender sends $w_0,w_1$ to the \receiver and sends $m_0,m_1,\phi$ to  \programmer who sends $\rho=\phi\oplus b_i$ to  \receiver. The final shares are constructed by having  \receiver send $w_\rho$ to  \programmer who computes $\shareTwo{B_{i}}_0:=m_{b_i}\oplus w_{\rho}$.
 
 
-The simulation of this protocol is also perfect. \programmer learns $m_0=A_{i}\oplus \shareTwo{B_{i}}_1\oplus w_\phi, m_1=A_{i-1}\oplus \shareTwo{B_{i}}_1\oplus w_{1\oplus \phi}, w_{b_i\oplus \phi}$. As such, they can compute $\shareTwo{B_i}_0=A_{i-b_i}\oplus \shareTwo{B_{i}}_1$ but not $A_{i-\overline{b_i}}\oplus \shareTwo{B_{i}}_1$. \receiver only learns $w_0,w_1$ and $\rho=b_i\oplus \phi$ which can be trivially simulated. If computational security is sufficient, then observe that $w_0,w_1,\phi$  are uniformly random and sending them can be optimized away with a pre-shared PRG seed.
+The simulation of this protocol is also perfect. \programmer learns $m_0=A_{i}\oplus \shareTwo{B_{i}}_1\oplus w_\phi, m_1=A_{i-1}\oplus \shareTwo{B_{i}}_1\oplus w_{1\oplus \phi}, w_{b_i\oplus \phi}$. As such, they can compute $\shareTwo{B_i}_0=A_{i-b_i}\oplus \shareTwo{B_{i}}_1$ but not $A_{i-\overline{b_i}}\oplus \shareTwo{B_{i}}_1$. \receiver only learns $w_0,w_1$ and $\rho=b_i\oplus \phi$ which can be trivially simulated. In our computationally secure setting observe that $w_0,w_1,\phi$  are uniformly random and sending them can be optimized away with a pre-shared PRG seed.
 
 
 The protocol just described considers the setting where the messages $A_{i-1},A_{i}$ are the private input of  \sender. However, we require that at each iteration the messages being selected is either $B_{i-1}$ or $A_{i}$ where $\shareTwo{B_{i-1}}$ was computed in the previous iteration. In this case  \sender inputs their share of $B_{i-1}$ instead of $A_{i-1}$ while the \programmer computes $\shareTwo{B_{i}}_0:=m_{b_i}\oplus w_{\rho}\oplus b_i\shareTwo{B_{i-1}}_0$. 
@@ -197,7 +197,7 @@ Note that this protocol outputs shares to \sender as opposed to  \receiver. This
 
 
 The protocols and functionality described above assume the vector being transformed is the private input of the \sender. However, our larger  protocols will require the transformations to be applied to secret shared vectors. In particular, the parties hold  $\share{A}$.
-As described in [shared Switch] of \ref{fig:switching-net}, the parties first locally convert $\share{A}$ into $\shareTwo{A}$ between \sender and \programmer. They run \f{switch} where  \sender inputs their share $B=\shareTwo{A}_0$. \programmer and \receiver receive $\shareTwo{\pi(B)}$ from \f{switch} where \programmer holds $\shareTwo{\pi(B)}_0$. \programmer  locally define $\shareTwo{C}_0:=\shareTwo{\pi(B)}_0\oplus \pi(\shareTwo{A}_1)$ and \receiver defines $\shareTwo{C}_1:=\shareTwo{\pi(B)}_1$. It is easy to verify that $C=\pi(A)$. Simulation of this protocol essentially equivalent to simulating the call to \f{switch} since there is no added communication.
+As described in [shared Switch] of \figureref{fig:switching-net}, the parties first locally convert $\share{A}$ into $\shareTwo{A}$ between \sender and \programmer. They run \f{switch} where  \sender inputs their share $B=\shareTwo{A}_0$. \programmer and \receiver receive $\shareTwo{\pi(B)}$ from \f{switch} where \programmer holds $\shareTwo{\pi(B)}_0$. \programmer  locally define $\shareTwo{C}_0:=\shareTwo{\pi(B)}_0\oplus \pi(\shareTwo{A}_1)$ and \receiver defines $\shareTwo{C}_1:=\shareTwo{\pi(B)}_1$. It is easy to verify that $C=\pi(A)$. Simulation of this protocol essentially equivalent to simulating the call to \f{switch} since there is no added communication.
 
 
 \paragraph{Universal Switching Network}\label{sec:switch}
@@ -321,19 +321,19 @@ We note that some of the columns of the tables may be secret shared in arithmeti
 
 The next phase of the protocol is for each row of $X$, select the appropriate rows of $\ytable$ so the keys can be compared. \Party{0} knows that if the join-keys of the $X[i]$ row will match with a row from $Y$, then this row will be at $\ytable[j]$ for some $j\in \{h_1(e),h_2(e)\}$ where  $e=\mathbb{E}_x[i]$. 
 
-To obliviously compare these rows, \Party{0} will construct two switching networks with programming $\pi_1,\pi_2 : n\rightarrow m$ such that if $h_l(\mathbb{E}_x[i])=j$ then $\pi_l(i)=j$. Each of these will be used to construct the tables $\shareTwo{\widetilde{Y}^1},\shareTwo{\widetilde{Y}^2}$ which are the result of applying the switching networks $\pi_1,\pi_2$ to $\shareTwo{\ytable}$. 
+To obliviously compare these rows, \Party{0} will construct two switching networks with programming $\pi_1,\pi_2 : n\rightarrow m$ such that if $h_l(\mathbb{E}_x[i])=j$ then $\pi_l(i)=j$. Each of these will be used to construct the tables $\shareTwo{\widehat{Y}^1},\shareTwo{\widehat{Y}^2}$ which are the result of applying the switching networks $\pi_1,\pi_2$ to $\shareTwo{\ytable}$. 
 \iffullversion
-In particular, for the $i$th row $X[i]$ it is now the case that if $X[i]$ has a matching row in $Y$ then it will be contained at  $\widetilde{Y}^1[i]$ or $\widetilde{Y}^2[i]$. 
+In particular, for the $i$th row $X[i]$ it is now the case that if $X[i]$ has a matching row in $Y$ then it will be contained at  $\widehat{Y}^1[i]$ or $\widehat{Y}^2[i]$. 
 \fi
 
 
 \paragraph{Inner Join}
 
-Given the three secret shared tables $\share{X},\shareTwo{\widetilde{Y}^1},\shareTwo{\widetilde{Y}^2}$ as described above, the parties do a linear pass over the $n$ rows to construct the join between $X$ and $Y$. Recall that the inner join consists of all the selected columns from the rows $X[i],Y[j]$ where  the join-keys of the rows $X[i]$ and $Y[j]$ are equal. 
+Given the three secret shared tables $\share{X},\shareTwo{\widehat{Y}^1},\shareTwo{\widehat{Y}^2}$ as described above, the parties do a linear pass over the $n$ rows to construct the join between $X$ and $Y$. Recall that the inner join consists of all the selected columns from the rows $X[i],Y[j]$ where  the join-keys of the rows $X[i]$ and $Y[j]$ are equal. 
 
-If row $X[i]$ has a matching row in $Y$ then this row will occupy either ${\widetilde{Y}^1}[i]$ or ${\widetilde{Y}^2}[i]$. To determine which, the parties input the secret shares of these rows to an MPC protocol where the join-keys are compared. For each $i$ and rows ${\widetilde{Y}^1}[i],{\widetilde{Y}^2}[i]$ the bits $c_1[i],c_2[i]$ are generated where $c_l[i]=1$ iff the join-keys of ${\widetilde{Y}^l}[i]$ are equal to that of $X[i]$. The MPC circuit then computes  $Y'[i]:=c_1[i]{\widetilde{Y}^1}[i]\oplus c_2[i]{\widetilde{Y}^2}[i]$ and $\YNull'[i]:=\YNull'[i]\vee \neg(c_1[i]\oplus c_2[i])$. That is, $Y'[i]$ is a \Null row if it was already \Null or none of the comparisons were equal. % $c[i]$ encodes whether the $i$th row of $Y'$ is not \texttt{NULL}. If so, then $Y'[i]$ is the row of $Y$ which has matching join-keys with $X[i]$.
+If row $X[i]$ has a matching row in $Y$ then this row will occupy either ${\widehat{Y}^1}[i]$ or ${\widehat{Y}^2}[i]$. To determine which, the parties input the secret shares of these rows to an MPC protocol where the join-keys are compared. For each $i$ and rows ${\widehat{Y}^1}[i],{\widehat{Y}^2}[i]$ the bits $c_1[i],c_2[i]$ are generated where $c_l[i]=1$ iff the join-keys of ${\widehat{Y}^l}[i]$ are equal to that of $X[i]$. The MPC circuit then computes  $Y'[i]:=c_1[i]{\widehat{Y}^1}[i]\oplus c_2[i]{\widehat{Y}^2}[i]$ and $\YNull'[i]:=\YNull'[i]\vee \neg(c_1[i]\oplus c_2[i])$. That is, $Y'[i]$ is a \Null row if it was already \Null or none of the comparisons were equal. % $c[i]$ encodes whether the $i$th row of $Y'$ is not \texttt{NULL}. If so, then $Y'[i]$ is the row of $Y$ which has matching join-keys with $X[i]$.
 
-Next, the \texttt{where} clause of the query. The \texttt{where} clause further filters the output table as a function of $Y'[i]$ and $X[i]$. 
+Next, the \texttt{where} clause further filters the output table as a function of $Y'[i]$ and $X[i]$. 
 \iffullversion
 For example, the query may specify that only rows where $Y_2'[i] + X_3[i] > 22$  are to be selected. Regardless of the exact where clause, the 
 \else 
@@ -365,7 +365,7 @@ A left join query is similar to an inner join except that all of the rows from t
 
 \paragraph{Union and Set Minus}
 
-Our framework is also capable of computing the union of two tables with respect to the join-keys. Specifically, we define the union operator as taking all of the rows from the left table and all of the rows from the right table that would not be present in the inner join. First we compute $Y\backslash X$ by only including $X[i]$ if $Y'[i]$ is \Null, e.i. $X[i]$ has no matching row in $Y$. The union of $X$ and $Y$ is then constructed as $(Y\backslash X) || X$ where the $||$ operator denotes the row-wise concatenation of $X$ to the end of $Y\backslash X$.
+Our framework is also capable of computing the union of two tables with respect to the join-keys. Specifically, we define the union operator as taking all of the rows from the left table and all of the rows from the right table that would not be present in the inner join. First we compute $Y\backslash X$ by only including $X[i]$ if $Y'[i]$ is \Null, i.e. $X[i]$ has no matching row in $Y$. The union of $X$ and $Y$ is then constructed as $(Y\backslash X) || X$ where the $||$ operator denotes the row-wise concatenation of $X$ to the end of $Y\backslash X$.
 
 
 \paragraph{Full Join}
@@ -374,7 +374,7 @@ We construct a full join as $(X$ left join $Y)$ union $Y$. The left join merge t
 
 We note that under some restrictions on the tables being joined, a more efficient protocol for full joins can be achieved. We defer an explanation of this technique to \sectionref{sec:threatlog}.
 
-\paragraph{Security} The simulation of these protocols directly follow from the composibility of the subroutines \f{encode}, \f{switch} and \f{mpc}. First, the output of \f{encode} simply outputs random strings and it is therefore straightforward to simulate.  \f{switch} and \f{mpc} both output secret shared values. Finally, correctness is straight forward to analysis and holds so long as there is no encoding collisions and cuckoo hashing succeeds. Parameters are chosen appropriately so these events happen with probability at least $1-2^{-\lambda}$.
+\paragraph{Security} The simulation of these protocols directly follow from the composibility of the subroutines \f{encode}, \f{switch} and \f{mpc}. First, the output of \f{encode} simply outputs random strings and it is therefore straightforward to simulate.  \f{switch} and \f{mpc} both output secret shared values. Finally, correctness is straight forward to analysis and holds so long as there is no encoding collisions and cuckoo hashing succeeds. Parameters are chosen appropriately so these failure events happen with probability at most $2^{-\lambda}$.
 
 \begin{figure}[ht]
 	\framebox{\begin{minipage}{0.95\linewidth}
