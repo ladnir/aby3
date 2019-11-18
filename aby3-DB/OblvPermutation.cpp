@@ -86,7 +86,10 @@ namespace osuCrypto
             }
 
             if (i == rows)
-                recvrChl.asyncSend(data, size, [a = std::move(src)](){});
+            {
+                auto s = span<u8>(data, size);
+                recvrChl.asyncSend(std::move(s), [a = std::move(src)](){});
+            }
             else
                 recvrChl.asyncSend(data, size);
         }
@@ -265,7 +268,10 @@ namespace osuCrypto
             u32* data = perm.data() + start;
 
             if (i == rows)
-                recvrChl.asyncSend(data, size, [permPointer]() {});
+            {
+                auto s = span<u32>(data, size);
+                recvrChl.asyncSend(std::move(s), [permPointer]() {});
+            }
             else
                 recvrChl.asyncSend(data, size);
 
