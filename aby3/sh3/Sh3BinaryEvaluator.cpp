@@ -2,7 +2,7 @@
 #include <cryptoTools/Common/Matrix.h>
 #include <cryptoTools/Common/Log.h>
 #include <libOTe/Tools/Tools.h>
-#include <cryptoTools/Crypto/sha1.h>
+#include <cryptoTools/Crypto/RandomOracle.h>
 #include "Sh3Converter.h"
 #include <immintrin.h>
 
@@ -448,7 +448,7 @@ namespace aby3
         if (mDebug == false)
             return ZeroBlock;
 
-        SHA1 sha(sizeof(block));
+        RandomOracle sha(sizeof(block));
         for (u64 r = 0; r < mPlainWires_DEBUG.size(); ++r)
         {
             auto& m = mPlainWires_DEBUG[r];
@@ -1279,7 +1279,7 @@ namespace aby3
                 }
             }
 
-            //SHA1 sha(sizeof(block));
+            //RandomOracle sha(sizeof(block));
             //sha.Update(sendBuff.data(), sendBuff.size());
             //block b;
             //sha.Final(b);

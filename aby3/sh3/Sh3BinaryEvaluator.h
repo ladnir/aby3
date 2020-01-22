@@ -3,7 +3,7 @@
 
 #include <cryptoTools/Circuit/BetaCircuit.h>
 #include "Sh3Runtime.h"
-#include <cryptoTools/Crypto/sha1.h>
+#include <cryptoTools/Crypto/RandomOracle.h>
 #include "Sh3ShareGen.h"
 #include <boost/align/aligned_allocator.hpp>
 #include <vector>
@@ -93,7 +93,7 @@ namespace aby3
 
         oc::block hashState()
         {
-            oc::SHA1 h(sizeof(block));
+            oc::RandomOracle h(sizeof(block));
             h.Update(mMem.mShares[0].data(), mMem.mShares[0].size());
             h.Update(mMem.mShares[1].data(), mMem.mShares[1].size());
 
