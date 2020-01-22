@@ -56,11 +56,13 @@ In short, this will build the project
 git clone --recursive https://github.com/osu-crypto/libOTe.git
 cd libOTe/cryptoTools/thirdparty/linux
 bash boost.get
+bash miracl.get
 cd ../../..
-cmake . -DENABLE_CIRCUITS=ON
+cmake . -DENABLE_CIRCUITS=ON -DENABLE_SIMPLESTOT=ON
 make -j
 cd ../
 git clone https://github.com/ladnir/aby3.git
+cd aby3
 cd thirdparty/linux
 bash eigen.get
 bash function2.get
