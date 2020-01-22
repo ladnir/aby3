@@ -23,18 +23,18 @@ endif()
 #############################################
 #                 Link Miracl               #
 #############################################
-find_library(
-  MIRACL_LIB 
-  NAMES miracl  
-  HINTS "${Miracl_Dirs}/miracl/source/")
+#ind_library(
+	# MIRACL_LIB 
+  # NAMES miracl  
+  # HINTS "${Miracl_Dirs}/miracl/source/")
   
 # if we cant fint it, throw an error
-if(NOT MIRACL_LIB)
-  Message(${MIRACL_LIB})
-  message(FATAL_ERROR "Failed to find miracl at " ${Miracl_Dirs})
-else()
-  message("Miracl at  ${MIRACL_LIB}")
-endif()
+#f(NOT MIRACL_LIB)
+	#  Message(${MIRACL_LIB})
+  #  message(FATAL_ERROR "Failed to find miracl at " ${Miracl_Dirs})
+  #else()
+	#message("Miracl at  ${MIRACL_LIB}")
+  #endif()
 
 
 
@@ -48,10 +48,10 @@ find_library(
     NAMES libOTe
     HINTS "${libOTe_Dirs}/lib/")
 	
-find_library(
-    SimplestOT_LIB
-    NAMES SimplestOT
-    HINTS "${libOTe_Dirs}/lib/")
+#find_library(
+#    SimplestOT_LIB
+#    NAMES SimplestOT
+#    HINTS "${libOTe_Dirs}/lib/")
 
 find_library(
     cryptoTools_LIB
@@ -77,5 +77,5 @@ target_include_directories(aby3 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../)
 target_include_directories(aby3 PUBLIC ${libOTe_Dirs}) 
 target_include_directories(aby3 PUBLIC ${libOTe_Dirs}/cryptoTools) 
 
-target_link_libraries(aby3 ${libOTe_LIB} ${SimplestOT_LIB} ${cryptoTools_LIB} ${MIRACL_LIB}  ${Boost_LIBRARIES})
+target_link_libraries(aby3 ${libOTe_LIB} ${cryptoTools_LIB} ${Boost_LIBRARIES})
 

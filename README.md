@@ -61,7 +61,7 @@ cmake . -DENABLE_CIRCUITS=ON
 make -j
 cd ../
 git clone https://github.com/ladnir/aby3.git
-cd thirdparty/linux
+cd aby3/thirdparty/linux
 bash eigen.get
 bash function2.get
 cd ../..
