@@ -58,22 +58,32 @@ namespace aby3
 
     Sh3Task Sh3Converter::toBinaryMatrix(Sh3Task dep, const si64Matrix& in, sbMatrix& dest)
     {
-        switch (dep.getRuntime().mPartyIdx)
+        struct State
         {
-        case 0:
-        {
-            return dep.then([&](CommPkg& comm, Sh3Task self) {
+            sbMatrix x0, x1;
+        };
+
+        auto state = std::make_shared<State>();
+
+        return dep.then([&, state](CommPkg comm, Sh3Task self) {
+
+            switch (dep.getRuntime().mPartyIdx)
+            {
+            case 0:
+            {
 
                 if (dest.rows() == 0)
                     dest.resize(in.rows(), 64 * in.cols());
 
                 // x0 = in.mShares[0] + in.mShare[1];
                 //    = in.0 + in.2 
-                sbMatrix x0(in.rows(), dest.bitCount());
+                sbMatrix& x0 = state->x0;
+                x0.resize(in.rows(), dest.bitCount());
 
                 // x1 = 0
                 //    = in.1
-                sbMatrix x1(in.rows(), dest.bitCount());
+                sbMatrix& x1 = state->x1;
+                x1.resize(in.rows(), dest.bitCount());
 
                 for (u64 i = 0; i < x0.mShares[0].size(); ++i)
                 {
@@ -96,24 +106,25 @@ namespace aby3
                 comm.mNext.asyncSend(x0.mShares[0].data(), x0.mShares[1].size());
 
                 mCir = getArithToBinCircuit(64, dest.bitCount());
-                mBin.asyncEvaluate(self, &mCir, { &x0,&x1 }, { &dest });
+                mBin.asyncEvaluate(self, &mCir, { &x0,&x1 }, { &dest }).then([state](Sh3Task) {});
 
-                }).getClosure();
-        }
-        case 1:
-        {
-            return dep.then([&](CommPkg comm, Sh3Task self) {
+                break;
+            }
+            case 1:
+            {
 
                 if (dest.rows() == 0)
                     dest.resize(in.rows(), 64 * in.cols());
 
                 // x0 = in.mShares[0] + in.mShare[1];
                 //    = in.0 + in.2 
-                sbMatrix x0(in.rows(), dest.bitCount());
+                sbMatrix& x0 = state->x0;
+                x0.resize(in.rows(), dest.bitCount());
 
                 // x1 = 0
                 //    = in.1
-                sbMatrix x1(in.rows(), dest.bitCount());
+                sbMatrix& x1 = state->x1;
+                x1.resize(in.rows(), dest.bitCount());
 
 
                 x0.mShares[0].setZero();
@@ -141,23 +152,24 @@ namespace aby3
 
 
                 self.then([f = std::move(f)](CommPkg& _, Sh3Task __) mutable { f.get(); });
-                mBin.asyncEvaluate(self, &mCir, { &x0,&x1 }, { &dest });
-                }).getClosure();
-        }
-        case 2:
-        {
-            return dep.then([&](CommPkg comm, Sh3Task self) {
-
+                mBin.asyncEvaluate(self, &mCir, { &x0,&x1 }, { &dest }).then([state](Sh3Task) {});
+                break;
+            }
+            case 2:
+            {
                 if (dest.rows() == 0)
                     dest.resize(in.rows(), 64 * in.cols());
 
                 // x0 = in.mShares[0] + in.mShare[1];
                 //    = in.0 + in.2 
-                sbMatrix x0(in.rows(), dest.bitCount());
+                sbMatrix& x0 = state->x0;
+                x0.resize(in.rows(), dest.bitCount());
 
                 // x1 = 0
                 //    = in.1
-                sbMatrix x1(in.rows(), dest.bitCount());
+                sbMatrix& x1 = state->x1;
+                x1.resize(in.rows(), dest.bitCount());
+
 
 
                 x0.mShares[1].setZero();
@@ -180,14 +192,15 @@ namespace aby3
                 }
 
                 mCir = getArithToBinCircuit(64, dest.bitCount());
-                mBin.asyncEvaluate(self, &mCir, { &x0,&x1 }, { &dest });
-
-                }).getClosure();
-        }
-        default:
-            throw std::runtime_error("logic error. " LOCATION);
-            break;
-        }
+                mBin.asyncEvaluate(self, &mCir, { &x0,&x1 }, { &dest }).then([state](Sh3Task) {});
+                break;
+            }
+            default:
+                throw std::runtime_error("logic error. " LOCATION);
+                break;
+            }
+            }
+        ).getClosure();
 
     }
 

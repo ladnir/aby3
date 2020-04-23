@@ -18,6 +18,7 @@ namespace aby3
 
 
     void share(const i64Matrix& x, u64 colBitCount, sbMatrix& x0, sbMatrix& x1, sbMatrix& x2, oc::PRNG& prng);
+    void share(const i64Matrix& x, si64Matrix& x0, si64Matrix& x1, si64Matrix& x2, oc::PRNG& prng);
     int memcmp(oc::MatrixView<i64> l, oc::MatrixView<i64> r);
     void reveal(i64Matrix& x, sbMatrix& x0, sbMatrix& x1, sbMatrix& x2);
     void reveal(i64Matrix& x, si64Matrix& x0, si64Matrix& x1, si64Matrix& x2);

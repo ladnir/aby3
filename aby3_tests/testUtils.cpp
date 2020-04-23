@@ -64,6 +64,24 @@ namespace aby3
         return ss.str();
     }
 
+    void share(const i64Matrix& x, si64Matrix& x0, si64Matrix& x1, si64Matrix& x2, oc::PRNG& prng)
+    {
+        x0.resize(x.rows(), x.cols());
+        x1.resize(x.rows(), x.cols());
+        x2.resize(x.rows(), x.cols());
+
+        prng.get(x0.mShares[0].data(), x0.mShares[0].size());
+        prng.get(x1.mShares[0].data(), x1.mShares[0].size());
+
+        for (u64 i = 0; i < x2.mShares[0].size(); ++i)
+        {
+            x2.mShares[0](i) = x(i) - x0.mShares[0](i) - x1.mShares[0](i);
+        }
+
+        x0.mShares[1] = x2.mShares[0];
+        x1.mShares[1] = x0.mShares[0];
+        x2.mShares[1] = x1.mShares[0];
+    }
 
     void share(const i64Matrix& x, u64 colBitCount, sbMatrix& x0, sbMatrix& x1, sbMatrix& x2, oc::PRNG& prng)
     {
