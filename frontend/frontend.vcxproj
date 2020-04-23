@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="aby3-DB-main.cpp" />
     <ClCompile Include="aby3Tutorial.cpp" />
+    <ClCompile Include="bug.cpp" />
     <ClCompile Include="eric.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="aby3-DB-main.h" />
@@ -95,7 +96,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>C:/libs/boost/stage/lib;C:\libs\mpir\lib\x64\$(Configuration);C:\libs\miracl\x64\$(Configuration);C:\libs\NTL\x64/$(Configuration);$(ProjectDir)../../libOTe/x64/$(Configuration);$(ProjectDir)../../relic/lib/$(Configuration);$(ProjectDir)../../emp/emp-tool/x64/$(Configuration);$(OutputPath)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>aby3-ML.lib;aby3-DB.lib;aby3-DB_tests.lib;aby3.lib;aby3_tests.lib;tests_cryptoTools.lib;cryptoTools.lib;libOTe.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>aby3-ML.lib;aby3-DB.lib;aby3-DT.lib;aby3-DB_tests.lib;aby3.lib;aby3_tests.lib;tests_cryptoTools.lib;cryptoTools.lib;libOTe.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

@@ -19,9 +19,14 @@ namespace aby3
     class Sh3Task
     {
     public:
-
+#ifdef __INTELLISENSE__ 
+		using RoundFunc = std::function<void(CommPkg & comm, Sh3Task & self)>;
+		using ContinuationFunc = std::function<void(Sh3Task & self)>;
+#else
         using RoundFunc = fu2::unique_function<void(CommPkg& comm, Sh3Task& self)>;
         using ContinuationFunc = fu2::unique_function<void(Sh3Task& self)>;
+#endif
+
 		enum Type { Evaluation, Closure };
 
         // returns the associated runtime.

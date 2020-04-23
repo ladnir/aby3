@@ -8,14 +8,11 @@
 #include <cryptoTools/Common/TestCollection.h>
 #include "aby3/sh3/Sh3FixedPoint.h"
 #include <iomanip>
+#include "testUtils.h"
 
 using namespace aby3;
 using namespace oc;
 
-void rand(i64Matrix& A, PRNG& prng)
-{
-	prng.get(A.data(), A.size());
-}
 
 void Sh3_Evaluator_asyncMul_test()
 {
@@ -135,24 +132,6 @@ void Sh3_Evaluator_asyncMul_test()
 }
 
 
-std::string prettyShare(u64 partyIdx, const si64& v)
-{
-	std::array<u64, 3> shares;
-	shares[partyIdx] = v[0];
-	shares[(partyIdx + 2) % 3] = v[1];
-	shares[(partyIdx + 1) % 3] = -1;
-
-	std::stringstream ss;
-	ss << "(";
-	if (shares[0] == -1) ss << "               _ ";
-	else ss << std::hex << std::setw(16) << std::setfill('0') << shares[0] << " ";
-	if (shares[1] == -1) ss << "               _ ";
-	else ss << std::hex << std::setw(16) << std::setfill('0') << shares[1] << " ";
-	if (shares[2] == -1) ss << "               _)";
-	else ss << std::hex << std::setw(16) << std::setfill('0') << shares[2] << ")";
-
-	return ss.str();
-}
 
 
 

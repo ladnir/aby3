@@ -4,6 +4,10 @@
 #include <array>
 #include <functional>
 
+#ifndef ENABLE_CIRCUITS
+static_assert(0, "ENABLE_CIRCUIT must be defined in cryptoTools/libOTe");
+#endif
+
 namespace osuCrypto
 {
 

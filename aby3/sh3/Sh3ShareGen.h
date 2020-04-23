@@ -11,6 +11,7 @@ namespace aby3
 			mCommon.SetSeed(oc::toBlock(3488535245, 2454523));
 			mNextCommon.SetSeed(nextSeed);
 			mPrevCommon.SetSeed(prevSeed);
+            mPrivPrng.SetSeed(nextSeed ^ prevSeed);
 
             mShareGenIdx = 0;
             mShareBuff[0].resize(buffSize);
@@ -32,7 +33,7 @@ namespace aby3
 
 
         u64 mShareIdx = 0, mShareGenIdx = 0;
-		oc::PRNG mNextCommon, mPrevCommon, mCommon;
+		oc::PRNG mNextCommon, mPrevCommon, mCommon, mPrivPrng;
         std::array<oc::AES, 2> mShareGen;
         std::array<std::vector<block>, 2> mShareBuff;
         void refillBuffer()

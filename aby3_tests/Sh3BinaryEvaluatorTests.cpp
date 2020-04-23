@@ -100,7 +100,11 @@ using namespace aby3;
 //    }
 //}
 
-void Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, bool debug, u64 valMask = ~0ull)
+void Sh3_BinaryEngine_test(
+    BetaCircuit* cir, 
+    std::function<i64(i64, i64)> binOp,
+    bool debug, 
+    u64 valMask = ~0ull)
 {
 
     IOService ios;
@@ -207,7 +211,7 @@ void Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp,
             {
                 if (c(j) != binOp(a(j), b(j)))
                 {
-                    std::cout << "mode: " << (int)mode << " failed at " << j << " " << c(j) << " != " << binOp(a(j), b(j)) << std::endl;
+                    std::cout << "mode: " << (int)mode << " failed at " << j << " " << c(j) << " != " << binOp(a(j), b(j)) << " debug = " << int(debug) << std::endl;
                     failed = true;
                 }
             }
@@ -290,6 +294,8 @@ void Sh3_BinaryEngine_and_test()
     BetaLibrary lib;
     u64 size = 8;
     u64 mask = ~((~0ull) << size);
+
+    std::cout << "1" << std::endl;
     // and
     {
         auto cir = lib.int_int_bitwiseAnd(size, size, size);
@@ -299,6 +305,7 @@ void Sh3_BinaryEngine_and_test()
         Sh3_BinaryEngine_test(cir, [](i64 a, i64 b) {return a & b; }, false, mask);
     }
 
+    std::cout << "2" << std::endl;
     // na_and
     {
         auto* cd = new BetaCircuit;

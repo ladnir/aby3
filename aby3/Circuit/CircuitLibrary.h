@@ -5,6 +5,10 @@
 #include "aby3/Common/Defines.h"
 #include <cryptoTools/Circuit/BetaLibrary.h>
 
+#ifndef ENABLE_CIRCUITS
+static_assert(0, "ENABLE_CIRCUIT must be defined in cryptoTools/libOTe");
+#endif
+
 namespace aby3
 {
     class CircuitLibrary : public oc::BetaLibrary

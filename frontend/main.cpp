@@ -8,6 +8,7 @@
 #include <tests_cryptoTools/UnitTests.h>
 #include <aby3-ML/main-linear.h>
 #include <aby3-ML/main-logistic.h>
+#include "aby3-DT/tests.h"
 
 #include "cryptoTools/tests_cryptoTools/UnitTests.h"
 #include "cryptoTools/Crypto/PRNG.h"
@@ -29,9 +30,15 @@ void help()
 }
 
 
+int bug(int argc, char** argv);
+
+
 int main(int argc, char** argv)
 {
 
+
+
+	//bug(argc, argv);
 
 	try {
 
@@ -39,6 +46,10 @@ int main(int argc, char** argv)
 		bool set = false;
 		oc::CLP cmd(argc, argv);
 
+		if (cmd.isSet("dt"))
+		{
+			test_DT.runIf(cmd);
+		}
 
 		if (cmd.isSet(unitTestTag))
 		{
