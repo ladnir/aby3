@@ -35,11 +35,11 @@ namespace aby3
     void run(Sh3Task t0, Sh3Task t1, Sh3Task t2)
     {
         std::thread thrd1 = std::thread([t1]() mutable {
-            oc::setThreadName("p" + std::to_string(t1.getRuntime().partyIdx()));
+            oc::setThreadName("p" + std::to_string(t1.getRuntime().mPartyIdx));
             t1.getRuntime().runUntilTaskCompletes(t1);
             });
         std::thread thrd2 = std::thread([t2]() mutable {
-            oc::setThreadName("p" + std::to_string(t2.getRuntime().partyIdx()));
+            oc::setThreadName("p" + std::to_string(t2.getRuntime().mPartyIdx));
             t2.getRuntime().runUntilTaskCompletes(t2);
             });
 
@@ -157,7 +157,7 @@ namespace aby3
                     memcpy(in[j].data(), &input[j](i, 0), in[j].sizeBytes());
                 }
             }
-            
+
             for (u64 j = 0; j < y.size(); j++)
                 ou[j].resize(cir.mOutputs[j].size());
 
@@ -170,11 +170,11 @@ namespace aby3
                     y[j]->resize(n, cir.mOutputs[j].size());
 
                     for (u64 k = 0; k < ou[j].size(); k++)
-                        (*y[j])(i,k) = ou[j][k];
+                        (*y[j])(i, k) = ou[j][k];
                 }
                 else
                 {
-                    y[j]->resize(n, oc::roundUpTo(cir.mOutputs[j].size(), 64)/ 64);
+                    y[j]->resize(n, oc::roundUpTo(cir.mOutputs[j].size(), 64) / 64);
                     memcpy(y[j]->row(j).data(), ou[j].data(), ou[j].sizeBytes());
                 }
             }
@@ -284,24 +284,22 @@ namespace aby3
         return comms;
     }
 
-    std::array<Sh3Runtime, 3> makeRuntimes(oc::IOService& ios)
+    void makeRuntimes(std::array<Sh3Runtime, 3>& rt, oc::IOService& ios)
     {
         auto comms = makeComms(ios);
-        return makeRuntimes(comms);
+        makeRuntimes(rt, comms);
     }
 
 
-    std::array<Sh3Runtime, 3> makeRuntimes(std::array<CommPkg, 3>& comms)
+    void makeRuntimes(std::array<Sh3Runtime, 3>& rts, std::array<CommPkg, 3>& comms)
     {
-        std::array<Sh3Runtime, 3> rts;
         rts[0].init(0, comms[0]);
         rts[1].init(1, comms[1]);
         rts[2].init(2, comms[2]);
-        return rts;
     }
     std::array<Sh3Encryptor, 3> makeEncryptors()
     {
-        std::array<Sh3Encryptor,3> encs;
+        std::array<Sh3Encryptor, 3> encs;
         encs[0].init(0, oc::toBlock(0ull), oc::toBlock(1));
         encs[1].init(1, oc::toBlock(1), oc::toBlock(2));
         encs[2].init(2, oc::toBlock(2), oc::toBlock(0ull));

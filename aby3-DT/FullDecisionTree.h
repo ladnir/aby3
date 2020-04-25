@@ -35,6 +35,8 @@ namespace aby3
         oc::BetaLibrary mLib;
         Sh3BinaryEvaluator mBin;
         Sh3Converter mConv;
+
+        //sbMatrix mActive, mOutLabels;
     };
 
 

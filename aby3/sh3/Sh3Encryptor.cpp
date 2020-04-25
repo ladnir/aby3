@@ -306,13 +306,13 @@ namespace aby3
 
     i64 Sh3Encryptor::revealAll(CommPkg & comm, const si64 & x)
     {
-        reveal(comm, (mPartyIdx + 2) % 3, x);
+        reveal(comm, (partyIdx() + 2) % 3, x);
         return reveal(comm, x);
     }
 
     void Sh3Encryptor::reveal(CommPkg & comm, u64 partyIdx, const si64 & x)
     {
-        auto p = ((mPartyIdx + 2)) % 3;
+        auto p = ((partyIdx() + 2)) % 3;
         if (p == partyIdx)
             comm.mPrev.asyncSendCopy(x[0]);
     }
@@ -328,14 +328,14 @@ namespace aby3
 
     Sh3Task Sh3Encryptor::revealAll(Sh3Task dep, const si64& x, i64& dest)
     {
-        reveal(dep, (mPartyIdx + 2) % 3, x);
+        reveal(dep, (partyIdx() + 2) % 3, x);
         return reveal(dep, x, dest);
     }
 
     Sh3Task Sh3Encryptor::reveal(Sh3Task dep, u64 partyIdx, const si64& x)
     {
         //TODO("decide if we can move the if outside the call to then(...)");
-        bool send = ((mPartyIdx + 2) % 3) == partyIdx;
+        bool send = ((partyIdx() + 2) % 3) == partyIdx;
         return dep.then([send, &x](CommPkg& comm, Sh3Task&) {
             if (send)
                 comm.mPrev.asyncSendCopy(x[0]);
@@ -353,14 +353,14 @@ namespace aby3
 
     Sh3Task Sh3Encryptor::revealAll(Sh3Task dep, const sb64& x, i64& dest)
     {
-        reveal(dep, (mPartyIdx + 2) % 3, x);
+        reveal(dep, (partyIdx() + 2) % 3, x);
         return reveal(dep, x, dest);
     }
 
     Sh3Task Sh3Encryptor::reveal(Sh3Task dep, u64 partyIdx, const sb64& x)
     {
         //TODO("decide if we can move the if outside the call to then(...)");
-        bool send = ((mPartyIdx + 2) % 3) == partyIdx;
+        bool send = ((partyIdx() + 2) % 3) == partyIdx;
         return dep.then([send, &x](CommPkg& comm, Sh3Task&) {
             if (send)
                 comm.mPrev.asyncSendCopy(x[0]);
@@ -379,14 +379,14 @@ namespace aby3
 
     Sh3Task Sh3Encryptor::revealAll(Sh3Task dep, const si64Matrix& x, i64Matrix& dest)
     {
-        reveal(dep, (mPartyIdx + 2) % 3, x);
+        reveal(dep, (partyIdx() + 2) % 3, x);
         return reveal(dep, x, dest);
     }
 
     Sh3Task Sh3Encryptor::reveal(Sh3Task dep, u64 partyIdx, const si64Matrix& x)
     {
         //TODO("decide if we can move the if outside the call to then(...)");
-        bool send = ((mPartyIdx + 2) % 3) == partyIdx;
+        bool send = ((partyIdx() + 2) % 3) == partyIdx;
         return dep.then([send, &x](CommPkg& comm, Sh3Task& self) {
             if (send)
                 comm.mPrev.asyncSendCopy(x.mShares[0].data(), x.mShares[0].size());
@@ -406,13 +406,13 @@ namespace aby3
     }
     Sh3Task Sh3Encryptor::revealAll(Sh3Task dep, const sbMatrix& x, i64Matrix& dest)
     {
-        reveal(dep, (mPartyIdx + 2) % 3, x);
+        reveal(dep, (partyIdx() + 2) % 3, x);
         return reveal(dep, x, dest);
     }
     Sh3Task Sh3Encryptor::reveal(Sh3Task dep, u64 partyIdx, const sbMatrix& x)
     {
         //TODO("decide if we can move the if outside the call to then(...)");
-        bool send = ((mPartyIdx + 2) % 3) == partyIdx;
+        bool send = ((partyIdx() + 2) % 3) == partyIdx;
         return dep.then([send, &x](CommPkg& comm, Sh3Task& self) {
             if (send)
                 comm.mPrev.asyncSendCopy(x.mShares[0].data(), x.mShares[0].size());
@@ -435,13 +435,13 @@ namespace aby3
 
     i64 Sh3Encryptor::revealAll(CommPkg & comm, const sb64 & x)
     {
-        reveal(comm, (mPartyIdx + 2) % 3, x);
+        reveal(comm, (partyIdx() + 2) % 3, x);
         return reveal(comm, x);
     }
 
     void Sh3Encryptor::reveal(CommPkg & comm, u64 partyIdx, const sb64 & x)
     {
-        if ((mPartyIdx + 2) % 3 == partyIdx)
+        if ((partyIdx() + 2) % 3 == partyIdx)
             comm.mPrev.asyncSendCopy(x[0]);
     }
 
@@ -459,13 +459,13 @@ namespace aby3
 
     void Sh3Encryptor::revealAll(CommPkg & comm, const si64Matrix & x, i64Matrix & dest)
     {
-        reveal(comm, (mPartyIdx + 2) % 3, x);
+        reveal(comm, (partyIdx() + 2) % 3, x);
         reveal(comm, x, dest);
     }
 
     void Sh3Encryptor::reveal(CommPkg & comm, u64 partyIdx, const si64Matrix & x)
     {
-        if ((mPartyIdx + 2) % 3 == partyIdx)
+        if ((partyIdx() + 2) % 3 == partyIdx)
             comm.mPrev.asyncSendCopy(x.mShares[0].data(), x.mShares[0].size());
     }
 
@@ -483,13 +483,13 @@ namespace aby3
 
     void Sh3Encryptor::revealAll(CommPkg & comm, const sbMatrix & x, i64Matrix & dest)
     {
-        reveal(comm, (mPartyIdx + 2) % 3, x);
+        reveal(comm, (partyIdx() + 2) % 3, x);
         reveal(comm, x, dest);
     }
 
     void Sh3Encryptor::reveal(CommPkg & comm, u64 partyIdx, const sbMatrix & x)
     {
-        if ((mPartyIdx + 2) % 3 == partyIdx)
+        if ((partyIdx() + 2) % 3 == partyIdx)
             comm.mPrev.asyncSendCopy(x.mShares[0].data(), x.mShares[0].size());
     }
 
@@ -520,14 +520,14 @@ namespace aby3
     Sh3Task Sh3Encryptor::revealAll(Sh3Task dep, const sPackedBin& A, i64Matrix& r)
     {
 
-        reveal(dep, (mPartyIdx + 2) % 3, A);
+        reveal(dep, (partyIdx() + 2) % 3, A);
         return reveal(dep, A, r);
     }
 
     Sh3Task Sh3Encryptor::reveal(Sh3Task dep, u64 partyIdx, const sPackedBin& A)
     {
         //TODO("decide if we can move the if outside the call to then(...)"); 
-        bool send = (mPartyIdx + 2) % 3 == partyIdx;
+        bool send = (partyIdx() + 2) % 3 == partyIdx;
         return dep.then([send, &A](CommPkg& comm, Sh3Task& self) {
             if (send)
                 comm.mPrev.asyncSendCopy(A.mShares[0].data(), A.mShares[0].size());
@@ -560,7 +560,7 @@ namespace aby3
     Sh3Task Sh3Encryptor::revealAll(Sh3Task dep, const sPackedBin& A, PackedBin& r)
     {
 
-        reveal(dep, (mPartyIdx + 2) % 3, A);
+        reveal(dep, (partyIdx() + 2) % 3, A);
         return reveal(dep, A, r);
     }
 
@@ -583,12 +583,12 @@ namespace aby3
 
     void Sh3Encryptor::revealAll(CommPkg & comm, const sPackedBin & A, i64Matrix & r)
     {
-        reveal(comm, (mPartyIdx + 2) % 3, A);
+        reveal(comm, (partyIdx() + 2) % 3, A);
         reveal(comm, A, r);
     }
     void Sh3Encryptor::reveal(CommPkg & comm, u64 partyIdx, const sPackedBin & A)
     {
-        if ((mPartyIdx + 2) % 3 == partyIdx)
+        if ((partyIdx() + 2) % 3 == partyIdx)
             comm.mPrev.asyncSendCopy(A.mShares[0].data(), A.mShares[0].size());
     }
 

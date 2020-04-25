@@ -147,14 +147,19 @@ namespace aby3
 
             initReduceCircuit(labelBitCount);
 
+            
+            //mBin.enableDebug(self.getRuntime().mPartyIdx, mDebug.mPrev, mDebug.mNext);
             mBin.setCir(&mReduceCir, cmp.rows());
             mBin.setInput(0, cmp);
             mBin.setInput(1, labels);
-            mBin.enableDebug(self.getRuntime().partyIdx(), mDebug.mPrev, mDebug.mNext);
             pred.resize(numTrees, labelBitCount);
+            //mActive.resize(numTrees, 1ull << (mDepth + 1));
+            //mOutLabels.resize(labels.rows(), labels.bitCount());
 
             mBin.asyncEvaluate(self).then([&](Sh3Task self) {
                 mBin.getOutput(0, pred);
+                //mBin.getOutput(1, mActive);
+                //mBin.getOutput(2, mOutLabels);
                 });
 
             }).getClosure();
@@ -237,8 +242,6 @@ namespace aby3
         mReduceCir.addTempWireBundle(active);
         mReduceCir.addConst(active[1], 1);
 
-        oc::gIoStreamMtx.lock();
-
         for (u64 d = 0; d < mDepth; ++d)
         {
             auto parent = 1ull << d;
@@ -254,13 +257,13 @@ namespace aby3
                 mReduceCir.addGate(active[parent], cmp[parent - 1], oc::GateType::And, active[child + 1]);
                 mReduceCir.addGate(active[parent], active[child + 1], oc::GateType::Xor, active[child]);
 
-                mReduceCir.addPrint("a[" + str(child) + "] = ");
-                mReduceCir.addPrint(active[child]);
-                mReduceCir.addPrint("\na[" + str(child+1) + "] = ");
-                mReduceCir.addPrint(active[child+1]);
-                mReduceCir.addPrint("\nc[" + str(parent) + "] = ");
-                mReduceCir.addPrint(cmp[parent-1]);
-                mReduceCir.addPrint("\n");
+                //mReduceCir.addPrint("a[" + str(child) + "] = ");
+                //mReduceCir.addPrint(active[child]);
+                //mReduceCir.addPrint("\na[" + str(child+1) + "] = ");
+                //mReduceCir.addPrint(active[child+1]);
+                //mReduceCir.addPrint("\nc[" + str(parent) + "] = ");
+                //mReduceCir.addPrint(cmp[parent-1]);
+                //mReduceCir.addPrint("\n");
 
                 //std::cout << "a[" << child << "] = a[" << parent << "] & ~c[" << child << "]" << std::endl;
                 //std::cout << "a[" << child + 1 << "] = a[" << parent << "] & ~c[" << child + 1 << "]" << std::endl;
@@ -280,7 +283,6 @@ namespace aby3
             }
         }
 
-
         for (u64 j = 0; j < labelBitCount; ++j)
             mReduceCir.addGate(labels[j], labels[j + labelBitCount], oc::GateType::Xor, pred[j]);
 
@@ -290,7 +292,6 @@ namespace aby3
                 mReduceCir.addGate(pred[j], labels[j + i * labelBitCount], oc::GateType::Xor, pred[j]);
         }
 
-        oc::gIoStreamMtx.unlock();
     }
 
     void FullDecisionTree::initVotingCircuit(u64 n, u64 bitCount)
@@ -494,7 +495,9 @@ namespace aby3
         {
             using namespace oc;
             IOService ios;
-            auto rts = makeRuntimes(ios);
+
+            std::array<Sh3Runtime, 3> rts;
+            makeRuntimes(rts, ios);
 
             int n = 43;
             int m = 17;
@@ -555,7 +558,9 @@ namespace aby3
         {
             using namespace oc;
             IOService ios;
-            auto rts = makeRuntimes(ios);
+            std::array<Sh3Runtime, 3> rts;
+            makeRuntimes(rts, ios);
+
 
             PRNG prng(oc::toBlock(cmd.getOr("seed", 0)));
             FullDecisionTree trees[3];
@@ -626,39 +631,39 @@ namespace aby3
 
             u64 jj = 0;
             
-            for (u64 d = 0; d < depth; ++d)
-            {
-                std::cout << "d[" << d << "] ~~ ";
-                auto w = 1ull << d;
-                for (u64 j = 0; j < w; j++)
-                {
-                    std::cout << " " << cmp(0, jj++);
-                }
+            //for (u64 d = 0; d < depth; ++d)
+            //{
+            //    std::cout << "d[" << d << "] ~~ ";
+            //    auto w = 1ull << d;
+            //    for (u64 j = 0; j < w; j++)
+            //    {
+            //        std::cout << " " << cmp(0, jj++);
+            //    }
 
-                std::cout << std::endl;
-            }
+            //    std::cout << std::endl;
+            //}
 
             for (u64 d = 0; d < depth; ++d)
             {
                 for (u64 i = 0; i < n; ++i)
                 {
-                    std::cout << "cmp["<<i<<"][" << d << "] = " << cmp(i, active[i]-1) << std::endl;
+                    //std::cout << "cmp["<<i<<"][" << d << "] = " << cmp(i, active[i]-1) << std::endl;
                     auto c = cmp(i, active[i]-1);
-                    std::cout << "active[" << i << "] = 2 * " << (active[i]) <<" + " << c << std::endl;
+                    //std::cout << "active[" << i << "] = 2 * " << (active[i]) <<" + " << c << std::endl;
                     active[i] = 2 * active[i] + c;
                 }
             }
 
             auto s = 1ull << depth;
-            for (u64 i = 0; i < s; i++)
-            {
-                std::cout << "label[0][" << i << "] = ";
-                for (u64 j = 0; j < labelBitCount; j++)
-                {
-                    std::cout <<  labels(0, i * labelBitCount + j) << " ";
-                }
-                std::cout << std::endl;
-            }
+            //for (u64 i = 0; i < s; i++)
+            //{
+            //    std::cout << "label[0][" << i << "] = ";
+            //    for (u64 j = 0; j < labelBitCount; j++)
+            //    {
+            //        std::cout <<  labels(0, i * labelBitCount + j) << " ";
+            //    }
+            //    std::cout << std::endl;
+            //}
 
             i64Matrix ret(n, labelBitCount);
             for (u64 i = 0; i < n; i++)
@@ -668,8 +673,8 @@ namespace aby3
                 {
                     ret(i, j) = labels(i, idx * labelBitCount + j);
                 }
-                std::cout << "active[" << i << "] = " << (active[i]) <<" ~~ " << idx << std::endl
-                    << " -> " << ret.row(i) << std::endl;
+                //std::cout << "active[" << i << "] = " << (active[i]) <<" ~~ " << idx << std::endl
+                //    << " -> " << ret.row(i) << std::endl;
             }
 
             return ret;
@@ -679,11 +684,16 @@ namespace aby3
         {
             using namespace oc;
             IOService ios;
-            auto rts = makeRuntimes(ios);
+            std::array<Sh3Runtime, 3> rts;
+            makeRuntimes(rts, ios);
+
 
             PRNG prng(oc::toBlock(cmd.getOr("seed", 0)));
             FullDecisionTree trees[3];
-
+            auto comm2 = makeComms(ios);
+            trees[0].mDebug = comm2[0];
+            trees[1].mDebug = comm2[1];
+            trees[2].mDebug = comm2[2];
 
             u64 n = 1;
             u64 d = 3;
@@ -698,7 +708,7 @@ namespace aby3
             trees[2].init(d, numFeatures);
 
             i64Matrix label(n, numLeaves * labelBitCount);
-            i64Matrix y(n, labelBitCount), yy;
+            i64Matrix y(n, labelBitCount), yy;// , active, active2, labels1, labels2;
             i64Matrix cmp(n, nodesPerTree);
 
             for (u64 i = 0; i < cmp.rows(); i++)
@@ -720,6 +730,7 @@ namespace aby3
 
 
             trees[0].initReduceCircuit(labelBitCount);
+            trees[0].mReduceCir.levelByAndDepth();
             evaluate(trees[0].mReduceCir, { cmp, label }, { &yy });
             if (yy != y)
             {
@@ -738,20 +749,36 @@ namespace aby3
             share(pack(label), label.cols(), l0, l1, l2, prng);
             share(pack(cmp), cmp.cols(), c0, c1, c2, prng);
 
-
             auto t0 = trees[0].reduce(rts[0], c0, l0, labelBitCount, y0);
             auto t1 = trees[1].reduce(rts[1], c1, l1, labelBitCount, y1);
             auto t2 = trees[2].reduce(rts[2], c2, l2, labelBitCount, y2);
 
             run(t0, t1, t2);
 
-            reveal(yy, c0, c1, c2);
-            yy = unpack(yy, labelBitCount);
+            reveal(yy, y0, y1, y2);
+            yy = unpack(yy, y0.bitCount());
+
+            //reveal(active2, trees[0].mActive, trees[1].mActive, trees[2].mActive);
+            //active2 = unpack(active2, trees[0].mActive.bitCount());
+
+
+            //
+            //reveal(labels2, trees[0].mOutLabels, trees[1].mOutLabels, trees[2].mOutLabels);
+            //labels2 = unpack(labels2, trees[0].mOutLabels.bitCount());
+
+
 
             if (y != yy)
             {
                 std::cout << "y  \n" << y << std::endl;
                 std::cout << "yy \n" << yy << std::endl;
+
+                //std::cout << "a  \n" << active << std::endl;
+                //std::cout << "aa \n" << active2 << std::endl;
+                //
+                //std::cout << "l  \n" << labels1 << std::endl;
+                //std::cout << "ll \n" << labels2<< std::endl;
+
 
                 throw std::runtime_error("incorrect result. " LOCATION);
             }

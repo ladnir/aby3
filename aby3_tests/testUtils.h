@@ -34,8 +34,8 @@ namespace aby3
 
 
     std::array<CommPkg, 3> makeComms(oc::IOService& ios);
-    std::array<Sh3Runtime, 3> makeRuntimes(oc::IOService& ios);
-    std::array<Sh3Runtime, 3> makeRuntimes(std::array<CommPkg, 3>& comm);
+    void makeRuntimes(std::array<Sh3Runtime, 3>&  rt, oc::IOService& ios);
+    void makeRuntimes(std::array<Sh3Runtime, 3>& rt, std::array<CommPkg, 3>& comm);
 
     std::array<Sh3Encryptor, 3> makeEncryptors();
     std::array<Sh3ShareGen, 3> makeShareGens();

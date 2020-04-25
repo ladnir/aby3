@@ -273,8 +273,8 @@ namespace aby3
     public:
 
         Sh3Runtime() = default;
-        Sh3Runtime(const Sh3Runtime&) = default;
-        Sh3Runtime(Sh3Runtime&&) = default;
+        Sh3Runtime(const Sh3Runtime&) = delete;
+        Sh3Runtime(Sh3Runtime&&) = delete;
         Sh3Runtime(u64 partyIdx, CommPkg& comm)
         {
             init(partyIdx, comm);
@@ -282,7 +282,7 @@ namespace aby3
 
 		~Sh3Runtime()
 		{
-			if (mTasks.size())
+			if (mTasks.size() && std::uncaught_exception() == false)
 			{
 				std::cout << "~~~~~~~~~~~~~~~~ Runtime not empty!!! ~~~~~~~~~~~~~~~~" << std::endl;
 			}
