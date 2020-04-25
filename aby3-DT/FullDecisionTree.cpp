@@ -9,18 +9,31 @@
 namespace aby3
 {
 
-    void FullDecisionTree::init(u64 d, u64 fc, Sh3Runtime& rt, Sh3ShareGen& gen, bool unitTest)
+    void FullDecisionTree::init(
+        u64 depth,
+        u64 numTrees,
+        u64 featureCount,
+        u64 featureBitCount,
+        u64 nodeBitCount,
+        u64 numLabels,
+        Sh3Runtime& rt, Sh3ShareGen& gen, bool unitTest)
     {
 
         mUnitTest = unitTest;
-        if (d < 1)
-            throw std::runtime_error("d must at least be 1");
 
-        if (fc == 0)
+        if (depth < 1)
+            throw std::runtime_error("d must at least be 1");
+        if (featureCount == 0)
+            throw std::runtime_error("logic error");
+        if (featureBitCount == 0)
             throw std::runtime_error("logic error");
 
-        mDepth = d;
-        mFeatureCount = fc;
+        mDepth = depth;
+        mNumTrees = numTrees;
+        mFeatureCount = featureCount;
+        mFeatureBitCount = featureBitCount;
+        mNodeBitCount = nodeBitCount;
+        mNumLabels = numLabels;
 
         mConv.init(rt, gen);
 
@@ -28,32 +41,31 @@ namespace aby3
 
     sbMatrix FullDecisionTree::run(Sh3Runtime& rt)
     {
+        //u64 n = 1, featureBitCount = 1, nodeBitCount = 1;
+        //u64 numLabels = 8;
 
-        u64 n = 1, featureBitCount = 1, nodeBitCount = 1;
-        u64 labelBitCount = 8;
-
-        sbMatrix features(1, mFeatureCount * featureBitCount);
+        sbMatrix features(1, mFeatureCount * mFeatureBitCount);
 
         u64 nodesPerTree = (1ull << mDepth) - 1;
         u64 numLeaves = 1ull << mDepth;
 
-        sbMatrix nodes(n * nodesPerTree, nodeBitCount);
-        sbMatrix mappedFeatures(n * nodesPerTree, featureBitCount);
-        sbMatrix label(n, numLeaves * labelBitCount);
+        sbMatrix nodes(mNumTrees * nodesPerTree, mNodeBitCount);
+        sbMatrix mappedFeatures(mNumTrees * nodesPerTree, mFeatureBitCount);
+        sbMatrix label(mNumTrees, numLeaves * mNumLabels);
 
         // there should be numSums mappings, on for each tree. 
-        sbMatrix mapping(nodesPerTree, mFeatureCount * featureBitCount);
+        sbMatrix mapping(nodesPerTree, mFeatureCount * mFeatureBitCount);
 
         innerProd(rt, features, mapping, mappedFeatures).get();
 
 
-        sbMatrix cmp(n, nodesPerTree);
+        sbMatrix cmp(mNumTrees, nodesPerTree);
         compare(rt, mappedFeatures, nodes, cmp, Comparitor::Eq).get();
 
-        sbMatrix y(n, labelBitCount);
-        reduce(rt, cmp, label, labelBitCount, y).get();
+        sbMatrix y(mNumTrees, mNumLabels);
+        reduce(rt, cmp, label, mNumLabels, y).get();
 
-        sbMatrix output(labelBitCount, 1);
+        sbMatrix output(mNumLabels, 1);
         vote(rt, y, output).get();
 
         return output;
@@ -151,7 +163,7 @@ namespace aby3
 
             initReduceCircuit(labelBitCount);
 
-            
+
             //mBin.enableDebug(self.getRuntime().mPartyIdx, mDebug.mPrev, mDebug.mNext);
             mBin.setCir(&mReduceCir, cmp.rows());
             mBin.setInput(0, cmp);
@@ -182,7 +194,7 @@ namespace aby3
         auto temp = std::make_shared<Temp>();
         temp->out = &out;
 
-        
+
         return mConv.bitInjection(dep, pred_, temp->pred).then(
             [this, temp](Sh3Task self) {
 
@@ -253,7 +265,7 @@ namespace aby3
         for (u64 d = 0; d < mDepth; ++d)
         {
             auto parent = 1ull << d;
-            auto child = 1ull << (d+1);
+            auto child = 1ull << (d + 1);
 
             auto pEnd = child;
 
@@ -305,7 +317,7 @@ namespace aby3
     void FullDecisionTree::initVotingCircuit(u64 numSums, u64 bitCount)
     {
         auto str = [](auto x, int width = 2) -> std::string {
-            std::string s = std::to_string(x); 
+            std::string s = std::to_string(x);
             while (s.size() < width)
                 s.insert(s.begin(), ' ');
             return s;
@@ -319,7 +331,7 @@ namespace aby3
 
         struct Node
         {
-            Node() :cmp(1),active(1){ }
+            Node() :cmp(1), active(1) { }
             Node(Node&&) = default;
             Node(const Node&) = default;
 
@@ -341,13 +353,13 @@ namespace aby3
             v.insert(v.end(), iter, iter + bitCount);
             iter += bitCount;
 
-            cir.addPrint("in[" + str(i) + "] = v[" + str(i + numSums) + "] = ");
-            cir.addPrint(nodes[i + numSums].val);
-            cir.addPrint("\n");
+            //cir.addPrint("in[" + str(i) + "] = v[" + str(i + numSums) + "] = ");
+            //cir.addPrint(nodes[i + numSums].val);
+            //cir.addPrint("\n");
 
         }
         for (u64 i = 0; i < numSums; ++i)
-            nodes[i + numSums].active[0]  = out[i];
+            nodes[i + numSums].active[0] = out[i];
 
         u64 start = 1ull << oc::log2ceil(numSums);
         u64 end = numSums * 2;
@@ -391,13 +403,13 @@ namespace aby3
                         v0, v1,
                         cmp, temp);
 
-                    cir.addPrint("v0[" + str(i) + "] = ");
-                    cir.addPrint(v0); 
-                    cir.addPrint("\nv1[" + str(i+1) + "] = ");
-                    cir.addPrint(v1);
-                    cir.addPrint("\n\tc=");
-                    cir.addPrint(cmp);
-                    cir.addPrint("\n");
+                    //cir.addPrint("v0[" + str(i) + "] = ");
+                    //cir.addPrint(v0);
+                    //cir.addPrint("\nv1[" + str(i + 1) + "] = ");
+                    //cir.addPrint(v1);
+                    //cir.addPrint("\n\tc=");
+                    //cir.addPrint(cmp);
+                    //cir.addPrint("\n");
                 }
                 else
                 {
@@ -416,9 +428,9 @@ namespace aby3
                     cir.addGate(temp[j], v0[j], oc::GateType::Xor, vp[j]);
                 }
 
-                cir.addPrint("vp["+str(i/2,2)+"] = ");
-                cir.addPrint(vp);
-                cir.addPrint("\n");
+                //cir.addPrint("vp[" + str(i / 2, 2) + "] = ");
+                //cir.addPrint(vp);
+                //cir.addPrint("\n");
 
             }
 
@@ -431,11 +443,11 @@ namespace aby3
 
 
         u64 parent = 1;
-        while(parent != numSums)
+        while (parent != numSums)
         {
             auto child = parent * 2;
-            std::cout << "a[" << child << "] <- " << "a[" << parent << "] & !c[" << parent << "]" << std::endl;
-            std::cout << "a[" << child +1<< "] <- " << "a[" << parent << "] &  c[" << parent << "]" << std::endl;
+            //std::cout << "a[" << child << "] <- " << "a[" << parent << "] & !c[" << parent << "]" << std::endl;
+            //std::cout << "a[" << child + 1 << "] <- " << "a[" << parent << "] &  c[" << parent << "]" << std::endl;
 
             cir.addGate(nodes[parent].active[0], nodes[parent].cmp[0], oc::GateType::nb_And, nodes[child + 0].active[0]);
             cir.addGate(nodes[parent].active[0], nodes[parent].cmp[0], oc::GateType::And, nodes[child + 1].active[0]);
@@ -624,11 +636,12 @@ namespace aby3
             u64 nodesPerTree = (1ull << d) - 1;
             u64 nodeBitCount = 1;
             u64 featureBitCount = 1;
+            u64 numLabels = 1;
             auto type = FullDecisionTree::Comparitor::Eq;
 
-            trees[0].init(d, numFeatures, rts[0], conv[0]);
-            trees[1].init(d, numFeatures, rts[1], conv[1]);
-            trees[2].init(d, numFeatures, rts[2], conv[2]);
+            trees[0].init(d, n, numFeatures, featureBitCount, nodeBitCount, numLabels, rts[0], conv[0]);
+            trees[1].init(d, n, numFeatures, featureBitCount, nodeBitCount, numLabels, rts[1], conv[1]);
+            trees[2].init(d, n, numFeatures, featureBitCount, nodeBitCount, numLabels, rts[2], conv[2]);
 
             i64Matrix nodes(n * nodesPerTree, nodeBitCount);
             i64Matrix mappedFeatures(n * nodesPerTree, featureBitCount);
@@ -682,7 +695,7 @@ namespace aby3
             std::vector<u64> active(n, 1);
 
             u64 jj = 0;
-            
+
             //for (u64 d = 0; d < depth; ++d)
             //{
             //    std::cout << "d[" << d << "] ~~ ";
@@ -700,7 +713,7 @@ namespace aby3
                 for (u64 i = 0; i < n; ++i)
                 {
                     //std::cout << "cmp["<<i<<"][" << d << "] = " << cmp(i, active[i]-1) << std::endl;
-                    auto c = cmp(i, active[i]-1);
+                    auto c = cmp(i, active[i] - 1);
                     //std::cout << "active[" << i << "] = 2 * " << (active[i]) <<" + " << c << std::endl;
                     active[i] = 2 * active[i] + c;
                 }
@@ -710,9 +723,9 @@ namespace aby3
             //for (u64 i = 0; i < s; i++)
             //{
             //    std::cout << "label[0][" << i << "] = ";
-            //    for (u64 j = 0; j < labelBitCount; j++)
+            //    for (u64 j = 0; j < numLabels; j++)
             //    {
-            //        std::cout <<  labels(0, i * labelBitCount + j) << " ";
+            //        std::cout <<  labels(0, i * numLabels + j) << " ";
             //    }
             //    std::cout << std::endl;
             //}
@@ -750,17 +763,20 @@ namespace aby3
             u64 n = 465;
             u64 d = 3;
             u64 numFeatures = 10;
+            u64 featureBitCount = 10;
+            u64 nodeBitCount = 10;
             u64 nodesPerTree = (1ull << d) - 1;
             u64 numLeaves = (1ull << d);
-            u64 labelBitCount = 100;
+            u64 numLabels = 100;
             auto type = FullDecisionTree::Comparitor::Eq;
 
-            trees[0].init(d, numFeatures, rts[0], conv[0]);
-            trees[1].init(d, numFeatures, rts[1], conv[1]);
-            trees[2].init(d, numFeatures, rts[2], conv[2]);
+            trees[0].init(d, n, numFeatures, featureBitCount, nodeBitCount, numLabels, rts[0], conv[0]);
+            trees[1].init(d, n, numFeatures, featureBitCount, nodeBitCount, numLabels, rts[1], conv[1]);
+            trees[2].init(d, n, numFeatures, featureBitCount, nodeBitCount, numLabels, rts[2], conv[2]);
 
-            i64Matrix label(n, numLeaves * labelBitCount);
-            i64Matrix y(n, labelBitCount), yy;// , active, active2, labels1, labels2;
+
+            i64Matrix label(n, numLeaves * numLabels);
+            i64Matrix y(n, numLabels), yy;// , active, active2, labels1, labels2;
             i64Matrix cmp(n, nodesPerTree);
 
             for (u64 i = 0; i < cmp.rows(); i++)
@@ -773,15 +789,15 @@ namespace aby3
             {
                 for (u64 j = 0; j < numLeaves; j++)
                 {
-                    auto k = (prng.get<u64>() % labelBitCount);
+                    auto k = (prng.get<u64>() % numLabels);
                     //auto k = j;
-                    label(i, j * labelBitCount + k) = 1;
+                    label(i, j * numLabels + k) = 1;
                 }
             }
 
             y = reduce(label, cmp);
 
-            trees[0].initReduceCircuit(labelBitCount);
+            trees[0].initReduceCircuit(numLabels);
             trees[0].mReduceCir.levelByAndDepth();
             evaluate(trees[0].mReduceCir, { cmp, label }, { &yy });
             if (yy != y)
@@ -796,9 +812,9 @@ namespace aby3
             share(pack(label), label.cols(), l0, l1, l2, prng);
             share(pack(cmp), cmp.cols(), c0, c1, c2, prng);
 
-            auto t0 = trees[0].reduce(rts[0], c0, l0, labelBitCount, y0);
-            auto t1 = trees[1].reduce(rts[1], c1, l1, labelBitCount, y1);
-            auto t2 = trees[2].reduce(rts[2], c2, l2, labelBitCount, y2);
+            auto t0 = trees[0].reduce(rts[0], c0, l0, numLabels, y0);
+            auto t1 = trees[1].reduce(rts[1], c1, l1, numLabels, y1);
+            auto t2 = trees[2].reduce(rts[2], c2, l2, numLabels, y2);
 
             run(t0, t1, t2);
 
@@ -808,7 +824,7 @@ namespace aby3
             {
                 std::cout << "y  \n" << y << std::endl;
                 std::cout << "yy \n" << yy << std::endl;
-                
+
                 throw std::runtime_error("incorrect result. " LOCATION);
             }
         }
@@ -851,23 +867,28 @@ namespace aby3
             PRNG prng(oc::toBlock(cmd.getOr("seed", 0)));
             FullDecisionTree trees[3];
 
-            auto conv = makeShareGens();
-            trees[0].init(2, 2, rts[0], conv[0], true);
-            trees[1].init(2, 2, rts[1], conv[1], true);
-            trees[2].init(2, 2, rts[2], conv[2], true);
-
+            u64 d = 4;
             u64 n = 100;
-            u64 labelBitCount = 10;
+            u64 numFeatures = 10;
+            u64 featureBitCount = 2, nodeBitCount = 2;
+            u64 numLabels = 10;
             auto logn = oc::log2ceil(n);
 
-            i64Matrix pred(n, labelBitCount), packed(1, logn * labelBitCount), sums(1, labelBitCount), sums2;
-            i64Matrix out(1, labelBitCount), r;
+            auto conv = makeShareGens();
+            trees[0].init(d, n, numFeatures, featureBitCount, nodeBitCount, numLabels, rts[0], conv[0]);
+            trees[1].init(d, n, numFeatures, featureBitCount, nodeBitCount, numLabels, rts[1], conv[1]);
+            trees[2].init(d, n, numFeatures, featureBitCount, nodeBitCount, numLabels, rts[2], conv[2]);
+
+
+
+            i64Matrix pred(n, numLabels), packed(1, logn * numLabels), sums(1, numLabels), sums2;
+            i64Matrix out(1, numLabels), r;
 
             sums.setZero();
             pred.setZero();
             for (u64 i = 0; i < n; ++i)
             {
-                auto k = prng.get<u64>() % labelBitCount;
+                auto k = prng.get<u64>() % numLabels;
                 pred(i, k) = 1;
 
                 sums(k) += 1;
@@ -875,9 +896,9 @@ namespace aby3
 
             out = vote(pred);
 
-            for (u64 i = 0,k=0; i < labelBitCount; i++)
+            for (u64 i = 0, k = 0; i < numLabels; i++)
             {
-                std::cout << "sum[" << i << "] = " << sums(i) << std::endl;
+                //std::cout << "sum[" << i << "] = " << sums(i) << std::endl;
                 auto iter = oc::BitIterator((u8*)&sums(i), 0);
                 for (u64 j = 0; j < logn; j++, ++k)
                 {
@@ -885,7 +906,7 @@ namespace aby3
                 }
             }
 
-            trees[0].initVotingCircuit(labelBitCount, logn);
+            trees[0].initVotingCircuit(numLabels, logn);
             auto& cir = trees[0].mVoteCircuit;
 
 
@@ -923,7 +944,7 @@ namespace aby3
             if (out != r)
             {
                 std::cout << " out \n" << out << std::endl;
-                std::cout << " r   \n" << r   << std::endl;
+                std::cout << " r   \n" << r << std::endl;
                 throw std::runtime_error(LOCATION);
             }
         }

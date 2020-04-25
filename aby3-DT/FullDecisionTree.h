@@ -15,7 +15,15 @@ namespace aby3
             Eq,
             Lt
         };
-        void init(u64 depth, u64 featureCount, Sh3Runtime& rt, Sh3ShareGen& gen, bool unitTest = false);
+        void init(
+            u64 depth,
+            u64 numTrees,
+            u64 featureCount,
+            u64 featureBitCount,
+            u64 nodeBitCount,
+            u64 numLabels, 
+            Sh3Runtime& rt, Sh3ShareGen& gen, bool unitTest = false);
+
         sbMatrix run(Sh3Runtime& rt);
 
         CommPkg mDebug;
@@ -23,14 +31,20 @@ namespace aby3
 
         Sh3Task innerProd(Sh3Task dep, sbMatrix& x, sbMatrix& y, sbMatrix& z);
         Sh3Task compare(Sh3Task dep, sbMatrix& x, sbMatrix& y, sbMatrix& cmp, Comparitor type);
-        
+
         Sh3Task reduce(Sh3Task dep, sbMatrix& cmp, sbMatrix& labels, u64 labelBitCount, sbMatrix& pred);
         Sh3Task vote(Sh3Task dep, sbMatrix& pred, sbMatrix& out);
 
         void initReduceCircuit(u64 labelBitCount);
         void initVotingCircuit(u64 n, u64 bitCount);
 
-        u64 mDepth = 0, mFeatureCount = 0;
+        u64 mDepth = 0, 
+            mNumTrees = 0,
+            mFeatureCount = 0,
+            mFeatureBitCount = 0,
+            mNodeBitCount = 0,
+            mNumLabels = 0;
+
         oc::BetaCircuit mReduceCir, mVoteCircuit;
         oc::BetaLibrary mLib;
         Sh3BinaryEvaluator mBin;
