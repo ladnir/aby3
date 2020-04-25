@@ -24,16 +24,21 @@ namespace aby3
             u64 numLabels, 
             Sh3Runtime& rt, Sh3ShareGen& gen, bool unitTest = false);
 
-        sbMatrix run(Sh3Runtime& rt);
+        Sh3Task evaluate(Sh3Task dep,
+            const sbMatrix& nodes,
+            const sbMatrix& features,
+            const sbMatrix& mapping,
+            const sbMatrix& labels,
+            sbMatrix& pred);
 
         CommPkg mDebug;
         bool mUnitTest = false;
 
-        Sh3Task innerProd(Sh3Task dep, sbMatrix& x, sbMatrix& y, sbMatrix& z);
-        Sh3Task compare(Sh3Task dep, sbMatrix& x, sbMatrix& y, sbMatrix& cmp, Comparitor type);
+        Sh3Task innerProd(Sh3Task dep, const sbMatrix& x, const sbMatrix& y, sbMatrix& z);
+        Sh3Task compare(Sh3Task dep, const sbMatrix& x, const sbMatrix& y, sbMatrix& cmp, Comparitor type);
 
-        Sh3Task reduce(Sh3Task dep, sbMatrix& cmp, sbMatrix& labels, u64 labelBitCount, sbMatrix& pred);
-        Sh3Task vote(Sh3Task dep, sbMatrix& pred, sbMatrix& out);
+        Sh3Task reduce(Sh3Task dep, const sbMatrix& cmp, const sbMatrix& labels, u64 labelBitCount, sbMatrix& pred);
+        Sh3Task vote(Sh3Task dep, const sbMatrix& pred, sbMatrix& out);
 
         void initReduceCircuit(u64 labelBitCount);
         void initVotingCircuit(u64 n, u64 bitCount);

@@ -31,6 +31,11 @@ namespace aby3
         prng.get(A.data(), A.size());
     }
 
+    void resize(span<sbMatrix> m, u64 x, u64 y)
+    {
+        for (u64 i = 0; i < m.size(); ++i)
+            m[i].resize(x, y);
+    }
 
     void run(Sh3Task t0, Sh3Task t1, Sh3Task t2)
     {

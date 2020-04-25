@@ -39,36 +39,50 @@ namespace aby3
 
     }
 
-    sbMatrix FullDecisionTree::run(Sh3Runtime& rt)
+    Sh3Task FullDecisionTree::evaluate(Sh3Task dep,
+        const sbMatrix& nodes,
+        const sbMatrix& features,
+        const sbMatrix& mapping,
+        const sbMatrix& labels,
+        sbMatrix& output)
     {
-        //u64 n = 1, featureBitCount = 1, nodeBitCount = 1;
-        //u64 numLabels = 8;
-
-        sbMatrix features(1, mFeatureCount * mFeatureBitCount);
 
         u64 nodesPerTree = (1ull << mDepth) - 1;
         u64 numLeaves = 1ull << mDepth;
 
-        sbMatrix nodes(mNumTrees * nodesPerTree, mNodeBitCount);
-        sbMatrix mappedFeatures(mNumTrees * nodesPerTree, mFeatureBitCount);
-        sbMatrix label(mNumTrees, numLeaves * mNumLabels);
+        if (features.rows() != 1)
+            throw RTE_LOC;
+        if (features.bitCount() != mFeatureCount * mFeatureBitCount)
+            throw RTE_LOC;
+        if (nodes.rows() != mNumTrees * nodesPerTree)
+            throw RTE_LOC;
+        if (nodes.bitCount() != mNodeBitCount)
+            throw RTE_LOC;
+        if (labels.rows() != mNumTrees)
+            throw RTE_LOC;
+        if (labels.bitCount() != numLeaves * mNumLabels)
+            throw RTE_LOC;
+        if (mapping.rows() != nodesPerTree)
+            throw RTE_LOC;
+        if (mapping.bitCount() != mFeatureCount * mFeatureBitCount)
+            throw RTE_LOC;
 
-        // there should be numSums mappings, on for each tree. 
-        sbMatrix mapping(nodesPerTree, mFeatureCount * mFeatureBitCount);
+        struct State {
+            sbMatrix mappedFeatures, cmp, y;
+        };
 
-        innerProd(rt, features, mapping, mappedFeatures).get();
+        auto state = std::make_shared<State>();
+        state->y.resize(mNumTrees, mNumLabels);
+        state->mappedFeatures.resize(mNumTrees * nodesPerTree, mFeatureBitCount);
+        state->cmp.resize(mNumTrees, nodesPerTree);
+        output.resize(mNumLabels, 1);
 
+        dep = innerProd(dep, features, mapping, state->mappedFeatures);
+        dep = compare(dep, state->mappedFeatures, nodes, state->cmp, Comparitor::Eq);
+        dep = reduce(dep, state->cmp, labels, mNumLabels, state->y);
+        dep = vote(dep, state->y, output).then([state](Sh3Task) {});
 
-        sbMatrix cmp(mNumTrees, nodesPerTree);
-        compare(rt, mappedFeatures, nodes, cmp, Comparitor::Eq).get();
-
-        sbMatrix y(mNumTrees, mNumLabels);
-        reduce(rt, cmp, label, mNumLabels, y).get();
-
-        sbMatrix output(mNumLabels, 1);
-        vote(rt, y, output).get();
-
-        return output;
+        return dep;
     }
 
     u8 parity(u64 x)
@@ -87,8 +101,8 @@ namespace aby3
     }
 
     Sh3Task  FullDecisionTree::compare(Sh3Task dep,
-        sbMatrix& features,
-        sbMatrix& nodes,
+        const sbMatrix& features,
+        const sbMatrix& nodes,
         sbMatrix& cmp,
         Comparitor type)
     {
@@ -153,7 +167,12 @@ namespace aby3
             throw std::runtime_error("not impl. " LOCATION);
     }
 
-    Sh3Task FullDecisionTree::reduce(Sh3Task dep, sbMatrix& cmp, sbMatrix& labels, u64 labelBitCount, sbMatrix& pred)
+    Sh3Task FullDecisionTree::reduce(
+        Sh3Task dep,
+        const sbMatrix& cmp,
+        const sbMatrix& labels,
+        u64 labelBitCount,
+        sbMatrix& pred)
     {
         return dep.then([&, labelBitCount](Sh3Task self) {
 
@@ -181,7 +200,10 @@ namespace aby3
             }, "top-level-reduce").getClosure();
     }
 
-    Sh3Task FullDecisionTree::vote(Sh3Task dep, sbMatrix& pred_, sbMatrix& out)
+    Sh3Task FullDecisionTree::vote(
+        Sh3Task dep,
+        const sbMatrix& pred_,
+        sbMatrix& out)
     {
         struct Temp
         {
@@ -458,7 +480,11 @@ namespace aby3
     }
 
 
-    Sh3Task FullDecisionTree::innerProd(Sh3Task dep, sbMatrix& X, sbMatrix& Y, sbMatrix& ret)
+    Sh3Task FullDecisionTree::innerProd(
+        Sh3Task dep,
+        const sbMatrix& X,
+        const sbMatrix& Y,
+        sbMatrix& ret)
     {
         return dep.then(Sh3Task::RoundFunc([&](CommPkg& comm, Sh3Task self) {
             //C[0]
@@ -952,6 +978,40 @@ namespace aby3
 
         void FullTree_endToEnd_test(const oc::CLP& cmd)
         {
+
+            using namespace oc;
+            IOService ios;
+            std::array<Sh3Runtime, 3> rts;
+            makeRuntimes(rts, ios);
+            PRNG prng(oc::toBlock(cmd.getOr("seed", 0)));
+            FullDecisionTree trees[3];
+
+            u64 d = 4;
+            u64 numTrees = 100;
+            u64 featureCount = 10;
+            u64 featureBitCount = 1, nodeBitCount = 1;
+            u64 numLabels = 10;
+            auto nodesPerTree = (1ull << d) - 1;
+            auto numLeaves = (1ull << d);
+            auto conv = makeShareGens();
+            trees[0].init(d, numTrees, featureCount, featureBitCount, nodeBitCount, numLabels, rts[0], conv[0]);
+            trees[1].init(d, numTrees, featureCount, featureBitCount, nodeBitCount, numLabels, rts[1], conv[1]);
+            trees[2].init(d, numTrees, featureCount, featureBitCount, nodeBitCount, numLabels, rts[2], conv[2]);
+
+            std::array<sbMatrix, 3> n, f, m, l, o;
+
+
+            resize(f, 1, featureCount * featureBitCount);
+            resize(n, numTrees * nodesPerTree, nodeBitCount);
+            resize(l, numTrees, numLeaves * numLabels);
+            resize(m, nodesPerTree, featureCount * featureBitCount);
+
+            auto t0 = trees[0].evaluate(rts[0], n[0], f[0], m[0], l[0], o[0]);
+            auto t1 = trees[1].evaluate(rts[1], n[1], f[1], m[1], l[1], o[1]);
+            auto t2 = trees[2].evaluate(rts[2], n[2], f[2], m[2], l[2], o[2]);
+
+            run(t0, t1, t2);
+
 
         }
     }
