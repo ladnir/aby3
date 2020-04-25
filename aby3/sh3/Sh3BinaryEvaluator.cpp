@@ -1116,6 +1116,9 @@ namespace aby3
 
                     }
                     break;
+                case GateType::nb_And:
+                    std::swap(s0_in0, s0_in1);
+                    std::swap(s1_in0, s1_in1);
                 case GateType::na_And:
                     z = getShares();
 
@@ -1140,7 +1143,6 @@ namespace aby3
                     writeIter += shareCountDiv8;
                     break;
                 case GateType::Zero:
-                case GateType::nb_And:
                 case GateType::nb:
                 case GateType::na:
                 case GateType::Nand:

@@ -65,9 +65,9 @@ namespace aby3
 
         auto state = std::make_shared<State>();
 
-        return dep.then([&, state](CommPkg comm, Sh3Task self) {
+        return dep.then([&in,&dest, this, state](CommPkg comm, Sh3Task self) {
 
-            switch (dep.getRuntime().mPartyIdx)
+            switch (self.getRuntime().mPartyIdx)
             {
             case 0:
             {

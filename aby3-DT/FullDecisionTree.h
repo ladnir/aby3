@@ -15,11 +15,11 @@ namespace aby3
             Eq,
             Lt
         };
-        void init(u64 depth, u64 featureCount);
+        void init(u64 depth, u64 featureCount, Sh3Runtime& rt, Sh3ShareGen& gen, bool unitTest = false);
         sbMatrix run(Sh3Runtime& rt);
 
         CommPkg mDebug;
-
+        bool mUnitTest = false;
 
         Sh3Task innerProd(Sh3Task dep, sbMatrix& x, sbMatrix& y, sbMatrix& z);
         Sh3Task compare(Sh3Task dep, sbMatrix& x, sbMatrix& y, sbMatrix& cmp, Comparitor type);
@@ -36,6 +36,7 @@ namespace aby3
         Sh3BinaryEvaluator mBin;
         Sh3Converter mConv;
 
+        si64Matrix mSums;
         //sbMatrix mActive, mOutLabels;
     };
 
@@ -45,6 +46,8 @@ namespace aby3
         void FullTree_innerProd_test(const osuCrypto::CLP&);
         void FullTree_compare_test(const osuCrypto::CLP&);
         void FullTree_reduce_test(const osuCrypto::CLP&);
+        void FullTree_vote_test(const osuCrypto::CLP&);
+        void FullTree_endToEnd_test(const osuCrypto::CLP&);
 
     }
 
