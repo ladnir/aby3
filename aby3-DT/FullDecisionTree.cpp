@@ -9,28 +9,36 @@
 namespace aby3
 {
 
-    sbMatrix FullDecisionTree::run(u64 d, u64 fc, Sh3Runtime& rt)
+    void FullDecisionTree::init(u64 d, u64 fc)
     {
 
         if (d < 1)
             throw std::runtime_error("d must at least be 1");
 
+        if (fc == 0)
+            throw std::runtime_error("logic error");
+
         mDepth = d;
+        mFeatureCount = fc;
+    }
+
+    sbMatrix FullDecisionTree::run(Sh3Runtime& rt)
+    {
 
         u64 n = 1, featureBitCount = 1, nodeBitCount = 1;
         u64 labelBitCount = 8;
 
-        sbMatrix features(1, fc * featureBitCount);
+        sbMatrix features(1, mFeatureCount * featureBitCount);
 
         u64 nodesPerTree = (1ull << mDepth) - 1;
         u64 numLeaves = 1ull << mDepth;
 
         sbMatrix nodes(n * nodesPerTree, nodeBitCount);
         sbMatrix mappedFeatures(n * nodesPerTree, featureBitCount);
-        sbMatrix label(n * numLeaves, labelBitCount);
+        sbMatrix label(n, numLeaves * labelBitCount);
 
         // there should be n mappings, on for each tree. 
-        sbMatrix mapping(nodesPerTree, fc * featureBitCount);
+        sbMatrix mapping(nodesPerTree, mFeatureCount * featureBitCount);
 
         innerProd(rt, features, mapping, mappedFeatures).get();
 
@@ -39,10 +47,12 @@ namespace aby3
         compare(rt, mappedFeatures, nodes, cmp, Comparitor::Eq).get();
 
         sbMatrix y(n, labelBitCount);
-        reduce(rt, cmp, label, y).get();
+        reduce(rt, cmp, label, labelBitCount, y).get();
 
-        sbMatrix output(labelBitCount,1);
+        sbMatrix output(labelBitCount, 1);
         vote(rt, y, output).get();
+
+        return output;
     }
 
     u8 parity(u64 x)
@@ -119,7 +129,7 @@ namespace aby3
                     }
                 }
 
-                cmp.resize(numTrees, (nodesPerTree + 63) / 64);
+                cmp.resize(numTrees, nodesPerTree);
                 });
 
         }
@@ -127,19 +137,21 @@ namespace aby3
             throw std::runtime_error("not impl. " LOCATION);
     }
 
-    Sh3Task FullDecisionTree::reduce(Sh3Task dep, sbMatrix& cmp, sbMatrix& labels, sbMatrix& pred)
+    Sh3Task FullDecisionTree::reduce(Sh3Task dep, sbMatrix& cmp, sbMatrix& labels, u64 labelBitCount, sbMatrix& pred)
     {
-        return dep.then([&](Sh3Task self) {
+        return dep.then([&, labelBitCount](Sh3Task self) {
 
             //sbMatrix cmp(numTrees, nodesPerTree);
             u64 numTrees = cmp.rows();
             u64 nodesPerTree = cmp.bitCount();
 
-            initReduceCircuit(labels.bitCount());
+            initReduceCircuit(labelBitCount);
 
             mBin.setCir(&mReduceCir, cmp.rows());
             mBin.setInput(0, cmp);
             mBin.setInput(1, labels);
+            mBin.enableDebug(self.getRuntime().partyIdx(), mDebug.mPrev, mDebug.mNext);
+            pred.resize(numTrees, labelBitCount);
 
             mBin.asyncEvaluate(self).then([&](Sh3Task self) {
                 mBin.getOutput(0, pred);
@@ -207,6 +219,8 @@ namespace aby3
     {
         mReduceCir = {};
 
+        auto str = [](auto x) -> std::string {return std::to_string(x); };
+
         u64 nodesPerTree = (1ull << mDepth) - 1;
         u64 numLabels = (1ull << mDepth);
         oc::BetaBundle cmp(nodesPerTree);
@@ -221,21 +235,35 @@ namespace aby3
         mReduceCir.addOutputBundle(pred);
 
         mReduceCir.addTempWireBundle(active);
-        mReduceCir.addConst(active[0], 1);
+        mReduceCir.addConst(active[1], 1);
 
+        oc::gIoStreamMtx.lock();
 
-        for (u64 d = 1; d < mDepth; ++d)
+        for (u64 d = 0; d < mDepth; ++d)
         {
-            auto parent = 1ull << (d - 1);
-            auto child = 1ull << d;
+            auto parent = 1ull << d;
+            auto child = 1ull << (d+1);
 
             auto pEnd = child;
 
             while (parent != pEnd)
             {
-                mReduceCir.addGate(active[parent - 1], cmp[child - 1], oc::GateType::nb_And, active[child - 1]);
-                mReduceCir.addGate(active[parent - 1], cmp[child - 0], oc::GateType::And, active[child - 0]);
+                //active[child + 1] = active[parent]    &  cmp[parent]
+                //active[child + 0] = active[parent]    & !cmp[parent]
+                //                  = active[child + 1] ^  active[parent]
+                mReduceCir.addGate(active[parent], cmp[parent - 1], oc::GateType::And, active[child + 1]);
+                mReduceCir.addGate(active[parent], active[child + 1], oc::GateType::Xor, active[child]);
 
+                mReduceCir.addPrint("a[" + str(child) + "] = ");
+                mReduceCir.addPrint(active[child]);
+                mReduceCir.addPrint("\na[" + str(child+1) + "] = ");
+                mReduceCir.addPrint(active[child+1]);
+                mReduceCir.addPrint("\nc[" + str(parent) + "] = ");
+                mReduceCir.addPrint(cmp[parent-1]);
+                mReduceCir.addPrint("\n");
+
+                //std::cout << "a[" << child << "] = a[" << parent << "] & ~c[" << child << "]" << std::endl;
+                //std::cout << "a[" << child + 1 << "] = a[" << parent << "] & ~c[" << child + 1 << "]" << std::endl;
                 child += 2;
                 ++parent;
             }
@@ -246,6 +274,8 @@ namespace aby3
         {
             for (u64 j = 0; j < labelBitCount; ++j, ++l)
             {
+
+                //std::cout << "l[" << l << "] = a[" << s + i << "] & ~l[" << l << "]" << std::endl;
                 mReduceCir.addGate(active[s + i], labels[l], oc::GateType::And, labels[l]);
             }
         }
@@ -259,6 +289,8 @@ namespace aby3
             for (u64 j = 0; j < labelBitCount; ++j)
                 mReduceCir.addGate(pred[j], labels[j + i * labelBitCount], oc::GateType::Xor, pred[j]);
         }
+
+        oc::gIoStreamMtx.unlock();
     }
 
     void FullDecisionTree::initVotingCircuit(u64 n, u64 bitCount)
@@ -462,12 +494,7 @@ namespace aby3
         {
             using namespace oc;
             IOService ios;
-            auto chl01 = Session(ios, "127.0.0.1:1313", SessionMode::Server, "01").addChannel();
-            auto chl10 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "01").addChannel();
-            auto chl02 = Session(ios, "127.0.0.1:1313", SessionMode::Server, "02").addChannel();
-            auto chl20 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "02").addChannel();
-            auto chl12 = Session(ios, "127.0.0.1:1313", SessionMode::Server, "12").addChannel();
-            auto chl21 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "12").addChannel();
+            auto rts = makeRuntimes(ios);
 
             int n = 43;
             int m = 17;
@@ -475,20 +502,6 @@ namespace aby3
 
             int m64 = (m + 63) / 64;
             int w64 = (w + 63) / 64;
-            int trials = 10;
-            CommPkg comms[3];
-            comms[0] = { chl02, chl01 };
-            comms[1] = { chl10, chl12 };
-            comms[2] = { chl21, chl20 };
-
-            Sh3Encryptor encs[3];
-            Sh3Runtime rts[3];
-            rts[0].init(0, comms[0]);
-            rts[1].init(1, comms[1]);
-            rts[2].init(2, comms[2]);
-            encs[0].init(0, oc::toBlock(0ull), oc::toBlock(1));
-            encs[1].init(1, oc::toBlock(1), oc::toBlock(2));
-            encs[2].init(2, oc::toBlock(2), oc::toBlock(0ull));
 
             PRNG prng(oc::toBlock(cmd.getOr("seed", 0)));
             FullDecisionTree trees[3];
@@ -506,42 +519,15 @@ namespace aby3
                     y(i, y.cols() - 1) &= mask;
             }
 
-            //std::cout << " x \n" << bitstr(x, w) << std::endl;
-            //std::cout << " y \n" << bitstr(y, w) << std::endl;
-
             auto z = innerProd(x, y);
-
-            //std::cout << " z \n" << bitstr(z, m) << std::endl;
-
             sbMatrix x0, x1, x2, y0, y1, y2, z0, z1, z2;
-
-            auto t0 = rts[0].noDependencies();
-            auto t1 = rts[1].noDependencies();
-            auto t2 = rts[2].noDependencies();
 
             share(x, w, x0, x1, x2, prng);
             share(y, w, y0, y1, y2, prng);
-
-            //t0 = encs[0].localPackedBinary(t0, x, x0);
-            //t1 = encs[1].remotePackedBinary(t1, x1);
-            //t2 = encs[2].remotePackedBinary(t2, x2);
-
-            //t0 = encs[0].localPackedBinary(t0, y, y0);
-            //t1 = encs[1].remotePackedBinary(t1, y1);
-            //t2 = encs[2].remotePackedBinary(t2, y2);
-
-            t0 = trees[0].innerProd(t0, x0, y0, z0);
-            t1 = trees[1].innerProd(t1, x1, y1, z1);
-            t2 = trees[2].innerProd(t2, x2, y2, z2);
-
-
-
+            auto t0 = trees[0].innerProd(rts[0], x0, y0, z0);
+            auto t1 = trees[1].innerProd(rts[1], x1, y1, z1);
+            auto t2 = trees[2].innerProd(rts[2], x2, y2, z2);
             run(t0, t1, t2);
-
-
-            //t0 = encs[0].reveal(t0, z0, zz);
-            //t1 = encs[1].reveal(t1, 0, z1);
-            //t2 = encs[2].reveal(t2, 0, z2);
             reveal(zz, z0, z1, z2);
 
             if (zz != z)
@@ -549,11 +535,227 @@ namespace aby3
                 std::cout << "zz \n" << bitstr(zz, m) << std::endl;
                 std::cout << "z \n" << bitstr(z, m) << std::endl;
 
+                throw std::runtime_error("incorrect result. " LOCATION);
+            }
+        }
+
+
+        void compare(i64Matrix& features, i64Matrix& nodes, i64Matrix& cmp, FullDecisionTree::Comparitor type)
+        {
+            if (type != FullDecisionTree::Comparitor::Eq)
+                throw std::runtime_error(LOCATION);
+
+            for (u64 i = 0; i < features.size(); ++i)
+            {
+                cmp(i) = (features(i) == nodes(i));
+            }
+        }
+
+        void FullTree_compare_test(const osuCrypto::CLP& cmd)
+        {
+            using namespace oc;
+            IOService ios;
+            auto rts = makeRuntimes(ios);
+
+            PRNG prng(oc::toBlock(cmd.getOr("seed", 0)));
+            FullDecisionTree trees[3];
+
+
+            u64 n = 43;
+            u64 d = 3;
+            u64 numFeatures = 10;
+            u64 nodesPerTree = (1ull << d) - 1;
+            u64 nodeBitCount = 1;
+            u64 featureBitCount = 1;
+            auto type = FullDecisionTree::Comparitor::Eq;
+
+            trees[0].init(d, numFeatures);
+            trees[1].init(d, numFeatures);
+            trees[2].init(d, numFeatures);
+
+            i64Matrix nodes(n * nodesPerTree, nodeBitCount);
+            i64Matrix mappedFeatures(n * nodesPerTree, featureBitCount);
+
+
+            for (u64 i = 0; i < nodes.rows(); i++)
+            {
+                for (u64 j = 0; j < nodes.cols(); j++)
+                {
+                    nodes(i, j) = prng.getBit();
+                    mappedFeatures(i, j) = prng.getBit();
+                }
+            }
+
+            i64Matrix cmp(n, nodesPerTree), cmp2;
+            compare(mappedFeatures, nodes, cmp, type);
+
+
+            sbMatrix f0, f1, f2, n0, n1, n2, c0, c1, c2;
+
+            share(pack(mappedFeatures), nodeBitCount, f0, f1, f2, prng);
+            share(pack(nodes), nodeBitCount, n0, n1, n2, prng);
+
+
+            auto t0 = trees[0].compare(rts[0], f0, n0, c0, type);
+            auto t1 = trees[1].compare(rts[1], f1, n1, c1, type);
+            auto t2 = trees[2].compare(rts[2], f2, n2, c2, type);
+
+            run(t0, t1, t2);
+
+            reveal(cmp2, c0, c1, c2);
+            cmp2 = unpack(cmp2, nodesPerTree);
+
+            if (cmp != cmp2)
+            {
+                std::cout << "cmp  \n" << bitstr(cmp, nodesPerTree) << std::endl;
+                std::cout << "cmp2 \n" << bitstr(cmp2, nodesPerTree) << std::endl;
+
+                throw std::runtime_error("incorrect result. " LOCATION);
+            }
+        }
+
+
+        i64Matrix reduce(i64Matrix labels, i64Matrix cmp)
+        {
+            auto n = cmp.rows();
+            auto nodesPerTree = cmp.cols();
+            auto depth = oc::log2ceil(nodesPerTree + 1);
+            auto labelBitCount = labels.cols() / (nodesPerTree + 1);
+
+            std::vector<u64> active(n, 1);
+
+            u64 jj = 0;
+            
+            for (u64 d = 0; d < depth; ++d)
+            {
+                std::cout << "d[" << d << "] ~~ ";
+                auto w = 1ull << d;
+                for (u64 j = 0; j < w; j++)
+                {
+                    std::cout << " " << cmp(0, jj++);
+                }
+
+                std::cout << std::endl;
+            }
+
+            for (u64 d = 0; d < depth; ++d)
+            {
+                for (u64 i = 0; i < n; ++i)
+                {
+                    std::cout << "cmp["<<i<<"][" << d << "] = " << cmp(i, active[i]-1) << std::endl;
+                    auto c = cmp(i, active[i]-1);
+                    std::cout << "active[" << i << "] = 2 * " << (active[i]) <<" + " << c << std::endl;
+                    active[i] = 2 * active[i] + c;
+                }
+            }
+
+            auto s = 1ull << depth;
+            for (u64 i = 0; i < s; i++)
+            {
+                std::cout << "label[0][" << i << "] = ";
+                for (u64 j = 0; j < labelBitCount; j++)
+                {
+                    std::cout <<  labels(0, i * labelBitCount + j) << " ";
+                }
+                std::cout << std::endl;
+            }
+
+            i64Matrix ret(n, labelBitCount);
+            for (u64 i = 0; i < n; i++)
+            {
+                auto idx = active[i] - s;
+                for (u64 j = 0; j < labelBitCount; j++)
+                {
+                    ret(i, j) = labels(i, idx * labelBitCount + j);
+                }
+                std::cout << "active[" << i << "] = " << (active[i]) <<" ~~ " << idx << std::endl
+                    << " -> " << ret.row(i) << std::endl;
+            }
+
+            return ret;
+        }
+
+        void FullTree_reduce_test(const osuCrypto::CLP& cmd)
+        {
+            using namespace oc;
+            IOService ios;
+            auto rts = makeRuntimes(ios);
+
+            PRNG prng(oc::toBlock(cmd.getOr("seed", 0)));
+            FullDecisionTree trees[3];
+
+
+            u64 n = 1;
+            u64 d = 3;
+            u64 numFeatures = 10;
+            u64 nodesPerTree = (1ull << d) - 1;
+            u64 numLeaves = (1ull << d);
+            u64 labelBitCount = numLeaves;
+            auto type = FullDecisionTree::Comparitor::Eq;
+
+            trees[0].init(d, numFeatures);
+            trees[1].init(d, numFeatures);
+            trees[2].init(d, numFeatures);
+
+            i64Matrix label(n, numLeaves * labelBitCount);
+            i64Matrix y(n, labelBitCount), yy;
+            i64Matrix cmp(n, nodesPerTree);
+
+            for (u64 i = 0; i < cmp.rows(); i++)
+                for (u64 j = 0; j < cmp.cols(); j++)
+                    cmp(i, j) = prng.getBit();
+
+
+            label.setZero();
+            for (u64 i = 0; i < cmp.rows(); i++)
+            {
+                for (u64 j = 0; j < numLeaves; j++)
+                {
+                    label(i, j * labelBitCount + j) = 1;
+                }
+            }
+
+
+            y = reduce(label, cmp);
+
+
+            trees[0].initReduceCircuit(labelBitCount);
+            evaluate(trees[0].mReduceCir, { cmp, label }, { &yy });
+            if (yy != y)
+            {
+                std::cout << "y  \n" << y << std::endl;
+                std::cout << "yy \n" << yy << std::endl;
 
                 throw std::runtime_error("incorrect result. " LOCATION);
             }
 
 
+            sbMatrix l0, l1, l2, y0, y1, y2, c0, c1, c2;
+
+
+
+
+            share(pack(label), label.cols(), l0, l1, l2, prng);
+            share(pack(cmp), cmp.cols(), c0, c1, c2, prng);
+
+
+            auto t0 = trees[0].reduce(rts[0], c0, l0, labelBitCount, y0);
+            auto t1 = trees[1].reduce(rts[1], c1, l1, labelBitCount, y1);
+            auto t2 = trees[2].reduce(rts[2], c2, l2, labelBitCount, y2);
+
+            run(t0, t1, t2);
+
+            reveal(yy, c0, c1, c2);
+            yy = unpack(yy, labelBitCount);
+
+            if (y != yy)
+            {
+                std::cout << "y  \n" << y << std::endl;
+                std::cout << "yy \n" << yy << std::endl;
+
+                throw std::runtime_error("incorrect result. " LOCATION);
+            }
         }
+
     }
 }

@@ -4,7 +4,11 @@
 #include <string>
 #include "cryptoTools/Crypto/PRNG.h"
 #include "aby3/sh3/Sh3Runtime.h"
-
+#include "cryptoTools/Circuit/BetaCircuit.h"
+#include "cryptoTools/Network/IOService.h"
+#include "aby3/sh3/Sh3Encryptor.h"
+#include "aby3/sh3/Sh3ShareGen.h"
+#include "aby3/sh3/Sh3Converter.h"
 namespace aby3
 {
 
@@ -17,10 +21,24 @@ namespace aby3
     std::string bitstr(const i64Matrix& x, u64 w);
 
 
+    i64Matrix pack(const i64Matrix& x);
+    i64Matrix unpack(const i64Matrix& x, u64 bitCount);
+
+    void evaluate(oc::BetaCircuit cir, std::vector<i64Matrix> input, std::vector<i64Matrix*> y, bool sparse = true);
+
     void share(const i64Matrix& x, u64 colBitCount, sbMatrix& x0, sbMatrix& x1, sbMatrix& x2, oc::PRNG& prng);
     void share(const i64Matrix& x, si64Matrix& x0, si64Matrix& x1, si64Matrix& x2, oc::PRNG& prng);
     int memcmp(oc::MatrixView<i64> l, oc::MatrixView<i64> r);
     void reveal(i64Matrix& x, sbMatrix& x0, sbMatrix& x1, sbMatrix& x2);
     void reveal(i64Matrix& x, si64Matrix& x0, si64Matrix& x1, si64Matrix& x2);
+
+
+    std::array<CommPkg, 3> makeComms(oc::IOService& ios);
+    std::array<Sh3Runtime, 3> makeRuntimes(oc::IOService& ios);
+    std::array<Sh3Runtime, 3> makeRuntimes(std::array<CommPkg, 3>& comm);
+
+    std::array<Sh3Encryptor, 3> makeEncryptors();
+    std::array<Sh3ShareGen, 3> makeShareGens();
+    std::array<Sh3Converter, 3> makeConverters(std::array<Sh3Runtime,3>& rts, std::array<Sh3ShareGen, 3>& gens);
 
 }

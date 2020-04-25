@@ -49,6 +49,7 @@ int main(int argc, char** argv)
 		if (cmd.isSet("dt"))
 		{
 			test_DT.runIf(cmd);
+			return 0;
 		}
 
 		if (cmd.isSet(unitTestTag))
