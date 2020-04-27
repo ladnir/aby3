@@ -102,5 +102,16 @@ namespace aby3
             auto i = getRandIntShare();
             return { { i[0], i[1] } };
         }
+
+
+        void getRandBinaryShare(sbMatrix&  mtx)
+        {
+            for (u64 i = 0; i < mtx.mShares[0].size(); i++)
+            {
+                auto s = getRandIntShare();
+                mtx.mShares[0](i) = s[0];
+                mtx.mShares[1](i) = s[1];
+            }
+        }
     };
 }

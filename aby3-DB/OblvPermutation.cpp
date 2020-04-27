@@ -105,69 +105,19 @@ namespace osuCrypto
         std::string tag,
         OutputType type)
     {
-        u32 recvCount = gsl::narrow<u32>((srcRows + step - 1) / step);
-
-        std::vector<std::pair<std::future<void>, std::vector<u8>>> recvs1(recvCount);
-        std::vector<std::pair<std::future<void>, std::vector<u32>>> recvs2(recvCount);
-        for (u32 i = 0; i < recvCount; ++i)
-        {
-            recvs1[i].first = sendrChl.asyncRecv(recvs1[i].second);
-            recvs2[i].first = programChl.asyncRecv(recvs2[i].second);
-
-        }
-        //ostreamLock(std::cout) << "recv count " << recvCount << " (" << srcRows <<") " << tag << std::endl;
-
-        for (u32 i = 0; i < recvCount; ++i)
-        {
-            recvs1[i].first.get();
-            recvs2[i].first.get();
+        asyncRecv(programChl, sendrChl, dest, srcRows, tag, type).get();
+    }
 
 
-            auto& perm = recvs2[i].second;
-            auto& data = recvs1[i].second;
-            if (perm.size() * dest.stride() != data.size())
-                throw std::runtime_error(LOCATION);
-
-            //ostreamLock(std::cout) << "recv size[" << i << "] -> " << data.size()<< " "<< tag << std::endl;
-
-            auto iter = data.data();
-            if (type == OutputType::Overwrite)
-            {
-                for (u32 j = 0; j < perm.size(); ++j)
-                {
-                    if (perm[j] != -1)
-                    {
-
-                        u8* destPtr = &*(dest.begin() + perm[j] * dest.stride());
-
-                        //std::cout << "____ -> " << j << " -> " << perm[j] << std::endl;
-
-                        memcpy(destPtr, iter, dest.stride());
-                    }
-                    iter += dest.stride();
-                }
-            }
-            else
-            {
-                for (u32 j = 0; j < perm.size(); ++j)
-                {
-                    if (perm[j] != -1)
-                    {
-                        u8* destPtr = &*(dest.begin() + perm[j] * dest.stride());
-
-                        for (u32 k = 0; k < dest.stride(); ++k)
-                        {
-                            destPtr[k] ^= *iter;
-                            ++iter;
-                        }
-                    }
-                    else
-                    {
-                        iter += dest.stride();
-                    }
-                }
-            }
-        }
+    OblvPermutation::AsyncRecv OblvPermutation::asyncRecv(
+        Channel& programChl,
+        Channel& sendrChl,
+        MatrixView<u8> dest,
+        u64 srcRows,
+        std::string tag,
+        OutputType type)
+    {
+        return AsyncRecv(programChl, sendrChl, dest, srcRows, tag, type);
     }
 
 
@@ -211,6 +161,7 @@ namespace osuCrypto
         //    pi1[i] = i;
         //}
 
+        TODO("FIX ME, security bug");
         block seed = ZeroBlock;// p.get<block>();
                                //sendrChl.asyncSend(seed);
         PRNG prng(seed, 256);
@@ -318,5 +269,85 @@ namespace osuCrypto
 
         ///std::cout << "p0" << prng.get<int>() << std::endl;
 
+    }
+    OblvPermutation::AsyncRecv::AsyncRecv(
+        Channel& programChl, 
+        Channel& sendrChl, 
+        MatrixView<u8> dest, 
+        u64 srcRows, 
+        std::string tag, 
+        OutputType type)
+    {
+
+        mDest = dest;
+        mSrcRows = srcRows;
+        mTag = tag;
+        mType = type;
+
+        u64 recvCount = gsl::narrow<u32>((srcRows + step - 1) / step);
+        recvs1.resize(recvCount);
+        recvs2.resize(recvCount);
+        for (u32 i = 0; i < recvCount; ++i)
+        {
+            recvs1[i].first = sendrChl.asyncRecv(recvs1[i].second);
+            recvs2[i].first = programChl.asyncRecv(recvs2[i].second);
+
+        }
+    }
+
+    void OblvPermutation::AsyncRecv::get()
+    {
+
+        for (u32 i = 0; i < recvs1.size(); ++i)
+        {
+            recvs1[i].first.get();
+            recvs2[i].first.get();
+
+
+            auto& perm = recvs2[i].second;
+            auto& data = recvs1[i].second;
+            if (perm.size() * mDest.stride() != data.size())
+                throw std::runtime_error(LOCATION);
+
+            //ostreamLock(std::cout) << "recv size[" << i << "] -> " << data.size()<< " "<< tag << std::endl;
+
+            auto iter = data.data();
+            if (mType == OutputType::Overwrite)
+            {
+                for (u32 j = 0; j < perm.size(); ++j)
+                {
+                    if (perm[j] != -1)
+                    {
+
+                        u8* destPtr = &*(mDest.begin() + perm[j] * mDest.stride());
+
+                        //std::cout << "____ -> " << j << " -> " << perm[j] << std::endl;
+
+                        memcpy(destPtr, iter, mDest.stride());
+                    }
+                    iter += mDest.stride();
+                }
+            }
+            else
+            {
+                for (u32 j = 0; j < perm.size(); ++j)
+                {
+                    if (perm[j] != -1)
+                    {
+                        u8* destPtr = &*(mDest.begin() + perm[j] * mDest.stride());
+
+                        for (u32 k = 0; k < mDest.stride(); ++k)
+                        {
+                            destPtr[k] ^= *iter;
+                            ++iter;
+                        }
+                    }
+                    else
+                    {
+                        iter += mDest.stride();
+                    }
+                }
+            }
+        }
     }
 }
