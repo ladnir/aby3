@@ -7,14 +7,14 @@ namespace osuCrypto
 {
     void OblvSwitchNet::sendRecv(Channel & programChl, Channel & helpChl, Matrix<u8> src, MatrixView<u8> dest)
     {
-        std::stringstream ss;
-        ss << "send_" << src.rows() <<"_"<< dest.rows() << "_" << src.cols();
+        //std::stringstream ss;
+        //ss << "send_" << src.rows() <<"_"<< dest.rows() << "_" << src.cols();
 
-        auto s = ss.str();
-        programChl.asyncSendCopy(s);
-        programChl.recv(s);
-        if (s != ss.str())
-            throw RTE_LOC;
+        //auto s = ss.str();
+        //programChl.asyncSendCopy(s);
+        //programChl.recv(s);
+        //if (s != ss.str())
+        //    throw RTE_LOC;
 
         TODO("make sure this resize is a no-op by reserving enough before...");
         if (src.rows() < dest.rows())
@@ -31,15 +31,15 @@ namespace osuCrypto
 
     void OblvSwitchNet::help(Channel& programChl, Channel& sendrChl, PRNG& prng, u32 destRows, u32 srcRows, u32 bytes)
     {
-        std::stringstream ss;
-        ss << "help_" << destRows << "_" << bytes;
+        //std::stringstream ss;
+        //ss << "help_" << destRows << "_" << bytes;
 
-        auto s = ss.str();
-        programChl.asyncSendCopy(s);
-        programChl.recv(s);
+        //auto s = ss.str();
+        //programChl.asyncSendCopy(s);
+        //programChl.recv(s);
 
-        if (s != ss.str())
-            throw RTE_LOC;
+        //if (s != ss.str())
+        //    throw RTE_LOC;
 
 
         Matrix<u8> temp(destRows, bytes);
@@ -63,39 +63,39 @@ namespace osuCrypto
         MatrixView<u8> dest,
         OutputType type)
     {
-        {
-            std::stringstream ss;
-            ss << "send_" << prog.mSrcSize << "_" << dest.rows() << "_" << dest.cols();
+        //{
+        //    std::stringstream ss;
+        //    ss << "send_" << prog.mSrcSize << "_" << dest.rows() << "_" << dest.cols();
 
-            sendrChl.asyncSendCopy(ss.str());
+        //    sendrChl.asyncSendCopy(ss.str());
 
-            std::string str;
-            sendrChl.recv(str);
-            if (str != ss.str())
-            {
-                std::cout << "exp: " << ss.str() << std::endl;
-                std::cout << "act: " << str << std::endl;
+        //    std::string str;
+        //    sendrChl.recv(str);
+        //    if (str != ss.str())
+        //    {
+        //        std::cout << "exp: " << ss.str() << std::endl;
+        //        std::cout << "act: " << str << std::endl;
 
-                throw std::runtime_error("");
-            }
-        }
+        //        throw std::runtime_error("");
+        //    }
+        //}
 
-        {
-            std::stringstream ss;
-            ss << "help_" << dest.rows() << "_" << dest.cols();
+        //{
+        //    std::stringstream ss;
+        //    ss << "help_" << dest.rows() << "_" << dest.cols();
 
-            helpChl.asyncSendCopy(ss.str());
+        //    helpChl.asyncSendCopy(ss.str());
 
-            std::string str;
-            helpChl.recv(str);
-            if (str != ss.str())
-            {
-                std::cout << "exp: " << ss.str() << std::endl;
-                std::cout << "act: " << str << std::endl;
+        //    std::string str;
+        //    helpChl.recv(str);
+        //    if (str != ss.str())
+        //    {
+        //        std::cout << "exp: " << ss.str() << std::endl;
+        //        std::cout << "act: " << str << std::endl;
 
-                throw std::runtime_error("");
-            }
-        }
+        //        throw std::runtime_error("");
+        //    }
+        //}
 
 
         Matrix<u8> temp(dest.rows(), dest.cols());

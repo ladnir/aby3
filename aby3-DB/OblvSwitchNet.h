@@ -49,6 +49,8 @@ namespace osuCrypto
             void validate();
         };
 
+        OblvSwitchNet() = default;
+
         std::string mTag;
         OblvSwitchNet(std::string tag)
             :mTag(tag)

@@ -8,6 +8,8 @@
 #include "cryptoTools/Common/CLP.h"
 #include "Common.h"
 #include "cryptoTools/Common/Timer.h"
+#include "aby3-DB/OblvSwitchNet.h"
+
 namespace aby3
 {
 
@@ -57,16 +59,16 @@ namespace aby3
             mFeatureBitCount = -1,
             mNumLabels = -1, mDIdx, mCmpDone = 0;
 
-        std::vector<sbMatrix> mFreatureKey, mNodeKey;
+        //std::vector<sbMatrix> mFreatureKey, mNodeKey;
 
-        oc::BetaCircuit mLowMCCir, mCmpCir;
+        oc::BetaCircuit mCmpCir;
         void initCmpCir();
 
 
         Sh3Task shuffleNodes(Sh3Task dep);
         Sh3Task shuffle(Sh3Task dep, sbMatrix& vals);
 
-        void sampleKeys();
+        //void sampleKeys();
         i64 featureMap(i64) { return 0; };
         i64 nodeMap(i64) { return 0; };
 
@@ -90,6 +92,8 @@ namespace aby3
 
         std::vector<Sh3Task> mTasks;
 
+
+        oc::OblvSwitchNet mSNet;
     };
 
 

@@ -38,8 +38,8 @@ namespace aby3
         mFeatures = features;
         
         setTimePoint("start");
-        sampleKeys();
-        setTimePoint("sampleKeys");
+        //sampleKeys();
+        //setTimePoint("sampleKeys");
 
         computeNodeNames(dep.getRuntime()).get();
         dep.getRuntime().cancelTasks();
@@ -216,58 +216,58 @@ namespace aby3
             }).getClosure();
     }
 
-    void SparseDecisionForest::sampleKeys()
-    {
+    //void SparseDecisionForest::sampleKeys()
+    //{
 
-        //const auto rounds = 13;
-        //const auto sboxCount = 14;
-        //const auto dataComplex = 30;
-        //const auto keySize = 128;
+    //    //const auto rounds = 13;
+    //    //const auto sboxCount = 14;
+    //    //const auto dataComplex = 30;
+    //    //const auto keySize = 128;
 
-        //if (mLowMCCir.mGates.size() == 0)
-        //{
-        //    std::stringstream filename;
-        //    filename << "./.lowMCCircuit"
-        //        << "_b" << mBlockSize
-        //        << "_r" << rounds
-        //        << "_d" << dataComplex
-        //        << "_k" << keySize
-        //        << ".bin";
+    //    //if (mLowMCCir.mGates.size() == 0)
+    //    //{
+    //    //    std::stringstream filename;
+    //    //    filename << "./.lowMCCircuit"
+    //    //        << "_b" << mBlockSize
+    //    //        << "_r" << rounds
+    //    //        << "_d" << dataComplex
+    //    //        << "_k" << keySize
+    //    //        << ".bin";
 
-        //    std::ifstream in;
-        //    in.open(filename.str(), std::ios::in | std::ios::binary);
+    //    //    std::ifstream in;
+    //    //    in.open(filename.str(), std::ios::in | std::ios::binary);
 
-        //    if (in.is_open() == false)
-        //    {
-        //        oc::LowMC2<sboxCount, mBlockSize, keySize, rounds> cipher1(false, 1);
-        //        cipher1.to_enc_circuit(mLowMCCir);
+    //    //    if (in.is_open() == false)
+    //    //    {
+    //    //        oc::LowMC2<sboxCount, mBlockSize, keySize, rounds> cipher1(false, 1);
+    //    //        cipher1.to_enc_circuit(mLowMCCir);
 
-        //        std::ofstream out;
-        //        out.open(filename.str(), std::ios::trunc | std::ios::out | std::ios::binary);
-        //        mLowMCCir.levelByAndDepth();
+    //    //        std::ofstream out;
+    //    //        out.open(filename.str(), std::ios::trunc | std::ios::out | std::ios::binary);
+    //    //        mLowMCCir.levelByAndDepth();
 
-        //        mLowMCCir.writeBin(out);
-        //    }
-        //    else
-        //    {
-        //        mLowMCCir.readBin(in);
-        //    }
-        //}
+    //    //        mLowMCCir.writeBin(out);
+    //    //    }
+    //    //    else
+    //    //    {
+    //    //        mLowMCCir.readBin(in);
+    //    //    }
+    //    //}
 
-        //mFreatureKey.resize(rounds + 1);
-        //mNodeKey.resize(rounds + 1);
-        //for (auto& f : mFreatureKey)
-        //{
-        //    f.resize(1, mBlockSize);
-        //    mGen.getRandBinaryShare(f);
-        //}
-        //for (auto& f : mNodeKey)
-        //{
-        //    f.resize(1, mBlockSize);
-        //    mGen.getRandBinaryShare(f);
-        //}
+    //    //mFreatureKey.resize(rounds + 1);
+    //    //mNodeKey.resize(rounds + 1);
+    //    //for (auto& f : mFreatureKey)
+    //    //{
+    //    //    f.resize(1, mBlockSize);
+    //    //    mGen.getRandBinaryShare(f);
+    //    //}
+    //    //for (auto& f : mNodeKey)
+    //    //{
+    //    //    f.resize(1, mBlockSize);
+    //    //    mGen.getRandBinaryShare(f);
+    //    //}
 
-    }
+    //}
 
     Sh3Task SparseDecisionForest::computeNodeNames(Sh3Task dep)
     {
@@ -309,37 +309,70 @@ namespace aby3
 
     Sh3Task SparseDecisionForest::computeFeatureNames(Sh3Task dep)
     {
-        return dep.then([this](Sh3Task self) {
+        return dep.then([this](CommPkg& comm, Sh3Task self) {
 
             mFeatureNames.resize(mNodes.rows(), mBlockSize);
+            auto view = oc::MatrixView<u8>(
+                (u8*)mFeatureNames.mShares[0].data(),
+                mFeatureNames.rows(),
+                mFeatureNames.i64Cols() * sizeof(u64));
+
+            switch (self.getRuntime().mPartyIdx)
+            {
+            case 0:
+            {
+                oc::OblvSwitchNet::Program prog;
+                prog.init(mNodes.rows(), mNodes.rows());
+                for (u64 i = 0; i < mNodes.rows(); i++)
+                {
+                    prog.addSwitch(i, i);
+                }
+                prog.finalize();
+
+                mSNet.program(comm.mPrev, comm.mNext, prog, mPrng, view);
+                break;
+            }
+            case 1:
+            {
+                mSNet.sendRecv(comm.mPrev, comm.mNext, view, view);
+                break;
+            }
+            case 2:
+            {
+                mSNet.help(comm.mNext, comm.mPrev, mPrng, mNodes.rows(), mNodes.rows(), view.cols());
+                break;
+            }
+            default:
+                break;
+            }
             //if (mFeatureNames.rows() != mFeatureCount)
             //    throw RTE_LOC;
 
-            auto bs = mBlockSize / 8;
-            for (u64 b = 0; b < 2; ++b)
-            {
-                auto sPtr = mNodes.mShares[b].data() + mFeatureOffset;
-                auto sStep = mNodes.i64Cols();
-                auto dPtr = mFeatureNames.mShares[b].data();
-                auto dStep = mFeatureNames.i64Cols();
-                for (u64 j = 0; j < mNodes.rows(); j++)
-                {
-                    std::memcpy(dPtr, sPtr, bs);
+            //auto bs = mBlockSize / 8;
+            //for (u64 b = 0; b < 2; ++b)
+            //{
+            //    auto sPtr = mNodes.mShares[b].data() + mFeatureOffset;
+            //    auto sStep = mNodes.i64Cols();
+            //    auto dPtr = mFeatureNames.mShares[b].data();
+            //    auto dStep = mFeatureNames.i64Cols();
+            //    for (u64 j = 0; j < mNodes.rows(); j++)
+            //    {
+            //        std::memcpy(dPtr, sPtr, bs);
 
-                    dPtr += dStep;
-                    sPtr += sStep;
-                }
-            }
+            //        dPtr += dStep;
+            //        sPtr += sStep;
+            //    }
+            //}
 
-            mBin2.setCir(&mLowMCCir, mFeatureNames.rows());
+            //mBin2.setCir(&mLowMCCir, mFeatureNames.rows());
 
-            mBin2.setInput(0, mFeatureNames);
-            for (u64 i = 0; i < mNodeKey.size(); ++i)
-                mBin2.setReplicatedInput(i + 1, mNodeKey[i]);
+            //mBin2.setInput(0, mFeatureNames);
+            //for (u64 i = 0; i < mNodeKey.size(); ++i)
+            //    mBin2.setReplicatedInput(i + 1, mNodeKey[i]);
 
-            mBin2.asyncEvaluate(self).then([this](Sh3Task self) {
-                mBin2.getOutput(0, mFeatureNames);
-                });
+            //mBin2.asyncEvaluate(self).then([this](Sh3Task self) {
+            //    mBin2.getOutput(0, mFeatureNames);
+            //    });
             }).getClosure();
     }
 
@@ -594,9 +627,9 @@ namespace aby3
             trees[1].mPrng.SetSeed(toBlock(2));
             trees[2].mPrng.SetSeed(toBlock(2));
 
-            trees[0].sampleKeys();
-            trees[1].sampleKeys();
-            trees[2].sampleKeys();
+            //trees[0].sampleKeys();
+            //trees[1].sampleKeys();
+            //trees[2].sampleKeys();
 
             trees[0].mFeatureOffset = blockSize8 * 3;
             trees[1].mFeatureOffset = blockSize8 * 3;
