@@ -416,7 +416,7 @@ namespace aby3
         return dep.then([send, &x](CommPkg& comm, Sh3Task& self) {
             if (send)
                 comm.mPrev.asyncSendCopy(x.mShares[0].data(), x.mShares[0].size());
-        });
+        }, "revealAll");
     }
 
 

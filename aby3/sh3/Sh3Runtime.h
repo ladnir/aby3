@@ -327,6 +327,8 @@ namespace aby3
         void runAll();
 		void runOneRound();
 
+		void cancelTasks();
+
         TaskDag mTasks;
         Sh3Task mNullTask;
     };

@@ -96,7 +96,9 @@ namespace aby3
             throw std::invalid_argument("incorrect number of simd rows");
 
 
-        std::array<char, 2> vals{ 0,~0 };
+        std::array<block_type, 2> vals;
+        memset(&vals[0], 0, sizeof(block_type));
+        memset(&vals[1], ~0, sizeof(block_type));
 
         for (u64 i = 0; i < 2; ++i)
         {
@@ -108,8 +110,13 @@ namespace aby3
                 if (shares.rows() <= inWires[j])
                     throw std::runtime_error(LOCATION);
 
-                char v = vals[*iter];
-                memset(shares.data() + simdWidth * inWires[j], v, simdWidth * sizeof(block_type));
+                auto v = vals[*iter];
+
+                auto ptr = shares.data() + simdWidth * inWires[j];
+                for (u64 k = 0; k < simdWidth; k++)
+                {
+                    ptr[k] = v;
+                }
             }
         }
 
@@ -717,7 +724,10 @@ namespace aby3
                         s0_Out[k + 5] = s0_in0[k + 5] ^ s0_in1[k + 5];
                         s0_Out[k + 6] = s0_in0[k + 6] ^ s0_in1[k + 6];
                         s0_Out[k + 7] = s0_in0[k + 7] ^ s0_in1[k + 7];
+                    }
 
+                    for (i32 k = 0; k < simdWidth128; k += 8)
+                    {
                         s1_Out[k + 0] = s1_in0[k + 0] ^ s1_in1[k + 0];
                         s1_Out[k + 1] = s1_in0[k + 1] ^ s1_in1[k + 1];
                         s1_Out[k + 2] = s1_in0[k + 2] ^ s1_in1[k + 2];

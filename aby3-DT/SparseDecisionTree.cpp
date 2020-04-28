@@ -8,32 +8,112 @@ namespace aby3
 {
 
 
-    void aby3::SparseDecisionForest::init(
+
+
+    void SparseDecisionForest::init(
         u64 depth,
-        u64 numTrees,
-        u64 featureCount,
+        std::vector<u32> treeStartIdx,
+        sbMatrix& nodes,
         u64 featureBitCount,
-        u64 nodeBitCount,
         u64 numLabels,
         Sh3Runtime& rt,
-        Sh3ShareGen& gen)
+        Sh3ShareGen&& gen)
     {
+        mDepth = depth;
+        mTreeStartIdx = std::move(treeStartIdx);
+        mNumTrees = mTreeStartIdx.size() - 1;
+        mNodes = nodes;
+        mFeatureBitCount = featureBitCount;
+        mNumLabels = numLabels;
+        mLabelOffset = mThresholdOffset + (mFeatureBitCount + 7) / 8;
 
-        rt;
+        mGen = std::move(gen);
+        mPrng.SetSeed(mGen.mPrivPrng.get());
+
+        mComparitor = Comparitor::Eq;
     }
 
+    Sh3Task SparseDecisionForest::evaluate(Sh3Task dep, sbMatrix& features)
+    {
+        mFeatures = features;
+        
+        setTimePoint("start");
+        sampleKeys();
+        setTimePoint("sampleKeys");
+
+        computeNodeNames(dep.getRuntime()).get();
+        dep.getRuntime().cancelTasks();
+        
+        setTimePoint("compute Names");
+
+        shuffleNodes(dep.getRuntime()).get();
+        dep.getRuntime().cancelTasks();
+
+        setTimePoint("suffle");
+        
+        TODO("FIX me \n\n\n\n\n\n\n\n\n\n\n\n\n\n")
+        computeFeatureNames(dep.getRuntime()).get();
+        setTimePoint("computeFeatureNames");
+
+
+
+        return traversTree(dep.getRuntime());
+    }
+
+
+    Sh3Task SparseDecisionForest::traversTree(Sh3Task dep)
+    {
+        mNodeIdxs.resize(mTreeStartIdx.size() - 1, (mBlockSize + 63) / 64);
+        for (u64 i = 0; i < mNodeIdxs.rows(); ++i)
+            mNodeIdxs(i, 0) = mTreeStartIdx[i];
+
+        for (u8 i = 0; i < mDepth; i++)
+        {
+            //if(dep.getRuntime().mPartyIdx == 0)
+            //    dep.getRuntime().mPrint = true;
+            getFeatures(dep.getRuntime()).get();
+            setTimePoint("getFeatures " + std::to_string(i));
+
+            dep.getRuntime().cancelTasks();
+
+            updateLabel(dep.getRuntime());
+            compare(dep.getRuntime()).get();
+
+            dep.getRuntime().cancelTasks();
+            setTimePoint("compare " +std::to_string(i));
+
+        }
+        getFeatures(dep.getRuntime()).get();
+        dep.getRuntime().cancelTasks();
+        updateLabel(dep.getRuntime()).get();
+        dep.getRuntime().cancelTasks();
+        setTimePoint("getFeatures & update ");
+
+        mConv.init(dep.getRuntime(), mGen);
+        vote(dep.getRuntime()).get();
+        dep.getRuntime().cancelTasks();
+
+        setTimePoint("vote, done ");
+
+        return dep;
+    }
     Sh3Task SparseDecisionForest::shuffleNodes(Sh3Task dep)
     {
-        return dep.then([this](CommPkg& comm, Sh3Task self) {
-                oc::OblvPermutation op;
+        return shuffle(dep, mNodes);
+    }
+
+    Sh3Task SparseDecisionForest::shuffle(Sh3Task dep, sbMatrix& vals)
+    {
+        return dep.then([this, &vals](CommPkg& comm, Sh3Task self) {
+            oc::OblvPermutation op;
             switch (self.getRuntime().mPartyIdx)
             {
             case 0:
             {
                 for (u64 i = 0; i < mTreeStartIdx.size() - 1; ++i)
                 {
-                    auto s = mTreeStartIdx[i];
-                    auto e = mTreeStartIdx[i+1];
+                    auto s = mTreeStartIdx[i] + 1;
+                    auto e = mTreeStartIdx[i + 1];
                     auto n = e - s;
                     std::vector<u32> perm(n);
 
@@ -47,20 +127,20 @@ namespace aby3
                     }
 
 
-                    auto ptr = &mNodes.mShares[0](s, 0);
-                    oc::MatrixView<u8> share0((u8*)ptr, n, mNodes.i64Cols() * sizeof(i64));
+                    auto ptr = &vals.mShares[0](s, 0);
+                    oc::MatrixView<u8> share0((u8*)ptr, n, vals.i64Cols() * sizeof(i64));
 
                     op.program(comm.mPrev, comm.mNext, perm, mPrng, share0, "", oc::OutputType::Overwrite);
                     op.program(comm.mNext, comm.mPrev, perm, mPrng, share0, "", oc::OutputType::Additive);
                     comm.mNext.asyncSend(std::move(share0));
 
-                    ptr = &mNodes.mShares[1](s, 0);
-                    oc::MatrixView<u8> share1((u8*)ptr, n, mNodes.i64Cols() * sizeof(i64));
+                    ptr = &vals.mShares[1](s, 0);
+                    oc::MatrixView<u8> share1((u8*)ptr, n, vals.i64Cols() * sizeof(i64));
                     auto f1 = comm.mPrev.asyncRecv(share1);
 
                     self.then([f1 = std::move(f1)](CommPkg& comm, Sh3Task _)mutable{
-                            f1.get();
-                        });
+                        f1.get();
+                    });
 
                 }
 
@@ -71,7 +151,7 @@ namespace aby3
             {
                 for (u64 i = 0; i < mTreeStartIdx.size() - 1; ++i)
                 {
-                    auto s = mTreeStartIdx[i];
+                    auto s = mTreeStartIdx[i] + 1;
                     auto e = mTreeStartIdx[i + 1];
                     auto n = e - s;
                     std::vector<u32> perm(n);
@@ -79,17 +159,19 @@ namespace aby3
                     for (u64 j = 0; j < n; j++)
                         perm[j] = j;
 
-                    auto ptr = &mNodes.mShares[0](s, 0);
-                    oc::MatrixView<u8> share0((u8*)ptr, n, mNodes.i64Cols() * sizeof(i64));
+                    auto ptr = &vals.mShares[0](s, 0);
+                    oc::MatrixView<u8> share0((u8*)ptr, n, vals.i64Cols() * sizeof(i64));
 
 
                     oc::PRNG* prng = nullptr;
                     oc::Channel* prog, * recv;
                     if (self.getRuntime().mPartyIdx == 1)
                     {
-                        for (u64 j = 0; j < mNodes.mShares[0].size(); j++)
+                        auto s0 = vals.mShares[0].data();
+                        auto s1 = vals.mShares[1].data();
+                        for (u64 j = s; j < e; j++)
                         {
-                            mNodes.mShares[0](j) = mNodes.mShares[0](j) ^ mNodes.mShares[1](j);
+                            s0[j] ^= s1[j];
                         }
                         prng = &mGen.mNextCommon;
                         prog = &comm.mPrev;
@@ -111,17 +193,17 @@ namespace aby3
                         std::swap_ranges(pp, pp + share0.cols(), share0[idx].data());
                     }
 
-                    op.send(*prog, *recv, share0,"");
-                    auto f0 = op.asyncRecv(*prog, *recv, share0,n,"");
+                    op.send(*prog, *recv, share0, "");
+                    auto f0 = op.asyncRecv(*prog, *recv, share0, n, "");
                     comm.mNext.asyncSend(share0);
 
-                    ptr = &mNodes.mShares[1](s, 0);
-                    oc::MatrixView<u8> share1((u8*)ptr, n, mNodes.i64Cols() * sizeof(i64));
+                    ptr = &vals.mShares[1](s, 0);
+                    oc::MatrixView<u8> share1((u8*)ptr, n, vals.i64Cols() * sizeof(i64));
                     auto f1 = comm.mPrev.asyncRecv(share1);
 
                     self.then([
-                        f0 = std::move(f0), 
-                        f1 = std::move(f1)](CommPkg& comm, Sh3Task _)mutable{
+                        f0 = std::move(f0),
+                            f1 = std::move(f1)](CommPkg& comm, Sh3Task _)mutable{
                             f0.get();
                             f1.get();
                         });
@@ -131,99 +213,98 @@ namespace aby3
             default:
                 throw RTE_LOC;
             }
-        }).getClosure();
+            }).getClosure();
     }
 
     void SparseDecisionForest::sampleKeys()
     {
 
-        const auto blockSize = 80;
-        const auto rounds = 13;
-        const auto sboxCount = 14;
-        const auto dataComplex = 30;
-        const auto keySize = 128;
+        //const auto rounds = 13;
+        //const auto sboxCount = 14;
+        //const auto dataComplex = 30;
+        //const auto keySize = 128;
 
-        if (mLowMCCir.mGates.size() == 0)
-        {
-            std::stringstream filename;
-            filename << "./.lowMCCircuit"
-                << "_b" << blockSize
-                << "_r" << rounds
-                << "_d" << dataComplex
-                << "_k" << keySize
-                << ".bin";
+        //if (mLowMCCir.mGates.size() == 0)
+        //{
+        //    std::stringstream filename;
+        //    filename << "./.lowMCCircuit"
+        //        << "_b" << mBlockSize
+        //        << "_r" << rounds
+        //        << "_d" << dataComplex
+        //        << "_k" << keySize
+        //        << ".bin";
 
-            std::ifstream in;
-            in.open(filename.str(), std::ios::in | std::ios::binary);
+        //    std::ifstream in;
+        //    in.open(filename.str(), std::ios::in | std::ios::binary);
 
-            if (in.is_open() == false)
-            {
-                oc::LowMC2<sboxCount, blockSize, keySize, rounds> cipher1(false, 1);
-                cipher1.to_enc_circuit(mLowMCCir);
+        //    if (in.is_open() == false)
+        //    {
+        //        oc::LowMC2<sboxCount, mBlockSize, keySize, rounds> cipher1(false, 1);
+        //        cipher1.to_enc_circuit(mLowMCCir);
 
-                std::ofstream out;
-                out.open(filename.str(), std::ios::trunc | std::ios::out | std::ios::binary);
-                mLowMCCir.levelByAndDepth();
+        //        std::ofstream out;
+        //        out.open(filename.str(), std::ios::trunc | std::ios::out | std::ios::binary);
+        //        mLowMCCir.levelByAndDepth();
 
-                mLowMCCir.writeBin(out);
-            }
-            else
-            {
-                mLowMCCir.readBin(in);
-            }
-            mBlockSize = blockSize;
-        }
+        //        mLowMCCir.writeBin(out);
+        //    }
+        //    else
+        //    {
+        //        mLowMCCir.readBin(in);
+        //    }
+        //}
 
-        mFreatureKey.resize(rounds + 1);
-        mNodeKey.resize(rounds + 1);
-        for (auto& f : mFreatureKey)
-        {
-            f.resize(1, blockSize);
-            mGen.getRandBinaryShare(f);
-        }
-        for (auto& f : mNodeKey)
-        {
-            f.resize(1, blockSize);
-            mGen.getRandBinaryShare(f);
-        }
+        //mFreatureKey.resize(rounds + 1);
+        //mNodeKey.resize(rounds + 1);
+        //for (auto& f : mFreatureKey)
+        //{
+        //    f.resize(1, mBlockSize);
+        //    mGen.getRandBinaryShare(f);
+        //}
+        //for (auto& f : mNodeKey)
+        //{
+        //    f.resize(1, mBlockSize);
+        //    mGen.getRandBinaryShare(f);
+        //}
 
     }
 
     Sh3Task SparseDecisionForest::computeNodeNames(Sh3Task dep)
     {
-        return dep.then([this](Sh3Task self) {
-            
-            mNodeNames.resize(mNodes.rows() * 2, mBlockSize);
-            auto bs = mBlockSize / 8;
-            for (u64 b = 0; b < 2; ++b)
-            {
-                auto sPtr = mNodes.mShares[b].data();
-                auto sStep = mNodes.i64Cols();
-                auto dPtr = mNodeNames.mShares[b].data();
-                auto dStep = mNodeNames.i64Cols();
-                for (u64 j = 0; j < mNodes.rows(); j++)
-                {
+        mNodeNames.resize(mNodes.rows() * 2, mBlockSize);
+        return shuffle(dep, mNodeNames);
 
-                    auto r = ((u8*)sPtr) + mROffset;
-                    auto l = ((u8*)sPtr) + mLOffset;
-                    
-                    std::memcpy(mNodeNames.mShares[b][2 * j + 0].data(), r, bs); dPtr += dStep;
-                    std::memcpy(mNodeNames.mShares[b][2 * j + 1].data(), l, bs); dPtr += dStep;
+        //return dep.then([this](Sh3Task self) {
+        //    auto bs = mBlockSize / 8;
+        //    for (u64 b = 0; b < 2; ++b)
+        //    {
+        //        auto sPtr = mNodes.mShares[b].data();
+        //        auto sStep = mNodes.i64Cols();
+        //        auto dPtr = mNodeNames.mShares[b].data();
+        //        auto dStep = mNodeNames.i64Cols();
+        //        for (u64 j = 0; j < mNodes.rows(); j++)
+        //        {
 
-                    sPtr += sStep;
-                }
-            }
-            
-            mBin.setCir(&mLowMCCir, mNodeNames.rows());
+        //            auto r = ((u8*)sPtr) + mROffset;
+        //            auto l = ((u8*)sPtr) + mLOffset;
 
-            mBin.setInput(0, mNodeNames);
-            for (u64 i = 0; i < mNodeKey.size(); ++i)
-                mBin.setReplicatedInput(i + 1, mNodeKey[i]);
+        //            std::memcpy(mNodeNames.mShares[b][2 * j + 0].data(), r, bs); dPtr += dStep;
+        //            std::memcpy(mNodeNames.mShares[b][2 * j + 1].data(), l, bs); dPtr += dStep;
 
-            mBin.asyncEvaluate(self).then([this](Sh3Task self) {
-                mBin.getOutput(0, mNodeNames);
-                });
-        }).getClosure();
+        //            sPtr += sStep;
+        //        }
+        //    }
+
+        //    mBin.setCir(&mLowMCCir, mNodeNames.rows());
+
+        //    mBin.setInput(0, mNodeNames);
+        //    for (u64 i = 0; i < mNodeKey.size(); ++i)
+        //        mBin.setReplicatedInput(i + 1, mNodeKey[i]);
+
+        //    mBin.asyncEvaluate(self).then([this](Sh3Task self) {
+        //        mBin.getOutput(0, mNodeNames);
+        //        });
+        //    }).getClosure();
     }
 
     Sh3Task SparseDecisionForest::computeFeatureNames(Sh3Task dep)
@@ -250,22 +331,180 @@ namespace aby3
                 }
             }
 
-            mBin.setCir(&mLowMCCir, mFeatureNames.rows());
+            mBin2.setCir(&mLowMCCir, mFeatureNames.rows());
 
-            mBin.setInput(0, mFeatureNames);
+            mBin2.setInput(0, mFeatureNames);
             for (u64 i = 0; i < mNodeKey.size(); ++i)
-                mBin.setReplicatedInput(i + 1, mNodeKey[i]);
+                mBin2.setReplicatedInput(i + 1, mNodeKey[i]);
 
-            mBin.asyncEvaluate(self).then([this](Sh3Task self) {
-                mBin.getOutput(0, mFeatureNames);
+            mBin2.asyncEvaluate(self).then([this](Sh3Task self) {
+                mBin2.getOutput(0, mFeatureNames);
                 });
             }).getClosure();
     }
 
-    Sh3Task SparseDecisionForest::traversTree(Sh3Task dep)
+
+
+        //return dep.then([this](Sh3Task dep) {
+
+
+
+        //    }).getClosure();
+    //void extract(const sbMatrix& src, sbMatrix& dest, span<i64> locs, u64 size, u64 offset = 0)
+    //{
+
+    //}
+    void extract(const sbMatrix& src, sbMatrix& dest, i64Matrix locs, u64 size, u64 offset = 0)
     {
-        return {};
+        //auto l = span<i64>(locs.data(), locs.size());
+        //extract(src, dest, l, size, offset);
+
+        if (dest.rows() != locs.rows())
+            throw RTE_LOC;
+        if (oc::roundUpTo(dest.bitCount(), 8) / 8 != size)
+            throw RTE_LOC;
+        if (oc::roundUpTo(src.bitCount(), 8) / 8 < size + offset)
+            throw RTE_LOC;
+
+        for (u64 b = 0; b < 2; b++)
+        {
+            for (u64 i = 0; i < locs.rows(); ++i)
+            {
+                auto destPtr = dest.mShares[b][i].data();
+                auto srcPtr = ((u8*)src.mShares[b][locs(i,0)].data()) + offset;
+                std::memcpy(destPtr, srcPtr, size);
+            }
+        }
     }
+
+    Sh3Task SparseDecisionForest::getFeatures(Sh3Task dep)
+    {
+        dep =  dep.then([this](Sh3Task self) {
+            mFeatureIdxs.resize(mTreeStartIdx.size() - 1, 2);
+            mTempNextFeatures.resize(mNumTrees, mBlockSize);
+
+            auto bs = mBlockSize / 8;
+            extract(mFeatureNames, mTempNextFeatures, mNodeIdxs, bs);
+
+            }, "getFeatures");
+
+        dep = mEnc.revealAll(dep, mTempNextFeatures, mFeatureIdxs);
+        
+        return dep.then([this](Sh3Task) {
+            for (u64 i = 0; i < mNumTrees; i++)
+                mFeatureIdxs(i, 0) = featureMap(mFeatureIdxs(i, 0));
+            }, "revealFeatures");
+    }
+
+    Sh3Task SparseDecisionForest::compare(Sh3Task dep)
+    {
+        return dep.then([this](Sh3Task self) {
+
+            sbMatrix curFeatures(mNumTrees, mFeatureBitCount);
+            sbMatrix curNodes(mNumTrees, mBlockSize);
+            sbMatrix curLeft(mNumTrees, mBlockSize);
+            sbMatrix curRight(mNumTrees, mBlockSize);
+            auto fSize = (mFeatureBitCount + 7) / 8;
+            auto nSize = (mBlockSize + 7) / 8;
+
+            extract(mFeatures, curFeatures, mFeatureIdxs, fSize);
+            extract(mNodes, curNodes, mNodeIdxs, nSize, mThresholdOffset);
+            extract(mNodes, curLeft, mNodeIdxs, nSize, mLOffset);
+            extract(mNodes, curRight, mNodeIdxs, nSize, mROffset);
+
+            if (mCmpCir.mGates.size() == 0)
+                initCmpCir();
+
+            mBin2.setCir(&mCmpCir, mNumTrees);
+            mBin2.setInput(0, curFeatures);
+            mBin2.setInput(1, curNodes);
+            mBin2.setInput(2, curLeft);
+            mBin2.setInput(3, curRight);
+            mBin2.asyncEvaluate(self).then([this](Sh3Task self) {
+                mTempNodeIdxs.resize(mNumTrees, mBlockSize);
+                mBin2.getOutput(0, mTempNodeIdxs);
+                mEnc.revealAll(self, mTempNodeIdxs, mNodeIdxs).then([this](Sh3Task) {
+
+                    mCmpDone++;
+                    for (u64 i = 0; i < mNodeIdxs.rows(); i++)
+                    {
+                        mNodeIdxs(i, 0) = nodeMap(mNodeIdxs(i, 0));
+                    }
+                    });
+                });
+            //TreeBase::compare(self, curFeatures, curNodes, 1, mCmp, Comparitor::Eq);
+
+            }).getClosure();
+    }
+
+
+    void SparseDecisionForest::initCmpCir()
+    {
+        mCmpCir = {};
+
+        oc::BetaBundle features(mFeatureBitCount);
+        oc::BetaBundle nodes(mBlockSize);
+        oc::BetaBundle left(mBlockSize), right(mBlockSize), out(mBlockSize);
+
+        mCmpCir.addInputBundle(features);
+        mCmpCir.addInputBundle(nodes);
+        mCmpCir.addInputBundle(left);
+        mCmpCir.addInputBundle(right);
+        mCmpCir.addOutputBundle(out);
+
+        oc::BetaBundle cmp(1), temp(1);
+        mCmpCir.addTempWireBundle(cmp);
+        mCmpCir.addTempWireBundle(temp);
+
+        if (mComparitor == Comparitor::Eq)
+        {
+            mLib.int_int_eq_build(mCmpCir, features, nodes, cmp);
+            mLib.int_int_multiplex_build(mCmpCir, right, left, cmp, out, temp);
+        }
+        else
+            throw RTE_LOC;
+    }
+
+    Sh3Task SparseDecisionForest::updateLabel(Sh3Task dep)
+    {
+        return dep.then([this](Sh3Task self) {
+            
+
+            if (mCurLabels.rows() == 0)
+            {
+                auto size = (mNumLabels + 7) / 8;
+                mCurLabels.resize(mNumTrees, mNumLabels);
+                extract(mNodes, mCurLabels, mNodeIdxs, size, mLabelOffset);
+            }
+            else
+            {
+                sbMatrix curIsDummyBits(mNumTrees, 1);
+                extract(mNodes, curIsDummyBits, mNodeIdxs, 1, mIsDummyOffset);
+
+                sbMatrix newLabels(mNumTrees, mNumLabels);
+                auto size = (mNumLabels + 7) / 8;
+                extract(mNodes, newLabels, mNodeIdxs, size, mLabelOffset);
+
+                auto cir = mLib.int_int_multiplex(mNumLabels);
+                mBin.setCir(cir, mNumTrees);
+
+                mBin.setInput(0, mCurLabels);
+                mBin.setInput(1, newLabels);
+                mBin.setInput(2, curIsDummyBits);
+                mBin.asyncEvaluate(self).then([this](Sh3Task) {
+                    mBin.getOutput(0, mCurLabels);
+                    });
+
+            }
+
+            }).getClosure();
+    }
+
+    Sh3Task SparseDecisionForest::vote(Sh3Task dep)
+    {
+        return TreeBase::vote(dep, mCurLabels, mFinalLabel);
+    }
+
 
 
     namespace tests
@@ -359,24 +598,17 @@ namespace aby3
             trees[1].sampleKeys();
             trees[2].sampleKeys();
 
-            trees[0].mBlockSize = blockSize;
-            trees[0].mROffset = blockSize8 * 1;
-            trees[0].mLOffset = blockSize8 * 2;
             trees[0].mFeatureOffset = blockSize8 * 3;
-            trees[1].mBlockSize = blockSize;
-            trees[1].mROffset = blockSize8 * 1;
-            trees[1].mLOffset = blockSize8 * 2;
             trees[1].mFeatureOffset = blockSize8 * 3;
-            trees[2].mBlockSize = blockSize;
-            trees[2].mROffset = blockSize8 * 1;
-            trees[2].mLOffset = blockSize8 * 2;
             trees[2].mFeatureOffset = blockSize8 * 3;
 
 
             trees[0].mNodes = n0;
             trees[1].mNodes = n1;
             trees[2].mNodes = n2;
-
+            trees[0].mTreeStartIdx = treeStartIdx;
+            trees[1].mTreeStartIdx = treeStartIdx;
+            trees[2].mTreeStartIdx = treeStartIdx;
 
             auto t0 = trees[0].computeNodeNames(rts[0]);
             auto t1 = trees[1].computeNodeNames(rts[1]);
@@ -391,6 +623,78 @@ namespace aby3
             run(t0, t1, t2);
 
 
+        }
+        
+        void Sparse_traversTree_test(const oc::CLP& cmd)
+        {
+
+            oc::Timer timer;
+            timer.setTimePoint("...");
+            using namespace oc;
+            IOService ios;
+            std::array<Sh3Runtime, 3> rts;
+            makeRuntimes(rts, ios);
+            PRNG prng(oc::toBlock(cmd.getOr("seed", 0)));
+            SparseDecisionForest trees[3];
+            trees[0].setTimer(timer);
+            u64 numNodes = 100;
+            u64 numTree = 1000;
+            u64 featureCount = 100;
+            u64 depth = 16;
+
+            u64 featureBitCount = 1;
+            u64 thresholdBitCount = 1,
+                isDummySize = 1,
+                numLabels = 10;
+
+            u64 blockSize = 80,
+                nodeNameSize = blockSize,
+                featureNameSize = blockSize,
+                leftRightSize = blockSize;
+
+            u64 cols
+                = oc::roundUpTo(thresholdBitCount, 8)
+                + oc::roundUpTo(featureBitCount, 8)
+                + oc::roundUpTo(isDummySize, 8)
+                + oc::roundUpTo(numLabels, 8)
+                + leftRightSize * 4;
+
+            std::vector<u32> treeStartIdx(numTree + 1);
+            for (u64 i = 0; i < treeStartIdx.size(); i++)
+                treeStartIdx[i] = numTree * i;
+
+            i64Matrix nodes(treeStartIdx.back(), cols);
+            i64Matrix features(featureCount, featureBitCount);
+            std::vector<u8> bits(nodes.size() / 8 + featureCount * featureBitCount / 8 +  2);
+            prng.get(bits.data(), bits.size());
+            auto iter = oc::BitIterator(bits.data(), 0);
+            for (u64 i = 0; i < nodes.size(); i++)
+                nodes(i) = *iter++;
+
+            for (u64 i = 0; i < features.size(); i++)
+                features(i) = *iter++;
+
+            sbMatrix n[3], f[3];
+            share(pack(nodes), cols, n[0], n[1], n[2], prng);
+            share(pack(features), featureBitCount, f[0], f[1], f[2], prng);
+
+            auto gens = makeShareGens();
+            //Sh3Task t[3];
+            for (auto i : { 0, 1, 2 })
+                trees[i].init(depth, treeStartIdx, n[i], featureBitCount, numLabels, rts[i], std::move(gens[i]));
+
+            timer.setTimePoint("init");
+
+
+            std::function<void()> fn[3];
+            for (auto i : { 0, 1, 2 })
+                fn[i] = [&,i]() { trees[i].evaluate(rts[i], f[i]); };
+
+            run(fn[0], fn[1], fn[2]);
+            //run(t[0], t[1], t[2]);
+
+            std::cout << timer << std::endl;
+            std::cout <<"num cmp's "<< trees[0].mCmpDone << std::endl;
         }
     }
 }

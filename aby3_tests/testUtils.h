@@ -16,6 +16,9 @@ namespace aby3
     std::string prettyShare(u64 partyIdx, const si64& v);
     void rand(i64Matrix& A, oc::PRNG& prng);
 
+    void run(std::function<void()> fn0,
+        std::function<void()> fn1,
+        std::function<void()> fn2);
     void run(Sh3Task t0, Sh3Task t1, Sh3Task t2);
 
     std::string bitstr(const i64Matrix& x, u64 w);

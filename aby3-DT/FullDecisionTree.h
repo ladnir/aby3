@@ -1,20 +1,18 @@
 #pragma once
 #include "cryptoTools/Common/Defines.h"
 #include "cryptoTools/Common/CLP.h"
-#include "aby3/sh3/Sh3BinaryEvaluator.h"
 #include "aby3/sh3/Sh3Converter.h"
-#include "cryptoTools/Circuit/BetaLibrary.h"
-
+#include "Common.h"
 namespace aby3
 {
-    class FullDecisionTree
+    class FullDecisionTree : public TreeBase
     {
     public:
-        enum class Comparitor
-        {
-            Eq,
-            Lt
-        };
+        //enum class Comparitor
+        //{
+        //    Eq,
+        //    Lt
+        //};
         void init(
             u64 depth,
             u64 numTrees,
@@ -32,16 +30,12 @@ namespace aby3
             sbMatrix& pred);
 
         CommPkg mDebug;
-        bool mUnitTest = false;
 
         Sh3Task innerProd(Sh3Task dep, const sbMatrix& x, const sbMatrix& y, sbMatrix& z);
-        Sh3Task compare(Sh3Task dep, const sbMatrix& x, const sbMatrix& y, sbMatrix& cmp, Comparitor type);
 
         Sh3Task reduce(Sh3Task dep, const sbMatrix& cmp, const sbMatrix& labels, u64 labelBitCount, sbMatrix& pred);
-        Sh3Task vote(Sh3Task dep, const sbMatrix& pred, sbMatrix& out);
 
         void initReduceCircuit(u64 labelBitCount);
-        void initVotingCircuit(u64 n, u64 bitCount);
 
         u64 mDepth = 0, 
             mNumTrees = 0,
@@ -50,12 +44,8 @@ namespace aby3
             mNodeBitCount = 0,
             mNumLabels = 0;
 
-        oc::BetaCircuit mReduceCir, mVoteCircuit;
-        oc::BetaLibrary mLib;
-        Sh3BinaryEvaluator mBin;
-        Sh3Converter mConv;
+        oc::BetaCircuit mReduceCir;
 
-        si64Matrix mSums;
         //sbMatrix mActive, mOutLabels;
     };
 

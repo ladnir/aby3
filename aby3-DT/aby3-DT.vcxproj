@@ -142,11 +142,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Common.cpp" />
     <ClCompile Include="FullDecisionTree.cpp" />
     <ClCompile Include="SparseDecisionTree.cpp" />
     <ClCompile Include="tests.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Common.h" />
     <ClInclude Include="FullDecisionTree.h" />
     <ClInclude Include="SparseDecisionTree.h" />
     <ClInclude Include="tests.h" />

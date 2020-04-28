@@ -37,21 +37,40 @@ namespace aby3
             m[i].resize(x, y);
     }
 
-    void run(Sh3Task t0, Sh3Task t1, Sh3Task t2)
+    void run(std::function<void()> fn0,
+        std::function<void()> fn1,
+        std::function<void()> fn2)
     {
-        std::thread thrd1 = std::thread([t1]() mutable {
-            oc::setThreadName("p" + std::to_string(t1.getRuntime().mPartyIdx));
-            t1.getRuntime().runUntilTaskCompletes(t1);
+        std::thread thrd1 = std::thread([fn1]() mutable {
+            oc::setThreadName("p1");
+            fn1();
             });
-        std::thread thrd2 = std::thread([t2]() mutable {
-            oc::setThreadName("p" + std::to_string(t2.getRuntime().mPartyIdx));
-            t2.getRuntime().runUntilTaskCompletes(t2);
+        std::thread thrd2 = std::thread([fn2]() mutable {
+            oc::setThreadName("p2");
+            fn2();
             });
 
-        t0.getRuntime().runUntilTaskCompletes(t0);
+        fn0();
 
         thrd1.join();
         thrd2.join();
+    }
+
+    void run(Sh3Task t0, Sh3Task t1, Sh3Task t2)
+    {
+        run(
+            [t0]() mutable {
+                oc::setThreadName("p" + std::to_string(t0.getRuntime().mPartyIdx));
+                t0.getRuntime().runUntilTaskCompletes(t0);
+            },
+            [t1]() mutable {
+                oc::setThreadName("p" + std::to_string(t1.getRuntime().mPartyIdx));
+                t1.getRuntime().runUntilTaskCompletes(t1);
+            },
+            [t2]() mutable {
+                oc::setThreadName("p" + std::to_string(t2.getRuntime().mPartyIdx));
+                t2.getRuntime().runUntilTaskCompletes(t2);
+            });
     }
 
     std::string bitstr(const i64Matrix& x, u64 w)

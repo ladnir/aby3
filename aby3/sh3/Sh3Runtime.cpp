@@ -236,7 +236,8 @@ namespace aby3
 					closure.mClosureCount++;
 					newTask.mUpstreamClosures.push_back(c);
 
-					ss << "   extending " << closure.mIdx << " " << closure.mName << " to " << closure.mClosureCount << "\n";
+					if (mPrint)
+						ss << "   extending " << closure.mIdx << " " << closure.mName << " to " << closure.mClosureCount << "\n";
 				}
 
 				if (mPrint)
@@ -281,6 +282,13 @@ namespace aby3
 
 			runNext();
 		}
+	}
+
+	void Sh3Runtime::cancelTasks()
+	{
+		mTasks.mPushIdx = 0;
+		mTasks.mReadyDeque.clear();
+		mTasks.mTaskMap.clear();
 	}
 
 	void print(TaskDag & tasks)
@@ -381,7 +389,10 @@ namespace aby3
 		for (auto dsPtr : dsTasks)
 		{
 			if (dsPtr->isEvaluated() == false && dsPtr->mIdx != mTasks.mReadyDeque.front())
+			{
+				std::this_thread::sleep_for(std::chrono::seconds(100));
 				throw RTE_LOC;
+			}
 
 			auto iter = std::find(dsPtr->mUpstreamClosures.begin(), dsPtr->mUpstreamClosures.end(), closure.mIdx);
 			if (iter == dsPtr->mUpstreamClosures.end())
