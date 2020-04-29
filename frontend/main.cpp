@@ -9,6 +9,7 @@
 #include <aby3-ML/main-linear.h>
 #include <aby3-ML/main-logistic.h>
 #include "aby3-DT/tests.h"
+#include "aby3-DT/benchmark.h"
 
 #include "cryptoTools/tests_cryptoTools/UnitTests.h"
 #include "cryptoTools/Crypto/PRNG.h"
@@ -48,6 +49,11 @@ int main(int argc, char** argv)
 
 		if (cmd.isSet("dt"))
 		{
+			if (cmd.isSet("sparse"))
+				benchmark_sparse(cmd);
+			//if (cmd.isSet("dense"))
+			//	benchmark_dense(cmd);
+
 			test_DT.runIf(cmd);
 			return 0;
 		}

@@ -324,17 +324,17 @@ namespace aby3
     std::array<Sh3Encryptor, 3> makeEncryptors()
     {
         std::array<Sh3Encryptor, 3> encs;
-        encs[0].init(0, oc::toBlock(0ull), oc::toBlock(1));
+        encs[0].init(0, oc::toBlock(3), oc::toBlock(1));
         encs[1].init(1, oc::toBlock(1), oc::toBlock(2));
-        encs[2].init(2, oc::toBlock(2), oc::toBlock(0ull));
+        encs[2].init(2, oc::toBlock(2), oc::toBlock(3));
         return encs;
     }
     std::array<Sh3ShareGen, 3> makeShareGens()
     {
         std::array<Sh3ShareGen, 3> gens;
-        gens[0].init(oc::toBlock(0ull), oc::toBlock(1));
+        gens[0].init(oc::toBlock(3), oc::toBlock(1));
         gens[1].init(oc::toBlock(1), oc::toBlock(2));
-        gens[2].init(oc::toBlock(2), oc::toBlock(0ull));
+        gens[2].init(oc::toBlock(2), oc::toBlock(3));
         return gens;
     }
     std::array<Sh3Converter, 3> makeConverters(std::array<Sh3Runtime, 3>& rts, std::array<Sh3ShareGen, 3>& gens)

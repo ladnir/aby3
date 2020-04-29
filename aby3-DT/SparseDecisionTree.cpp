@@ -72,7 +72,7 @@ namespace aby3
             //if(dep.getRuntime().mPartyIdx == 0)
             //    dep.getRuntime().mPrint = true;
             getFeatures(dep.getRuntime()).get();
-            setTimePoint("getFeatures " + std::to_string(i));
+            //setTimePoint("getFeatures " + std::to_string(i));
 
             dep.getRuntime().cancelTasks();
 
@@ -80,20 +80,20 @@ namespace aby3
             compare(dep.getRuntime()).get();
 
             dep.getRuntime().cancelTasks();
-            setTimePoint("compare " +std::to_string(i));
+            //setTimePoint("compare " +std::to_string(i));
 
         }
         getFeatures(dep.getRuntime()).get();
         dep.getRuntime().cancelTasks();
         updateLabel(dep.getRuntime()).get();
         dep.getRuntime().cancelTasks();
-        setTimePoint("getFeatures & update ");
+        //setTimePoint("getFeatures & update ");
 
         mConv.init(dep.getRuntime(), mGen);
         vote(dep.getRuntime()).get();
         dep.getRuntime().cancelTasks();
 
-        setTimePoint("vote, done ");
+        setTimePoint("travers, done ");
 
         return dep;
     }
@@ -680,36 +680,26 @@ namespace aby3
                 isDummySize = 1,
                 numLabels = 10;
 
-            u64 blockSize = 80,
-                nodeNameSize = blockSize,
-                featureNameSize = blockSize,
-                leftRightSize = blockSize;
-
             u64 cols
                 = oc::roundUpTo(thresholdBitCount, 8)
                 + oc::roundUpTo(featureBitCount, 8)
                 + oc::roundUpTo(isDummySize, 8)
                 + oc::roundUpTo(numLabels, 8)
-                + leftRightSize * 4;
+                + SparseDecisionForest::mBlockSize * 4;
 
             std::vector<u32> treeStartIdx(numTree + 1);
             for (u64 i = 0; i < treeStartIdx.size(); i++)
                 treeStartIdx[i] = numTree * i;
 
-            i64Matrix nodes(treeStartIdx.back(), cols);
-            i64Matrix features(featureCount, featureBitCount);
-            std::vector<u8> bits(nodes.size() / 8 + featureCount * featureBitCount / 8 +  2);
-            prng.get(bits.data(), bits.size());
-            auto iter = oc::BitIterator(bits.data(), 0);
-            for (u64 i = 0; i < nodes.size(); i++)
-                nodes(i) = *iter++;
+            i64Matrix nodes(treeStartIdx.back(), (cols +63) / sizeof(i64));
+            i64Matrix features(featureCount, (featureBitCount+63) / sizeof(i64));
 
-            for (u64 i = 0; i < features.size(); i++)
-                features(i) = *iter++;
+            prng.get(nodes.data(), nodes.size());
+            prng.get(features.data(), features.size());
 
             sbMatrix n[3], f[3];
-            share(pack(nodes), cols, n[0], n[1], n[2], prng);
-            share(pack(features), featureBitCount, f[0], f[1], f[2], prng);
+            share(nodes, cols, n[0], n[1], n[2], prng);
+            share(features, featureBitCount, f[0], f[1], f[2], prng);
 
             auto gens = makeShareGens();
             //Sh3Task t[3];
