@@ -51,8 +51,8 @@ int main(int argc, char** argv)
 		{
 			if (cmd.isSet("sparse"))
 				benchmark_sparse(cmd);
-			//if (cmd.isSet("dense"))
-			//	benchmark_dense(cmd);
+			if (cmd.isSet("dense"))
+				benchmark_dense(cmd);
 
 			test_DT.runIf(cmd);
 			return 0;

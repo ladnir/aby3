@@ -6,6 +6,13 @@ namespace aby3
 {
     struct Sh3ShareGen
     {
+        Sh3ShareGen clone()
+        {
+            Sh3ShareGen ret;
+            ret.init(mPrevCommon.get(), mNextCommon.get(), mShareBuff.size());
+            return ret;
+        }
+
         void init(block prevSeed, block nextSeed, u64 buffSize = 256)
         {
 			mCommon.SetSeed(oc::toBlock(3488535245, 2454523));

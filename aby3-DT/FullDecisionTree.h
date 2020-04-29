@@ -3,9 +3,10 @@
 #include "cryptoTools/Common/CLP.h"
 #include "aby3/sh3/Sh3Converter.h"
 #include "Common.h"
+#include "cryptoTools/Common/Timer.h"
 namespace aby3
 {
-    class FullDecisionTree : public TreeBase
+    class FullDecisionTree : public TreeBase, public oc::TimerAdapter
     {
     public:
         //enum class Comparitor

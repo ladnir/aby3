@@ -77,10 +77,15 @@ namespace aby3
         state->cmp.resize(mNumTrees, nodesPerTree);
         output.resize(mNumLabels, 1);
 
+        setTimePoint("start");
         dep = innerProd(dep, features, mapping, state->mappedFeatures);
+        setTimePoint("mapped");
         dep = compare(dep, state->mappedFeatures, nodes, nodesPerTree, state->cmp, Comparitor::Eq);
+        setTimePoint("compare");
         dep = reduce(dep, state->cmp, labels, mNumLabels, state->y);
+        setTimePoint("reduce");
         dep = vote(dep, state->y, output).then([state](Sh3Task) {});
+        setTimePoint("vote");
 
         return dep;
     }
