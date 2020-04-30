@@ -43,8 +43,9 @@ namespace aby3
         //sbMatrix mNodeIdxs, mNodeLR, mNodeThreshold, mNodeIsLeaf, mNodeLabel;
         std::vector<u32> mTreeStartIdx;
         i64Matrix mNodeIdxs, mFeatureIdxs;
-        sbMatrix mNodes, mNodeNames, mFeatureNames, mFeatures, mCurLabels, mFinalLabel;
-        static const u64 mBlockSize = 80;
+        sbMatrix mNodes, mFeatures, mCurLabels, mFinalLabel;
+        oc::Matrix<u8> mNodeNames, mFeatureNames;
+        static const u64 mBlockSize = 16;
         static const u64
             mROffset = mBlockSize / 8 * 1,
             mLOffset = mBlockSize / 8 * 2,
@@ -66,7 +67,7 @@ namespace aby3
 
 
         Sh3Task shuffleNodes(Sh3Task dep);
-        Sh3Task shuffle(Sh3Task dep, sbMatrix& vals);
+        Sh3Task shuffle(Sh3Task dep, std::array<oc::MatrixView<u8>, 2> vals);
 
         //void sampleKeys();
         i64 featureMap(i64) { return 0; };
