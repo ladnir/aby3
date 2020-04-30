@@ -30,13 +30,13 @@ namespace aby3
         mGen = std::move(gen);
         mPrng.SetSeed(mGen.mPrivPrng.get());
 
-        mComparitor = Comparitor::Eq;
     }
 
     Sh3Task SparseDecisionForest::evaluate(Sh3Task dep, sbMatrix& features)
     {
         mFeatures = features;
-        
+        mFeatureCount = features.rows();
+
         setTimePoint("start");
         //sampleKeys();
         //setTimePoint("sampleKeys");
@@ -48,13 +48,13 @@ namespace aby3
         //setTimePoint("computeFeatureNames");
         setTimePoint("compute Names");
         dep.getRuntime().cancelTasks();
-        
 
+        shuffleFeatures(dep);
         shuffleNodes(dep.getRuntime()).get();
         dep.getRuntime().cancelTasks();
 
-        setTimePoint("suffle");
-        
+        setTimePoint("shuffle");
+
 
         return traversTree(dep.getRuntime());
     }
@@ -103,26 +103,54 @@ namespace aby3
 
         return dep;
     }
+
+    Sh3Task SparseDecisionForest::shuffleFeatures(Sh3Task dep)
+    {
+        //return dep.then([this](CommPkg& comm, Sh3Task self) {
+        //    if (self.getRuntime().mPartyIdx == 0)
+        //    {
+        //        std::vector<u8> buff(mBlockSize / 8 * mFeatureCount);
+        //        mPrng.get(buff.data(), buff.size());
+        //        comm.mNext.asyncSend(std::move(buff));
+        //    }
+        //    if (self.getRuntime().mPartyIdx == 1)
+        //    {
+        //        std::vector<u8> buff(mBlockSize / 8 * mFeatureCount);
+        //        comm.mPrev.recv(buff);
+        //        }
+        //    });
+        mFeatureStartIdx.resize(mNumTrees+1);
+        for (u64 i = 0; i < mFeatureStartIdx.size(); ++i)
+            mFeatureStartIdx[i] = i * mFeatureCount;
+
+        mFeatures.resize(mFeatureStartIdx.back(), mFeatureBitCount + mBlockSize);
+
+        std::array<oc::MatrixView<u8>, 2> views;
+        views[0] = oc::MatrixView<u8>((u8*)mFeatures.mShares[0].data(), mFeatures.rows(), mFeatures.i64Cols() * sizeof(u64));
+        views[1] = oc::MatrixView<u8>((u8*)mFeatures.mShares[1].data(), mFeatures.rows(), mFeatures.i64Cols() * sizeof(u64));
+        return shuffle(dep, views, mFeatureStartIdx);
+    }
+
     Sh3Task SparseDecisionForest::shuffleNodes(Sh3Task dep)
     {
         std::array<oc::MatrixView<u8>, 2> views;
         views[0] = oc::MatrixView<u8>((u8*)mNodes.mShares[0].data(), mNodes.rows(), mNodes.i64Cols() * sizeof(u64));
         views[1] = oc::MatrixView<u8>((u8*)mNodes.mShares[1].data(), mNodes.rows(), mNodes.i64Cols() * sizeof(u64));
-        return shuffle(dep, views);
+        return shuffle(dep, views, mTreeStartIdx);
     }
 
-    Sh3Task SparseDecisionForest::shuffle(Sh3Task dep, std::array<oc::MatrixView<u8>,2> vals)
+    Sh3Task SparseDecisionForest::shuffle(Sh3Task dep, std::array<oc::MatrixView<u8>, 2> vals, const std::vector<u32>& idxs)
     {
-        return dep.then([this, vals](CommPkg& comm, Sh3Task self) {
+        return dep.then([this, vals,&idxs](CommPkg& comm, Sh3Task self) {
             oc::OblvPermutation op;
             switch (self.getRuntime().mPartyIdx)
             {
             case 0:
             {
-                for (u64 i = 0; i < mTreeStartIdx.size() - 1; ++i)
+                for (u64 i = 0; i < idxs.size() - 1; ++i)
                 {
-                    auto s = mTreeStartIdx[i] + 1;
-                    auto e = mTreeStartIdx[i + 1];
+                    auto s = idxs[i] + 1;
+                    auto e = idxs[i + 1];
                     auto n = e - s;
                     std::vector<u32> perm(n);
 
@@ -158,10 +186,10 @@ namespace aby3
             case 1:
             case 2:
             {
-                for (u64 i = 0; i < mTreeStartIdx.size() - 1; ++i)
+                for (u64 i = 0; i < idxs.size() - 1; ++i)
                 {
-                    auto s = mTreeStartIdx[i] + 1;
-                    auto e = mTreeStartIdx[i + 1];
+                    auto s = idxs[i] + 1;
+                    auto e = idxs[i + 1];
                     auto n = e - s;
                     std::vector<u32> perm(n);
 
@@ -280,8 +308,8 @@ namespace aby3
 
     Sh3Task SparseDecisionForest::computeNodeNames(Sh3Task dep)
     {
-        mNodeNames.resize(mNodes.rows() * 2, mBlockSize/8);
-        return shuffle(dep, { mNodeNames, mNodeNames });
+        mNodeNames.resize(mNodes.rows() * 2, mBlockSize / 8);
+        return shuffle(dep, { mNodeNames, mNodeNames }, mTreeStartIdx);
 
         //return dep.then([this](Sh3Task self) {
         //    auto bs = mBlockSize / 8;
@@ -383,15 +411,15 @@ namespace aby3
 
 
 
-        //return dep.then([this](Sh3Task dep) {
+    //return dep.then([this](Sh3Task dep) {
 
 
 
-        //    }).getClosure();
-    //void extract(const sbMatrix& src, sbMatrix& dest, span<i64> locs, u64 size, u64 offset = 0)
-    //{
+    //    }).getClosure();
+//void extract(const sbMatrix& src, sbMatrix& dest, span<i64> locs, u64 size, u64 offset = 0)
+//{
 
-    //}
+//}
     void extract(const oc::Matrix<u8>& src, sbMatrix& dest, i64Matrix locs, u64 size, u64 offset = 0)
     {
         //auto l = span<i64>(locs.data(), locs.size());
@@ -432,7 +460,7 @@ namespace aby3
             for (u64 i = 0; i < locs.rows(); ++i)
             {
                 auto destPtr = dest.mShares[b][i].data();
-                auto srcPtr = ((u8*)src.mShares[b][locs(i,0)].data()) + offset;
+                auto srcPtr = ((u8*)src.mShares[b][locs(i, 0)].data()) + offset;
                 std::memcpy(destPtr, srcPtr, size);
             }
         }
@@ -440,8 +468,8 @@ namespace aby3
 
     Sh3Task SparseDecisionForest::getFeatures(Sh3Task dep)
     {
-        dep =  dep.then([this](Sh3Task self) {
-            mFeatureIdxs.resize(mTreeStartIdx.size() - 1, (mBlockSize+63)/64);
+        dep = dep.then([this](Sh3Task self) {
+            mFeatureIdxs.resize(mTreeStartIdx.size() - 1, (mBlockSize + 63) / 64);
             mTempNextFeatures.resize(mNumTrees, mBlockSize);
 
             auto bs = mBlockSize / 8;
@@ -450,7 +478,7 @@ namespace aby3
             }, "getFeatures");
 
         dep = mEnc.revealAll(dep, mTempNextFeatures, mFeatureIdxs);
-        
+
         return dep.then([this](Sh3Task) {
             for (u64 i = 0; i < mNumTrees; i++)
                 mFeatureIdxs(i, 0) = featureMap(mFeatureIdxs(i, 0));
@@ -462,14 +490,14 @@ namespace aby3
         return dep.then([this](Sh3Task self) {
 
             sbMatrix curFeatures(mNumTrees, mFeatureBitCount);
-            sbMatrix curNodes(mNumTrees, mBlockSize);
+            sbMatrix curNodes(mNumTrees, mFeatureBitCount);
             sbMatrix curLeft(mNumTrees, mBlockSize);
             sbMatrix curRight(mNumTrees, mBlockSize);
             auto fSize = (mFeatureBitCount + 7) / 8;
             auto nSize = (mBlockSize + 7) / 8;
 
             extract(mFeatures, curFeatures, mFeatureIdxs, fSize);
-            extract(mNodes, curNodes, mNodeIdxs, nSize, mThresholdOffset);
+            extract(mNodes, curNodes, mNodeIdxs, fSize, mThresholdOffset);
             extract(mNodes, curLeft, mNodeIdxs, nSize, mLOffset);
             extract(mNodes, curRight, mNodeIdxs, nSize, mROffset);
 
@@ -504,7 +532,7 @@ namespace aby3
         mCmpCir = {};
 
         oc::BetaBundle features(mFeatureBitCount);
-        oc::BetaBundle nodes(mBlockSize);
+        oc::BetaBundle nodes(mFeatureBitCount);
         oc::BetaBundle left(mBlockSize), right(mBlockSize), out(mBlockSize);
 
         mCmpCir.addInputBundle(features);
@@ -513,23 +541,21 @@ namespace aby3
         mCmpCir.addInputBundle(right);
         mCmpCir.addOutputBundle(out);
 
-        oc::BetaBundle cmp(1), temp(1);
+        oc::BetaBundle cmp(1), temp(2* mFeatureBitCount);
         mCmpCir.addTempWireBundle(cmp);
         mCmpCir.addTempWireBundle(temp);
 
-        if (mComparitor == Comparitor::Eq)
-        {
-            mLib.int_int_eq_build(mCmpCir, features, nodes, cmp);
-            mLib.int_int_multiplex_build(mCmpCir, right, left, cmp, out, temp);
-        }
+        if(mFeatureBitCount == 1)
+            mLib.int_int_bitwiseXor_build(mCmpCir, features, nodes, cmp);
         else
-            throw RTE_LOC;
+            mLib.int_int_add_msb_build_do(mCmpCir, features, nodes, cmp, temp);
+        mLib.int_int_multiplex_build(mCmpCir, right, left, cmp, out, temp);
     }
 
     Sh3Task SparseDecisionForest::updateLabel(Sh3Task dep)
     {
         return dep.then([this](Sh3Task self) {
-            
+
 
             if (mCurLabels.rows() == 0)
             {
@@ -685,7 +711,7 @@ namespace aby3
 
 
         }
-        
+
         void Sparse_traversTree_test(const oc::CLP& cmd)
         {
 
@@ -719,8 +745,8 @@ namespace aby3
             for (u64 i = 0; i < treeStartIdx.size(); i++)
                 treeStartIdx[i] = numTree * i;
 
-            i64Matrix nodes(treeStartIdx.back(), (cols +63) / sizeof(i64));
-            i64Matrix features(featureCount, (featureBitCount+63) / sizeof(i64));
+            i64Matrix nodes(treeStartIdx.back(), (cols + 63) / sizeof(i64));
+            i64Matrix features(featureCount, (featureBitCount + 63) / sizeof(i64));
 
             prng.get(nodes.data(), nodes.size());
             prng.get(features.data(), features.size());
@@ -739,13 +765,13 @@ namespace aby3
 
             std::function<void()> fn[3];
             for (auto i : { 0, 1, 2 })
-                fn[i] = [&,i]() { trees[i].evaluate(rts[i], f[i]); };
+                fn[i] = [&, i]() { trees[i].evaluate(rts[i], f[i]); };
 
             run(fn[0], fn[1], fn[2]);
             //run(t[0], t[1], t[2]);
 
             std::cout << timer << std::endl;
-            std::cout <<"num cmp's "<< trees[0].mCmpDone << std::endl;
+            std::cout << "num cmp's " << trees[0].mCmpDone << std::endl;
         }
     }
 }

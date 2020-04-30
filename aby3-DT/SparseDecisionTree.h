@@ -35,13 +35,12 @@ namespace aby3
 
         Sh3Task evaluate(Sh3Task dep, sbMatrix& features);
 
-        Comparitor mComparitor;
         Sh3Encryptor mEnc;
         Sh3BinaryEvaluator mBin2;
         Sh3ShareGen mGen;
         oc::PRNG mPrng;
         //sbMatrix mNodeIdxs, mNodeLR, mNodeThreshold, mNodeIsLeaf, mNodeLabel;
-        std::vector<u32> mTreeStartIdx;
+        std::vector<u32> mTreeStartIdx, mFeatureStartIdx;
         i64Matrix mNodeIdxs, mFeatureIdxs;
         sbMatrix mNodes, mFeatures, mCurLabels, mFinalLabel;
         oc::Matrix<u8> mNodeNames, mFeatureNames;
@@ -66,8 +65,9 @@ namespace aby3
         void initCmpCir();
 
 
+        Sh3Task shuffleFeatures(Sh3Task dep);
         Sh3Task shuffleNodes(Sh3Task dep);
-        Sh3Task shuffle(Sh3Task dep, std::array<oc::MatrixView<u8>, 2> vals);
+        Sh3Task shuffle(Sh3Task dep, std::array<oc::MatrixView<u8>, 2> vals, const std::vector<u32>&);
 
         //void sampleKeys();
         i64 featureMap(i64) { return 0; };

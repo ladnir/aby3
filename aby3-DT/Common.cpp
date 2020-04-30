@@ -9,8 +9,7 @@ namespace aby3
         const sbMatrix& features,
         const sbMatrix& nodes,
         u64 nodesPerTree,
-        sbMatrix& cmp,
-        Comparitor type)
+        sbMatrix& cmp)
     {
         // features: (nodesPerTree * numSums) x featureBitCount
         // nodes:    (nodesPerTree * numSums) x nodeBitCount
@@ -23,19 +22,53 @@ namespace aby3
         u64 featureBitCount = features.mBitCount;
         u64 nodeBitCount = nodes.mBitCount;
 
-        cmp.resize(features.rows(), 1);
 
-        if (type == Comparitor::Eq)
+        if (featureBitCount != nodeBitCount)
+            throw std::runtime_error("mis match bit count. " LOCATION);
+
+
+        if (featureBitCount == 1)
         {
-            if (featureBitCount != nodeBitCount)
-                throw std::runtime_error("mis match bit count. " LOCATION);
+            cmp.resize(numTrees, nodesPerTree);
+            for (u64 b = 0; b < 2; ++b)
+            {
+                for (u64 i = 0, ii = 0, jj = 0; i < numTrees; ++i)
+                {
+                    for (u64 j = 0; j < nodesPerTree;)
+                    {
+                        auto min = std::min<u64>(nodesPerTree - j, 64);
+                        j += min;
+                        i64 sum = 0;
+                        for (u64 k = 0; k < min; ++k, ++ii)
+                        {
 
 
-            auto cir = mLib.int_eq(featureBitCount);
+                            sum |= ((1 ^ nodes.mShares[b](ii) ^ features.mShares[b](ii)) & 1) << k;
+                        }
+
+                        cmp.mShares[b](jj) = sum;
+                        ++jj;
+                    }
+
+                    if (ii > nodes.i64Size())
+                        throw RTE_LOC;
+                    if (ii > features.i64Size())
+                        throw RTE_LOC;
+                    if (jj > cmp.i64Size())
+                        throw RTE_LOC;
+                }
+            }
+            return dep;
+            //cir = mLib.int_eq(featureBitCount);
+        }
+        else
+        {
+            auto cir = mLib.int_int_add_msb(featureBitCount);
+            cmp.resize(features.rows(), 1);
+
             mBin.setCir(cir, features.rows());
             mBin.setInput(0, features);
             mBin.setInput(1, nodes);
-
             return mBin.asyncEvaluate(dep).then([&, numTrees, nodesPerTree](Sh3Task self) {
                 mBin.getOutput(0, cmp);
 
@@ -72,8 +105,6 @@ namespace aby3
                 });
 
         }
-        else
-            throw std::runtime_error("not impl. " LOCATION);
     }
 
 

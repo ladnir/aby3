@@ -80,7 +80,7 @@ namespace aby3
         setTimePoint("start");
         dep = innerProd(dep, features, mapping, state->mappedFeatures);
         setTimePoint("mapped");
-        dep = compare(dep, state->mappedFeatures, nodes, nodesPerTree, state->cmp, Comparitor::Eq);
+        dep = compare(dep, state->mappedFeatures, nodes, nodesPerTree, state->cmp);
         setTimePoint("compare");
         dep = reduce(dep, state->cmp, labels, mNumLabels, state->y);
         setTimePoint("reduce");
@@ -367,10 +367,8 @@ namespace aby3
         }
 
 
-        void compare(i64Matrix& features, i64Matrix& nodes, i64Matrix& cmp, FullDecisionTree::Comparitor type)
+        void compare(i64Matrix& features, i64Matrix& nodes, i64Matrix& cmp)
         {
-            if (type != FullDecisionTree::Comparitor::Eq)
-                throw std::runtime_error(LOCATION);
 
             for (u64 i = 0; i < features.size(); ++i)
             {
@@ -397,7 +395,6 @@ namespace aby3
             u64 nodeBitCount = 1;
             u64 featureBitCount = 1;
             u64 numLabels = 1;
-            auto type = FullDecisionTree::Comparitor::Eq;
 
             trees[0].init(d, n, numFeatures, featureBitCount, nodeBitCount, numLabels, rts[0], conv[0]);
             trees[1].init(d, n, numFeatures, featureBitCount, nodeBitCount, numLabels, rts[1], conv[1]);
@@ -417,7 +414,7 @@ namespace aby3
             }
 
             i64Matrix cmp(n, nodesPerTree), cmp2;
-            compare(mappedFeatures, nodes, cmp, type);
+            compare(mappedFeatures, nodes, cmp);
 
 
             sbMatrix f0, f1, f2, n0, n1, n2, c0, c1, c2;
@@ -426,9 +423,9 @@ namespace aby3
             share(pack(nodes), nodeBitCount, n0, n1, n2, prng);
 
 
-            auto t0 = trees[0].compare(rts[0], f0, n0, nodesPerTree, c0, type);
-            auto t1 = trees[1].compare(rts[1], f1, n1, nodesPerTree, c1, type);
-            auto t2 = trees[2].compare(rts[2], f2, n2, nodesPerTree, c2, type);
+            auto t0 = trees[0].compare(rts[0], f0, n0, nodesPerTree, c0);
+            auto t1 = trees[1].compare(rts[1], f1, n1, nodesPerTree, c1);
+            auto t2 = trees[2].compare(rts[2], f2, n2, nodesPerTree, c2);
 
             run(t0, t1, t2);
 
@@ -528,7 +525,6 @@ namespace aby3
             u64 nodesPerTree = (1ull << d) - 1;
             u64 numLeaves = (1ull << d);
             u64 numLabels = 100;
-            auto type = FullDecisionTree::Comparitor::Eq;
 
             trees[0].init(d, n, numFeatures, featureBitCount, nodeBitCount, numLabels, rts[0], conv[0]);
             trees[1].init(d, n, numFeatures, featureBitCount, nodeBitCount, numLabels, rts[1], conv[1]);

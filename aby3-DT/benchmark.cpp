@@ -54,6 +54,7 @@ namespace aby3
         u64 depth,
         u64 numLabels,
         u64 numFeatures,
+        u64 featureBC,
         std::string tag,
         bool verbose)
     {
@@ -81,6 +82,7 @@ namespace aby3
                 std::cout << "depth        " << depth << std::endl;
                 std::cout << "numLabels    " << numLabels << std::endl;
                 std::cout << "numFeatures  " << numFeatures << std::endl;
+                std::cout << "featureBC    " << featureBC << std::endl;
                 std::cout << timer << std::endl;
 
                 for (u64 i = 0; i < bt.size(); i++)
@@ -100,6 +102,7 @@ namespace aby3
                 std::cout << " d " << std::setw(6) << std::setfill(' ') << depth;
                 std::cout << " l " << std::setw(6) << std::setfill(' ') << numLabels;
                 std::cout << " f " << std::setw(6) << std::setfill(' ') << numFeatures;
+                std::cout << " bc " << std::setw(6) << std::setfill(' ') << featureBC;
                 std::cout << " t " << std::setw(6) << std::setfill(' ') << time;
                 std::cout << " c " << std::setw(6) << std::setfill(' ') << bt[0][0] << std::endl;
             }
@@ -158,16 +161,17 @@ namespace aby3
             auto depth = params[2];
             auto numLabels = params[3];
             auto numFeatures = params[4];
+            auto featureBC = params[5];
 
 
             std::vector<u32> startIdx(numTrees + 1);
             for (u64 i = 0; i < startIdx.size(); i++)
                 startIdx[i] = i * nodesPerTree;
 
-            u64 featureBC = 1;
             u64 nodeSize =
                 SparseDecisionForest::mBlockSize * 4 +
-                3 * 8 +
+                2 * 8 +
+                oc::roundUpTo(featureBC, 8)+
                 oc::roundUpTo(numLabels, 8);
 
 
@@ -203,7 +207,7 @@ namespace aby3
 
             timer.setTimePoint("done");
             auto tag = "sparse";
-            printStats(partyIdx, comm, timer, numTrees, nodesPerTree, depth, numLabels, numFeatures, tag, verbose);
+            printStats(partyIdx, comm, timer, numTrees, nodesPerTree, depth, numLabels, numFeatures,featureBC, tag, verbose);
         }
     }
 
@@ -214,7 +218,6 @@ namespace aby3
         Indexer idx,
         bool verbose)
     {
-        u64 featureBC = 1;
 
         Sh3ShareGen gen;
         CommPkg comm;
@@ -252,6 +255,7 @@ namespace aby3
             auto depth = params[1];
             auto numLabels = params[2];
             auto numFeatures = params[3];
+            u64 featureBC = params[4];
 
             Sh3Runtime rt;
             rt.init(partyIdx, comm);
@@ -291,7 +295,7 @@ namespace aby3
 
             auto nodesPerTree = 1ull << depth;
             auto tag = "dense ";
-            printStats(partyIdx, comm, timer, numTrees, nodesPerTree, depth, numLabels, numFeatures, tag, verbose);
+            printStats(partyIdx, comm, timer, numTrees, nodesPerTree, depth, numLabels, numFeatures, featureBC, tag, verbose);
         }
 
     }
@@ -303,14 +307,15 @@ namespace aby3
         auto vecNumTrees = cmd.getManyOr<u64>("numTrees", { 400 });
         auto vecDepth = cmd.getManyOr<u64>("depth", { 6 });
         auto vecNumLabels = cmd.getManyOr<u64>("numLabels", { 8 });
-        auto vecNumFeatures = cmd.getManyOr<u64>("numFeature", { 100 });
+        auto vecNumFeatures = cmd.getManyOr<u64>("numFeatures", { 100 });
+        auto vecFeaturesBC = cmd.getManyOr<u64>("featureBC", { 1 });
         bool verbose = cmd.isSet("v");
 
         auto p = cmd.getManyOr<u64>("p", { 0,1,2 });
         std::vector<std::string> ip = cmd.getManyOr<std::string>("ip", { "127.0.0.1:1212" });
         while (ip.size() < p.size())
             ip.push_back(ip.back());
-        Indexer idx({ vecNumTrees, vecDepth, vecNumLabels, vecNumFeatures });
+        Indexer idx({ vecNumTrees, vecDepth, vecNumLabels, vecNumFeatures, vecFeaturesBC });
 
 
         IOService ios;
@@ -338,14 +343,15 @@ namespace aby3
         auto vecNodesPer = cmd.getManyOr<u64>("nodesPer", { 400 });
         auto vecDepth = cmd.getManyOr<u64>("depth", { 20 });
         auto vecNumLabels = cmd.getManyOr<u64>("numLabels", { 8 });
-        auto vecNumFeatures = cmd.getManyOr<u64>("numFeature", { 100 });
+        auto vecNumFeatures = cmd.getManyOr<u64>("numFeatures", { 100 });
+        auto vecFeaturesBC = cmd.getManyOr<u64>("featureBC", { 1 });
         bool verbose = cmd.isSet("v");
 
         auto p = cmd.getManyOr<u64>("p", { 0,1,2 });
         std::vector<std::string> ip = cmd.getManyOr<std::string>("ip", { "127.0.0.1:1212" });
         while (ip.size() < p.size())
             ip.push_back(ip.back());
-        Indexer idx({ vecNumTrees, vecNodesPer, vecDepth, vecNumLabels, vecNumFeatures });
+        Indexer idx({ vecNumTrees, vecNodesPer, vecDepth, vecNumLabels, vecNumFeatures, vecFeaturesBC });
 
         IOService ios;
         std::vector<std::thread> thrds;

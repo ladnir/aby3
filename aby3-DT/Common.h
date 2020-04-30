@@ -9,18 +9,17 @@ namespace aby3
     class TreeBase
     {
     public:
-        enum class Comparitor
-        {
-            Eq,
-            Lt
-        };
+        //enum class Comparitor
+        //{
+        //    Eq,
+        //    Lt
+        //};
         Sh3Task compare(
             Sh3Task dep, 
             const sbMatrix& x, 
             const sbMatrix& y,
             u64 nodesPerTree,
-            sbMatrix& cmp,
-            Comparitor type);
+            sbMatrix& cmp);
 
 
         Sh3Task vote(Sh3Task dep, const sbMatrix& pred, sbMatrix& out);
