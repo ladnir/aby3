@@ -42,7 +42,7 @@ namespace aby3
         //sbMatrix mNodeIdxs, mNodeLR, mNodeThreshold, mNodeIsLeaf, mNodeLabel;
         std::vector<u32> mTreeStartIdx, mFeatureStartIdx;
         i64Matrix mNodeIdxs, mFeatureIdxs;
-        sbMatrix mNodes, mFeatures, mCurLabels, mFinalLabel;
+        sbMatrix mNodes, mFeatures, mCurLabels, mFinalLabel, mFeatureMap, mFeatureNames2;
         oc::Matrix<u8> mNodeNames, mFeatureNames;
         static const u64 mBlockSize = 16;
         static const u64

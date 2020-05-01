@@ -22,6 +22,12 @@ namespace aby3
             sbMatrix& cmp);
 
 
+
+        Sh3Task innerProd(
+            Sh3Task dep,
+            const sbMatrix& X,
+            const sbMatrix& Y,
+            sbMatrix& ret);
         Sh3Task vote(Sh3Task dep, const sbMatrix& pred, sbMatrix& out);
         void initVotingCircuit(u64 n, u64 bitCount);
 

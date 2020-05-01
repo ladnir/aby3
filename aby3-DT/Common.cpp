@@ -4,6 +4,84 @@
 namespace aby3
 {
 
+    u8 parity(u64 x)
+    {
+        u8* ptr = (u8*)&x;
+
+        u8 v = 0;
+        for (u64 i = 0; i < sizeof(u64); ++i)
+            v = v ^ ptr[i];
+
+        u8 ret = 0;
+        for (u64 i = 0; i < 8; ++i)
+            ret = ret ^ (v >>= 1);
+
+        return ret & 1;
+    }
+
+    Sh3Task TreeBase::innerProd(
+        Sh3Task dep,
+        const sbMatrix& X,
+        const sbMatrix& Y,
+        sbMatrix& ret)
+    {
+        return dep.then(Sh3Task::RoundFunc([&](CommPkg& comm, Sh3Task self) {
+            //C[0]
+            //    = A[0] * B[0]
+            //    + A[0] * B[1]
+            //    + A[1] * B[0]
+            //    + mShareGen.getShare();
+
+            //comm.mNext.asyncSendCopy(C[0]);
+            //auto fu = comm.mPrev.asyncRecv(C[1]).share();
+
+            //self.then([fu = std::move(fu)](CommPkg& comm, Sh3Task& self){
+            //    fu.get();
+            //});
+
+            u64 n = X.rows();
+            u64 m = Y.rows();
+            u64 w = X.mBitCount;
+            u64 w64 = X.i64Cols();
+
+            if (Y.mBitCount != w)
+                throw std::runtime_error("bad inner dimension");
+
+            ret.resize(n, m);
+
+            for (u64 i = 0; i < n; ++i)
+            {
+                auto xx0 = X.mShares[0][i];
+                auto xx1 = X.mShares[1][i];
+                auto zz0 = oc::BitIterator((u8*)ret.mShares[0][i].data(), 0);
+                for (u64 j = 0; j < m; ++j)
+                {
+                    auto yy0 = Y.mShares[0][j];
+                    auto yy1 = Y.mShares[1][j];
+
+                    i64 sum = 0;
+                    for (u64 k = 0; k < w64; ++k)
+                    {
+                        sum = sum
+                            ^ xx0[k] & yy0[k]
+                            ^ xx0[k] & yy1[k]
+                            ^ xx1[k] & yy0[k];
+                    }
+                    *zz0++ = parity(sum);
+                }
+            }
+
+
+            comm.mNext.asyncSendCopy(ret.mShares[0]);
+            auto fu = comm.mPrev.asyncRecv(ret.mShares[1]).share();
+
+            self.then([fu = std::move(fu)](CommPkg& comm, Sh3Task& self) {
+                fu.get();
+            });
+
+            })).getClosure();
+    }
+
 
     Sh3Task  TreeBase::compare(Sh3Task dep,
         const sbMatrix& features,

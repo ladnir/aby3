@@ -262,9 +262,9 @@ namespace aby3
             auto nodesPer = (1ull << depth) - 1;
             auto numLeaves = 1ull << depth;
             sbMatrix nodes(nodesPer * numTrees, featureBC);
-            sbMatrix features(1, numFeatures * featureBC);
+            sbMatrix features(featureBC, numFeatures);
             sbMatrix leaves(numTrees, numLeaves * numLabels);
-            sbMatrix mapping(nodesPer, featureBC * numFeatures);
+            sbMatrix mapping(nodesPer * numTrees, numFeatures);
             sbMatrix out;
 
             FullDecisionTree trees;

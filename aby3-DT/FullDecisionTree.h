@@ -32,7 +32,7 @@ namespace aby3
 
         CommPkg mDebug;
 
-        Sh3Task innerProd(Sh3Task dep, const sbMatrix& x, const sbMatrix& y, sbMatrix& z);
+        //Sh3Task innerProd(Sh3Task dep, const sbMatrix& x, const sbMatrix& y, sbMatrix& z);
 
         Sh3Task reduce(Sh3Task dep, const sbMatrix& cmp, const sbMatrix& labels, u64 labelBitCount, sbMatrix& pred);
 

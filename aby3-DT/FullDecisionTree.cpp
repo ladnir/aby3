@@ -50,9 +50,9 @@ namespace aby3
         u64 nodesPerTree = (1ull << mDepth) - 1;
         u64 numLeaves = 1ull << mDepth;
 
-        if (features.rows() != 1)
+        if (features.rows() != mFeatureBitCount)
             throw RTE_LOC;
-        if (features.bitCount() != mFeatureCount * mFeatureBitCount)
+        if (features.bitCount() != mFeatureCount)
             throw RTE_LOC;
         if (nodes.rows() != mNumTrees * nodesPerTree)
             throw RTE_LOC;
@@ -62,9 +62,9 @@ namespace aby3
             throw RTE_LOC;
         if (labels.bitCount() != numLeaves * mNumLabels)
             throw RTE_LOC;
-        if (mapping.rows() != nodesPerTree)
+        if (mapping.rows() != nodesPerTree * mNumTrees)
             throw RTE_LOC;
-        if (mapping.bitCount() != mFeatureCount * mFeatureBitCount)
+        if (mapping.bitCount() != mFeatureCount )
             throw RTE_LOC;
 
         struct State {
@@ -90,20 +90,6 @@ namespace aby3
         return dep;
     }
 
-    u8 parity(u64 x)
-    {
-        u8* ptr = (u8*)&x;
-
-        u8 v = 0;
-        for (u64 i = 0; i < sizeof(u64); ++i)
-            v = v ^ ptr[i];
-
-        u8 ret = 0;
-        for (u64 i = 0; i < 8; ++i)
-            ret = ret ^ (v >>= 1);
-
-        return ret & 1;
-    }
 
     Sh3Task FullDecisionTree::reduce(
         Sh3Task dep,
@@ -213,69 +199,7 @@ namespace aby3
     }
 
 
-
-    Sh3Task FullDecisionTree::innerProd(
-        Sh3Task dep,
-        const sbMatrix& X,
-        const sbMatrix& Y,
-        sbMatrix& ret)
-    {
-        return dep.then(Sh3Task::RoundFunc([&](CommPkg& comm, Sh3Task self) {
-            //C[0]
-            //    = A[0] * B[0]
-            //    + A[0] * B[1]
-            //    + A[1] * B[0]
-            //    + mShareGen.getShare();
-
-            //comm.mNext.asyncSendCopy(C[0]);
-            //auto fu = comm.mPrev.asyncRecv(C[1]).share();
-
-            //self.then([fu = std::move(fu)](CommPkg& comm, Sh3Task& self){
-            //    fu.get();
-            //});
-
-            u64 n = X.rows();
-            u64 m = Y.rows();
-            u64 w = X.mBitCount;
-            u64 w64 = X.i64Cols();
-
-            if (Y.mBitCount != w)
-                throw std::runtime_error("bad inner dimension");
-
-            ret.resize(n, m);
-
-            for (u64 i = 0; i < n; ++i)
-            {
-                auto xx0 = X.mShares[0][i];
-                auto xx1 = X.mShares[1][i];
-                auto zz0 = oc::BitIterator((u8*)ret.mShares[0][i].data(), 0);
-                for (u64 j = 0; j < m; ++j)
-                {
-                    auto yy0 = Y.mShares[0][j];
-                    auto yy1 = Y.mShares[1][j];
-
-                    i64 sum = 0;
-                    for (u64 k = 0; k < w64; ++k)
-                    {
-                        sum = sum
-                            ^ xx0[k] & yy0[k]
-                            ^ xx0[k] & yy1[k]
-                            ^ xx1[k] & yy0[k];
-                    }
-                    *zz0++ = parity(sum);
-                }
-            }
-
-
-            comm.mNext.asyncSendCopy(ret.mShares[0]);
-            auto fu = comm.mPrev.asyncRecv(ret.mShares[1]).share();
-
-            self.then([fu = std::move(fu)](CommPkg& comm, Sh3Task& self) {
-                fu.get();
-            });
-
-            })).getClosure();
-    }
+    u8 parity(u64 x);
 
 
 
@@ -731,10 +655,10 @@ namespace aby3
             std::array<sbMatrix, 3> n, f, m, l, o;
 
 
-            resize(f, 1, featureCount * featureBitCount);
+            resize(f, featureBitCount, featureCount);
             resize(n, numTrees * nodesPerTree, nodeBitCount);
             resize(l, numTrees, numLeaves * numLabels);
-            resize(m, nodesPerTree, featureCount * featureBitCount);
+            resize(m, numTrees* nodesPerTree, featureCount);
 
             auto t0 = trees[0].evaluate(rts[0], n[0], f[0], m[0], l[0], o[0]);
             auto t1 = trees[1].evaluate(rts[1], n[1], f[1], m[1], l[1], o[1]);

@@ -346,9 +346,16 @@ namespace aby3
 
     Sh3Task SparseDecisionForest::computeFeatureNames(Sh3Task dep)
     {
+
+        //if (mFeatures.rows() != mFeatureBitCount)
+        //    throw RTE_LOC;
+        mFeatures.resize(mFeatureBitCount, mFeatureCount);
+        mFeatureNames.resize(mNodes.rows(), mBlockSize / 8);
+        mFeatureMap.resize(mNodes.rows(), mFeatureCount);
+        return innerProd(dep, mFeatures, mFeatureMap, mFeatureNames2);
+
         return dep.then([this](CommPkg& comm, Sh3Task self) {
 
-            mFeatureNames.resize(mNodes.rows(), mBlockSize / 8);
 
             switch (self.getRuntime().mPartyIdx)
             {
@@ -702,6 +709,14 @@ namespace aby3
             auto t2 = trees[2].computeNodeNames(rts[2]);
 
             run(t0, t1, t2);
+
+            trees[0].mFeatureBitCount = 10;
+            trees[0].mFeatureCount = 100;
+            trees[1].mFeatureBitCount = 10;
+            trees[1].mFeatureCount = 100;
+            trees[2].mFeatureBitCount = 10;
+            trees[2].mFeatureCount = 100;
+            
 
             t0 = trees[0].computeFeatureNames(rts[0]);
             t1 = trees[1].computeFeatureNames(rts[1]);
