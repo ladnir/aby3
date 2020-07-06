@@ -22,6 +22,7 @@
     <ClCompile Include="sh3\Sh3Types.cpp" />
     <ClCompile Include="OT\SharedOT.cpp" />
     <ClCompile Include="sh3\Sh3Encryptor.cpp" />
+    <ClCompile Include="Common\Task.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Circuit\CircuitLibrary.h" />
@@ -37,6 +38,7 @@
     <ClInclude Include="sh3\Sh3Runtime.h" />
     <ClInclude Include="OT\SharedOT.h" />
     <ClInclude Include="sh3\Sh3Encryptor.h" />
+    <ClInclude Include="Common\Task.h" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="..\..\libOTe\cryptoTools\cryptoTools\gsl\GSL.natvis" />

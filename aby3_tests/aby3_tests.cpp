@@ -3,8 +3,10 @@
 oc::TestCollection aby3_tests([](oc::TestCollection& tc) {
     
     tc.add("BetaCircuit_int_Sh3Piecewise_Test       ", BetaCircuit_int_Sh3Piecewise_Test);
-                                                             
-	tc.add("Sh3_Runtime_schedule_test               ", Sh3_Runtime_schedule_test);
+                
+    tc.add("Task_schedule_test                      ", Task_schedule_test);
+    tc.add("Sh3_Runtime_schedule_test               ", Sh3_Runtime_schedule_test); 
+    tc.add("Sh3_Runtime_repeatInput_test            ", Sh3_Runtime_repeatInput_test);
     tc.add("Sh3_trim_test                           ", Sh3_trim_test);
     tc.add("Sh3_Encryptor_IO_test                   ", Sh3_Encryptor_IO_test);
     tc.add("Sh3_Encryptor_asyncIO_test              ", Sh3_Encryptor_asyncIO_test);
