@@ -373,7 +373,7 @@ void lowMC_BinFileCircuit_test() {
             std::cout << "o " << c2 << std::endl;
             std::cout << "O " << outputs[0] << std::endl;
 
-            throw UnitTestFail();
+            throw UnitTestFail(LOCATION);
         }
     }
 }

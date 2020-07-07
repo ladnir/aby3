@@ -109,7 +109,7 @@ namespace aby3
 
         return dep.then([this, &m, &ret](CommPkg& comm, Sh3Task& self) {
 
-            oc::lout << self.mRuntime->mPartyIdx << " localIntMatrix" << std::endl;
+            //oc::lout << self.mRuntime->mPartyIdx << " localIntMatrix" << std::endl;
 
             if (ret.cols() != static_cast<u64>(m.cols()) ||
                 ret.size() != static_cast<u64>(m.size()))
@@ -121,7 +121,7 @@ namespace aby3
             auto fu = comm.mPrev.asyncRecv(ret.mShares[1].data(), ret.mShares[1].size());
 
             self.then([fu = std::move(fu)](CommPkg& comm, Sh3Task& self)mutable{
-                oc::lout << self.mRuntime->mPartyIdx << " localIntMatrix 2" << std::endl;
+                //oc::lout << self.mRuntime->mPartyIdx << " localIntMatrix 2" << std::endl;
                 fu.get();
             });
         }).getClosure();
@@ -141,7 +141,7 @@ namespace aby3
     Sh3Task Sh3Encryptor::remoteIntMatrix(Sh3Task dep, si64Matrix & ret)
     {
         return dep.then([this, &ret](CommPkg& comm, Sh3Task& self) {
-            oc::lout << self.mRuntime->mPartyIdx << " remoteIntMatrix 1" << std::endl;
+            //oc::lout << self.mRuntime->mPartyIdx << " remoteIntMatrix 1" << std::endl;
 
             for (i64 i = 0; i < ret.mShares[0].size(); ++i)
                 ret.mShares[0](i) = mShareGen.getShare();
@@ -150,7 +150,7 @@ namespace aby3
             auto fu = comm.mPrev.asyncRecv(ret.mShares[1].data(), ret.mShares[1].size());
 
             self.then([fu = std::move(fu)](CommPkg& comm, Sh3Task& self) mutable {
-                oc::lout << self.mRuntime->mPartyIdx << " remoteIntMatrix 2" << std::endl;
+                //oc::lout << self.mRuntime->mPartyIdx << " remoteIntMatrix 2" << std::endl;
                 fu.get();
             });
         }).getClosure();
@@ -375,7 +375,7 @@ namespace aby3
     Sh3Task Sh3Encryptor::reveal(Sh3Task dep, const si64Matrix& x, i64Matrix& dest)
     {
         return dep.then([&x, &dest](CommPkg& comm, Sh3Task& self) {
-            oc::lout << self.mRuntime->mPartyIdx << " reveal recv" << std::endl;
+            //oc::lout << self.mRuntime->mPartyIdx << " reveal recv" << std::endl;
             dest.resize(x.rows(), x.cols());
             comm.mNext.recv(dest.data(), dest.size());
             dest += x.mShares[0];
@@ -395,7 +395,7 @@ namespace aby3
         bool send = ((mPartyIdx + 2) % 3) == partyIdx;
         return dep.then([send, &x](CommPkg& comm, Sh3Task& self) {
 
-            oc::lout << self.mRuntime->mPartyIdx << " reveal Send" << std::endl;
+            //oc::lout << self.mRuntime->mPartyIdx << " reveal Send" << std::endl;
 
             if (send)
                 comm.mPrev.asyncSendCopy(x.mShares[0].data(), x.mShares[0].size());
