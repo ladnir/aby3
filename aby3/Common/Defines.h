@@ -1,5 +1,11 @@
 #pragma once
 #include <cryptoTools/Common/Defines.h>
+#include <cryptoTools/Common/Version.h>
+
+#if CRYPTO_TOOLS_VERSION < 10503
+static_assert(0, "update cryptoTools / libOTe")
+#endif
+
 #define _WIN32_WINNT 0x0501
 namespace aby3
 {
