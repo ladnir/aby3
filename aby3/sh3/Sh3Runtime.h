@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <string>
 #include <unordered_set>
+#include "aby3/Common/Task.h"
 
 namespace aby3
 {
@@ -74,93 +75,54 @@ namespace aby3
 		Sh3TaskBase(Sh3TaskBase&&) = default;
 		~Sh3TaskBase() = default;
 
+
         struct EmptyState {};
 		struct And {};
+		struct Closure {};
 
-        i64 mIdx = -1;
-
-		std::vector<Sh3Task> mDepList;
 		std::string mName;
 
-		// The list of downstream tasks that depend on this task. 
-		// When this task is fulfillied, we will check if these
-		// tasks are ready to be run. 
-		std::vector<i64> mChildren, mUpstreamClosures, mClosureChildren;
-
-		//bool mExtendLifetime = false;
-		i64 mClosureCount = -1, mDepCount = 0;
-		//bool mIsClosure = false;
-
-
-        void addChild(Sh3TaskBase& child, Sh3Task::Type type)
-        {
-			if (type == Sh3Task::Evaluation)
-				mChildren.push_back(child.mIdx);
-			else if (type == Sh3Task::Closure)
-				mClosureChildren.push_back(child.mIdx);
-			else
-				throw RTE_LOC;
-        }
-
-		void addDep(Sh3Task d)
-		{
-			++mDepCount;
-			mDepList.emplace_back(d);
-		}
-
-
-
-		enum Status { Pending, Evaluated, Closed };
-		Status mStatus = Pending;
-
-        boost::variant<
-            EmptyState,
-			//Closure,
+		boost::variant<
+			EmptyState,
+			Closure,
 			And,
-            Sh3Task::RoundFunc,
-            Sh3Task::ContinuationFunc>
-            mFunc = EmptyState{};
+			Sh3Task::RoundFunc,
+			Sh3Task::ContinuationFunc>
+			mFunc = EmptyState{};
 
-		void depFulfilled(Sh3Task parent, Sh3Runtime& rt);
 
-        // returns true if this task is initialized.
-        bool isValid() const
-        {
-            return mIdx != -1;
-        }
+  //      // returns true if this task is ready to be performed
+        //bool isReady() const
+        //{
+        //    return mBase->mUpstream.size() == 0;
+        //}
 
-        // returns true if this task is ready to be performed
-        bool isReady() const
-        {
-            return mDepCount == 0;
-        }
-
-        // returns true if this task has completed all of its work
-        bool isEvaluated()
-        {
-            return mStatus == Evaluated || mStatus == Closed;
-        }
+  //      // returns true if this task has completed all of its work
+  //      bool isEvaluated()
+  //      {
+  //          return mStatus == Evaluated || mStatus == Closed;
+  //      }
 
         // returns true if this task can be executed in the same round as its parent/dependent tasks.
-        bool isContinuationTask()
-        {
-            return boost::get<Sh3Task::ContinuationFunc>(&mFunc);
-        }
+        //bool isContinuationTask()
+        //{
+        //    return boost::get<Sh3Task::ContinuationFunc>(&mFunc);
+        //}
 
 
-		bool isRemovable()
-		{
-			return isEvaluated() && (mUpstreamClosures.size() == 0);
-		}
+		//bool isRemovable()
+		//{
+		//	return isEvaluated() && (mUpstreamClosures.size() == 0);
+		//}
 
-		bool isClosure()
-		{
-			return mClosureCount != -1;
-		}
-		bool isAnd()
-		{
-			return boost::get<And>(&mFunc);
-		}
+		//bool isClosure()
+		//{
+		//	return boost::get<Closure>(&mFunc);
+		//}
+		//bool isAnd()
+		//{
+		//	return boost::get<And>(&mFunc);
+		//}
     };
 
 
@@ -173,95 +135,6 @@ namespace aby3
 			o << ".C";
 		return o;
 	}
-
-	class TaskDag
-	{
-	public:
-		std::deque<i64> mReadyDeque;
-		std::unordered_map<i64, Sh3TaskBase> mTaskMap;
-
-		i64 mPushIdx = 0;
-		Sh3TaskBase& emplace()
-		{
-			auto p = mTaskMap.emplace(mPushIdx, Sh3TaskBase{});
-			p.first->second.mIdx = mPushIdx++;
-			return p.first->second;
-		}
-		void enqueueBack(i64 idx)
-		{
-			if (mTaskMap.find(idx) == mTaskMap.end())
-				throw RTE_LOC;
-			mReadyDeque.push_back(idx);
-		}
-
-		//void enqueueFront(i64 idx)
-		//{
-		//	if (mTaskMap.find(idx) == mTaskMap.end())
-		//		throw RTE_LOC;
-		//	mReadyDeque.push_front(idx);
-		//}
-
-		Sh3TaskBase& front()
-		{
-			if (mReadyDeque.size() == 0)
-				throw RTE_LOC;
-			return mTaskMap.find(mReadyDeque.front())->second;
-		}
-		void popFront()
-		{
-			if (mReadyDeque.size() == 0)
-				throw RTE_LOC;
-
-			auto iter = mTaskMap.find(mReadyDeque.front());
-			if (iter == mTaskMap.end())
-				throw RTE_LOC;
-
-			mReadyDeque.pop_front();
-
-			if (iter->second.isRemovable())
-			{
-				mTaskMap.erase(iter);
-			}
-		}
-
-		void remove(i64 idx)
-		{
-			auto iter = mTaskMap.find(idx);
-			if (iter == mTaskMap.end())
-				throw RTE_LOC;
-
-			mTaskMap.erase(iter);
-		}
-
-		Sh3TaskBase* tryGet(i64 idx)
-		{
-			if (idx >= mPushIdx)
-				throw std::runtime_error("requested task that has not been created. " LOCATION);
-
-			auto iter = mTaskMap.find(idx);
-			if (iter == mTaskMap.end())
-				return nullptr;
-			return &iter->second;
-		}
-
-		Sh3TaskBase& get(i64 idx)
-		{
-			auto ptr = tryGet(idx);
-			if (ptr) return *ptr;
-			throw std::runtime_error("Task has been evaluated and removed. " LOCATION);
-		}
-
-		void reserve(u64 n)
-		{
-			//mReadyQueue.reserve(n);
-			mTaskMap.reserve(n);
-		}
-
-		u64 size()
-		{
-			return mTaskMap.size();
-		}
-	};
 
     class Sh3Runtime
     {
@@ -277,7 +150,7 @@ namespace aby3
 
 		~Sh3Runtime()
 		{
-			if (mTasks.size())
+			if (mSched.mTasks.size())
 			{
 				std::cout << "~~~~~~~~~~~~~~~~ Runtime not empty!!! ~~~~~~~~~~~~~~~~" << std::endl;
 			}
@@ -293,7 +166,7 @@ namespace aby3
             mPartyIdx = partyIdx;
             mComm = comm;
 
-            mTasks.reserve(64);
+            //mTasks.reserve(64);
             mNullTask.mRuntime = this;
             mNullTask.mIdx = -1;
             //mActiveTasks.resize(1024, nullptr);
@@ -310,19 +183,20 @@ namespace aby3
 		
 		Sh3Task addAnd(span<Sh3Task> deps, std::string&& name);
 
-		void configureAnd(span<Sh3Task> deps, Sh3TaskBase& handle);
+		//void configureAnd(span<Sh3Task> deps, Sh3TaskBase& handle);
 		//void configureClosure(span<i64> deps, Sh3TaskBase& handle);
-		Sh3Task configureTask(span<Sh3Task> deps, Sh3TaskBase& base);
+		//Sh3Task configureTask(span<Sh3Task> deps, Sh3TaskBase& base);
 
 
-		void removeClosure(Sh3TaskBase& closure);
+		//void removeClosure(Sh3TaskBase& closure);
 
         void runUntilTaskCompletes(Sh3Task task);
         void runNext();
         void runAll();
 		void runOneRound();
 
-        TaskDag mTasks;
+		std::unordered_map<u64, Sh3TaskBase> mTasks;
+        Scheduler mSched;
         Sh3Task mNullTask;
     };
 

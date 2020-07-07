@@ -329,7 +329,7 @@ void Sh3_Encryptor_asyncIO_test()
         Sh3Task task = rt.noDependencies();
 		//rt.mPrint = true;
 
-		if (rt.mTasks.mTaskMap.size() || rt.mTasks.mReadyDeque.size())
+		if (rt.mSched.mTasks.size() || rt.mSched.mReady.size())
 		{
 			std::cout << "bad runtime 1" << std::endl;
 			failed = true;
@@ -343,7 +343,7 @@ void Sh3_Encryptor_asyncIO_test()
             failed = true;
         }
 
-		if (rt.mTasks.mTaskMap.size() || rt.mTasks.mReadyDeque.size())
+        if (rt.mSched.mTasks.size() || rt.mSched.mReady.size())
 		{
 			std::cout << "bad runtime 2" << std::endl;
 			failed = true;

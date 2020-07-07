@@ -537,6 +537,9 @@ namespace aby3
 		u64 shift)
 	{
 		return dependency.then([&, shift](CommPkg & comm, Sh3Task & self) -> void {
+			
+			oc::lout << self.mRuntime->mPartyIdx << " mult Send" << std::endl;
+
 			i64Matrix abMinusR
 				= A.mShares[0] * B.mShares[0]
 				+ A.mShares[0] * B.mShares[1]
@@ -578,6 +581,7 @@ namespace aby3
 				self.then([fu0, fu1, shares = std::move(shares), &C, shift, this]
 				(CommPkg & comm, Sh3Task self) mutable
 				{
+					oc::lout << self.mRuntime->mPartyIdx << " mult recv" << std::endl;
 					fu0.get();
 					fu1.get();
 

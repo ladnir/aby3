@@ -74,16 +74,16 @@ void Task_schedule_test(const oc::CLP& cmd)
 
 	auto task2c = rt.addTask(Type::Round, task2);
 
-	std::cout << "1) " << rt.print() << std::endl;
+	//std::cout << "1) " << rt.print() << std::endl;
 	rt.popTask();
-	std::cout << "2) " << rt.print() << std::endl;
+	//std::cout << "2) " << rt.print() << std::endl;
 
 
 	if (rt.currentTask().mTaskIdx != task2b.mTaskIdx)
 		throw RTE_LOC;
 	rt.popTask();
 
-	std::cout << "3) " << rt.print() << std::endl;
+	//std::cout << "3) " << rt.print() << std::endl;
 	if (rt.currentTask().mTaskIdx != task2c.mTaskIdx)
 		throw RTE_LOC;
 	rt.popTask();
@@ -199,7 +199,7 @@ void Sh3_Runtime_schedule_test(const CLP& cmd)
 
 	task2.then([&](Sh3Task self) 
 		{
-			if (counter++ != 3)
+			if (counter++ != 4)
 				throw RTE_LOC;
 		}
 	, "task2-cont.");
@@ -213,7 +213,7 @@ void Sh3_Runtime_schedule_test(const CLP& cmd)
 
 	task2.get();	
 
-	if (counter++ != 4)
+	if (counter++ != 3)
 		throw RTE_LOC;
 
 	task3.get();

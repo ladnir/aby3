@@ -300,8 +300,28 @@ void Sh3_Evaluator_asyncMul_fixed_test()
 	if (failed)
 		throw std::runtime_error(LOCATION);
 }
+void sync(CommPkg& comm)
+{
+	char c;
+	comm.mNext.send(c);
+	comm.mPrev.send(c);
+	comm.mNext.recv(c);
+	comm.mPrev.recv(c);
+}
 
+f64Matrix<D8> reveal(sf64Matrix<D8>& A, CommPkg& comm)
+{
+	comm.mPrev.asyncSend(A[0].data(), A.size());
+	f64Matrix<D8> ret(A.rows(), A.cols());
 
+	comm.mNext.recv((i64*)ret.mData.data(), ret.size());
+
+	for (u64 i = 0; i < ret.size(); ++i)
+	{
+		ret(i).mValue += A[0](i) + A[1](i);
+	}
+	return ret;
+}
 
 void Sh3_Evaluator_truncationPai_test(const oc::CLP & cmd)
 {
@@ -359,6 +379,7 @@ void Sh3_Evaluator_truncationPai_test(const oc::CLP & cmd)
 	}
 }
 
+
 void Sh3_Evaluator_asyncMul_matrixFixed_test(const oc::CLP & cmd)
 {
 
@@ -389,6 +410,11 @@ void Sh3_Evaluator_asyncMul_matrixFixed_test(const oc::CLP & cmd)
 	evals[1].init(1, toBlock(1, 1), toBlock(1, 2));
 	evals[2].init(2, toBlock(1, 2), toBlock(1, 0));
 
+
+	sf64Matrix<D8> A[3]; //(size, size);
+	sf64Matrix<D8> B[3]; //(size, size);
+	sf64Matrix<D8> C[3]; //;
+
 	bool failed = false;
 
 	auto routine = [&](int idx) {
@@ -409,54 +435,81 @@ void Sh3_Evaluator_asyncMul_matrixFixed_test(const oc::CLP & cmd)
 			f64Matrix<D8> b(size, size);
 			f64Matrix<D8> c;
 
-			sf64Matrix<D8> A(size, size);
-			sf64Matrix<D8> B(size, size);
-			sf64Matrix<D8> C;
+
 			for (u64 i = 0; i < a.size(); ++i) a(i) = (prng.get<u32>() >> 8) / 100.0;
 			for (u64 i = 0; i < b.size(); ++i) b(i) = (prng.get<u32>() >> 8) / 100.0;
 			c = a * b;
 			auto c64 = a.i64Cast() * b.i64Cast();
 
-			A[0].setZero();
-			A[1].setZero();
-			B[0].setZero();
-			B[1].setZero();
+			A[idx][0].resize(size, size);
+			A[idx][1].resize(size, size);
+			B[idx][0].resize(size, size);
+			B[idx][1].resize(size, size);
+			A[idx][0].setZero();
+			A[idx][1].setZero();
+			B[idx][0].setZero();
+			B[idx][1].setZero();
 
 			if (idx == 0)
 			{
-				//lout << "a \n" << a.i64Cast() << std::endl;
-				//lout << "b \n" << b.i64Cast() << std::endl;
-				//lout << "c \n" << c.i64Cast() << std::endl;
-				//lout << "c64 \n" << c64 << std::endl;
+				enc.localFixedMatrix(rt, a, A[idx]).get();
+				f64Matrix<D8> aa;
+				sync(rt.mComm);
+				enc.revealAll(rt, A[idx], aa).get();
+				auto aa2 = reveal(A[idx], rt.mComm);
+				if (aa.i64Cast() != a.i64Cast())
+				{
+					std::cout << " failure A1 " << std::endl;
+					std::cout << "a   " << a << std::endl;
+					std::cout << "aa  " << aa << std::endl;
+				}
+				if (aa2.i64Cast() != a.i64Cast())
+				{
+					std::cout << " failure A2 " << std::endl;
+					std::cout << "aa2 " << aa2 << std::endl;
+				}
+				sync(rt.mComm);
 
-				//auto vv = c64(0,1);
-				//auto vv2 = a(0, 0).mValue * b(0, 1).mValue +
-				//	 	   a(0, 1).mValue * b(1, 1).mValue;
-
-				//lout << a(0,0).mValue << " * " << b(1,0).mValue << "+\n"
-				//	<< a(0,1).mValue << " * " << b(1,1).mValue << "\n -> " 
-				//	<< c(0,1).mValue << "\n ~ " <<vv << " " << vv2<< " " << (vv >> 8)<< std::endl;
-				//lout << a(1) << " * " << b(1) << " -> " << c(1) << std::endl;
-
-				enc.localFixedMatrix(rt, a, A);
-				enc.localFixedMatrix(rt, b, B).get();
+				enc.localFixedMatrix(rt, b, B[idx]).get();
 			}
 			else
 			{
-				enc.remoteFixedMatrix(rt, A);
-				enc.remoteFixedMatrix(rt, B).get();
+				enc.remoteFixedMatrix(rt, A[idx]).get();
+				f64Matrix<D8> aa;
+				sync(rt.mComm);
+				enc.revealAll(rt, A[idx], aa).get();
+				reveal(A[idx], rt.mComm);
+
+				sync(rt.mComm);
+
+				enc.remoteFixedMatrix(rt, B[idx]).get();
 			}
 
 			auto task = rt.noDependencies();
-			task = eval.asyncMul(task, A, B, C);
+			task = eval.asyncMul(task, A[idx], B[idx], C[idx]);
 
 			f64Matrix<D8> cc, aa;
-			enc.revealAll(task, A, aa).get();
-			enc.revealAll(task, C, cc).get();
+			enc.revealAll(task, A[idx], aa).get();
 
+
+			sync(rt.mComm);
+
+			//enc.revealAll(task, C[idx], cc).get();
+			cc = reveal(C[idx], rt.mComm);
+			auto aa2 = reveal(A[idx], rt.mComm);
 
 			if (idx == 0)
 			{
+				if (aa2.i64Cast() != a.i64Cast())
+				{
+					std::cout << " failure AA* " << std::endl;
+				}
+
+				if (aa.i64Cast() != a.i64Cast())
+				{
+					std::cout << " failure AA " << std::endl;
+				}
+
 				f64Matrix<D8> diffMat = (c - cc);
 
 				for (u64 i = 0; i < diffMat.size(); ++i)
@@ -469,8 +522,8 @@ void Sh3_Evaluator_asyncMul_matrixFixed_test(const oc::CLP & cmd)
 					{
 						failed = true;
 						oc::lout << Color::Red << "======= FAILED =======" << std::endl << Color::Default;
-						sf64<D8> aa = A(0);
-						sf64<D8> bb = B(0);
+						sf64<D8> aa = A[idx](0);
+						sf64<D8> bb = B[idx](0);
 						oc::lout << "\n" << i << "\n"
 							<< "p" << rt.mPartyIdx << ": " << "a   " << prettyShare(rt.mPartyIdx, aa.mShare) << " ~ " << std::endl
 							<< "p" << rt.mPartyIdx << ": " << "b   " << prettyShare(rt.mPartyIdx, bb.mShare) << " ~ " << std::endl

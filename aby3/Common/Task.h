@@ -16,7 +16,7 @@ namespace aby3
     struct Task
     {
     public:
-        u64 mTaskIdx;
+        i64 mTaskIdx;
         Scheduler* mSched;
 
     };
@@ -26,7 +26,7 @@ namespace aby3
     {
     public:
         Type mType;
-        u64 mIdx;
+        i64 mIdx =-1;
 
         TaskBase(Type t, u64 idx) : mType(t), mIdx(idx) {};
 
@@ -69,12 +69,12 @@ namespace aby3
     class Scheduler
     {
     public:
-        u64 mTaskIdx = 1;
+        i64 mTaskIdx = 0;
         std::unordered_map<u64, TaskBase> mTasks;
 
-        std::list<u64> mReady, mNextRound;
+        std::list<i64> mReady, mNextRound;
 
-        void addReady(u64 idx)
+        void addReady(i64 idx)
         {
 
             if (idx > mTaskIdx)
@@ -90,7 +90,7 @@ namespace aby3
             mReady.push_back(idx);
         }
 
-        void addNextRound(u64 idx)
+        void addNextRound(i64 idx)
         {
             if (idx > mTaskIdx)
                 throw RTE_LOC;
@@ -126,6 +126,10 @@ namespace aby3
             {
                 if (d.mSched != this)
                     throw RTE_LOC;
+
+                if (d.mTaskIdx != -1 && d.mTaskIdx >= idx)
+                    throw RTE_LOC;
+
 
                 auto db = mTasks.find(d.mTaskIdx);
 
@@ -168,6 +172,9 @@ namespace aby3
             for (auto& d : deps)
             {
                 if (d.mSched != this)
+                    throw RTE_LOC;
+
+                if (d.mTaskIdx != -1 && d.mTaskIdx >= idx)
                     throw RTE_LOC;
 
                 auto db = mTasks.find(d.mTaskIdx);
@@ -267,7 +274,7 @@ namespace aby3
         }
 
         Task nullTask() {
-            return { 0, this }; 
+            return { -1, this }; 
         }
 
         std::string print()
