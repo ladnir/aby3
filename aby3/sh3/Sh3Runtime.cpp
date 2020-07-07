@@ -275,7 +275,7 @@ namespace aby3
 			throw std::runtime_error("The runtime is currently running a different task. Do not call Sh3Task.get() recursively. " LOCATION);
 
 		auto tt = mSched.currentTask();
-		auto& task = mTasks.find(tt.mTaskIdx);
+		auto task = mTasks.find(tt.mTaskIdx);
 
 		//if (mPrint)
 		//{

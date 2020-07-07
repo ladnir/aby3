@@ -366,14 +366,15 @@ void lowMC_BinFileCircuit_test() {
     {
         if ((bool)outputs[0][i] != c2[i])
         {
-            std::cout << "failed " << i << std::endl;
 
-            std::cout << "m " << m << std::endl;
-            std::cout << "M " << inputs[0] << std::endl;
-            std::cout << "o " << c2 << std::endl;
-            std::cout << "O " << outputs[0] << std::endl;
+            //std::cout << "failed " << i << std::endl;
 
-            throw UnitTestFail(LOCATION);
+            //std::cout << "m " << m << std::endl;
+            //std::cout << "M " << inputs[0] << std::endl;
+            //std::cout << "o " << c2 << std::endl;
+            //std::cout << "O " << outputs[0] << std::endl;
+
+            throw UnitTestFail("Known issue, need to investigate. " LOCATION);
         }
     }
 }
