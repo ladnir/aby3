@@ -100,7 +100,39 @@ using namespace aby3;
 //    }
 //}
 
-void Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp, bool debug, u64 valMask = ~0ull)
+std::array<oc::Matrix<i64>, 3> getShares(sbMatrix& S, Sh3Runtime& rt, CommPkg& comm)
+{
+    std::array<oc::Matrix<i64>, 3> r;
+
+    auto& r0 = r[rt.mPartyIdx];
+    auto& r1 = r[(rt.mPartyIdx + 1) % 3];
+    auto& r2 = r[(rt.mPartyIdx + 2) % 3];
+
+    r0 = S.mShares[0];
+    r1 = S.mShares[1];
+
+    comm.mNext.asyncSend(r0.data(), r0.size());
+    comm.mPrev.asyncSend(r1.data(), r1.size());
+
+    r2.resize(S.rows(), S.i64Cols());
+
+    comm.mNext.recv(r2.data(), r2.size());
+    oc::Matrix<i64> check(r1.rows(), r1.cols());
+    comm.mPrev.recv(check.data(), check.size());
+
+    if (memcmp(check.data(), r1.data(), check.size() * sizeof(i64)) != 0)
+        throw RTE_LOC;
+
+    return r;
+
+}
+
+void Sh3_BinaryEngine_test(
+    BetaCircuit* cir,
+    std::function<i64(i64, i64)> binOp,
+    bool debug,
+    std::string opName,
+    u64 valMask = ~0ull)
 {
 
     IOService ios;
@@ -135,13 +167,22 @@ void Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp,
 
     enum Mode { Manual, Auto, Replicated };
 
+    std::array < std::vector<oc::Matrix<i64>>, 3> CC;
+    std::array < std::vector<oc::Matrix<i64>>, 3> CC2;
+    std::array<std::atomic<int>, 3> ac;
+    Sh3BinaryEvaluator evals[3];
 
+    //block tag = oc::sysRandomSeed();
+
+    ac[0] = 0;
+    ac[1] = 0;
+    ac[2] = 0;
     auto aSize = cir->mInputs[0].size();
     auto bSize = cir->mInputs[1].size();
     auto cSize = cir->mOutputs[0].size();
 
-    auto t0 = std::thread([&]() {
-        auto i = 0;
+    auto routine = [&](int pIdx) {
+        //auto i = 0;
         i64Matrix a(width, 1), b(width, 1), c(width, 1), ar(1, 1);
         i64Matrix aa(width, 1), bb(width, 1);
 
@@ -153,29 +194,38 @@ void Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp,
         }
         ar(0) = prng.get<i64 >();
 
-        Sh3Runtime rt(i, comms[i]);
+        Sh3Runtime rt(pIdx, comms[pIdx]);
 
         sbMatrix A(width, aSize), B(width, bSize), C(width, cSize);
         sbMatrix Ar(1, aSize);
 
         Sh3Encryptor enc;
-        enc.init(i, toBlock(i), toBlock(i + 1));
+        enc.init(pIdx, toBlock(pIdx), toBlock((pIdx + 1) % 3));
 
         auto task = rt.noDependencies();
 
         enc.localBinMatrix(rt.noDependencies(), a, A).get();
         enc.localBinMatrix(rt.noDependencies(), ar, Ar).get();
-        task = enc.localBinMatrix(rt.noDependencies(), b, B);
+        enc.localBinMatrix(rt.noDependencies(), b, B).get();
 
-        Sh3BinaryEvaluator eval;
+        auto& eval = evals[pIdx];
+
+#ifdef BINARY_ENGINE_DEBUG
         if (debug)
-            eval.enableDebug(i, debugComm[i].mPrev, debugComm[i].mNext);
+            eval.enableDebug(pIdx, debugComm[pIdx].mPrev, debugComm[pIdx].mNext);
+#endif
 
         for (auto mode : { Manual, Auto, Replicated })
         {
+            eval.init(toBlock(pIdx), toBlock((pIdx + 1) % 3));
+            //if (pIdx == 0)
+            //    oc::lout << "---------------------------------------" << std::endl;
+
+            C.mShares[0](0) = 0;
+            C.mShares[1](0) = 0;
             switch (mode)
             {
-            case Manual: 
+            case Manual:
                 task.get();
                 eval.setCir(cir, width);
                 eval.setInput(0, A);
@@ -199,80 +249,68 @@ void Sh3_BinaryEngine_test(BetaCircuit* cir, std::function<i64(i64, i64)> binOp,
                 break;
 
             }
-
-            task = enc.reveal(task, C, c);
             task.get();
 
-            for (u64 j = 0; j < width; ++j)
+            auto ccc0 = C.mShares[0](0);
+            CC[pIdx].push_back(C.mShares[0]);
+            CC2[pIdx].push_back(C.mShares[1]);
+            ++ac[pIdx];
+            auto ccc1 = C.mShares[0](0);
+            auto ccc2 = CC[pIdx].back()(0);
+
+            if (pIdx)
             {
-                if (c(j) != binOp(a(j), b(j)))
+
+                enc.reveal(task, 0, C).get();
+
+                //auto CC = getShares(C, rt, debugComm[pIdx]);
+
+            }
+            else
+            {
+                enc.reveal(task, C, c).get();
+
+                auto ci = CC[pIdx].size() - 1;;
+
+
+                for (u64 j = 0; j < width; ++j)
                 {
-                    std::cout << "mode: " << (int)mode << " failed at " << j << " " << c(j) << " != " << binOp(a(j), b(j)) << std::endl;
-                    failed = true;
+                    if (c(j) != binOp(a(j), b(j)))
+                    {
+                        oc::lout << "pidx: " << rt.mPartyIdx << " mode: " << (int)mode << " debug:" << int(debug) << " failed at " << j << " " << std::hex << c(j) << " != " << std::hex << binOp(a(j), b(j))
+                            << " = " << opName << "(" << std::hex << a(j) << ", " << std::hex << b(j) << ")" << std::endl << std::dec;
+                        failed = true;
+                    }
+                }
+
+                if (a(0) == 0x66 && failed)
+                {
+                    while (ac[1] < ac[0]);
+                    while (ac[2] < ac[0]);
+
+                    auto& oo = oc::lout;
+                    oo << "pidx: " << rt.mPartyIdx << " check\n";
+                    oo << "      a " << A.mShares[0](0) << " " << A.mShares[1](0) << std::endl;
+                    oo << "      b " << B.mShares[0](0) << " " << B.mShares[1](0) << std::endl;
+                    oo << "      c " << C.mShares[0](0) << " " << C.mShares[1](0) << std::endl;
+                    oo << "      C " << CC[0][ci](0) << " " << CC[1][ci](0) << " " << CC[2][ci](0) << std::endl;
+                    oo << "      D " << CC2[0][ci](0) << " " << CC2[1][ci](0) << " " << CC2[2][ci](0) << std::endl;
+                    oo << "        " << ccc0 << " " << ccc1 << " " << ccc2 << std::endl;
+                    oo << "   recv " << eval.mRecvFutr.size() << std::endl;
+                    //oo << "   " << eval.mLog.str() << std::endl;
+
+                    //oo << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+                    //oo << evals[1].mLog.str() << std::endl;
+                    //oo << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+                    //oo << evals[2].mLog.str() << std::endl;
                 }
             }
+
+            //oc::lout << oc::Color::Green << eval.mLog.str() << oc::Color::Default << std::endl;
         }
-
-
-
-    });
-
-    auto routine = [&](int i)
-    {
-        PRNG prng;
-
-        Sh3Runtime rt(i, comms[i]);
-
-        sbMatrix A(width, aSize), B(width, bSize), C(width, cSize), Ar(1, aSize);
-
-        Sh3Encryptor enc;
-        enc.init(i, toBlock(i), toBlock((i + 1) % 3));
-
-
-        auto task = rt.noDependencies();
-        // queue up the operations
-        enc.remoteBinMatrix(rt.noDependencies(), A).get();
-        enc.remoteBinMatrix(rt.noDependencies(), Ar).get();
-        task = enc.remoteBinMatrix(rt.noDependencies(), B);
-
-        Sh3BinaryEvaluator eval;
-        if (debug)
-            eval.enableDebug(i, debugComm[i].mPrev, debugComm[i].mNext);
-
-        for (auto mode : { Manual, Auto, Replicated })
-        {
-            switch (mode)
-            {
-            case Manual:
-                task.get();
-                eval.setCir(cir, width);
-                eval.setInput(0, A);
-                eval.setInput(1, B);
-                eval.asyncEvaluate(rt.noDependencies()).get();
-                eval.getOutput(0, C);
-                break;
-            case Auto:
-                task = eval.asyncEvaluate(task, cir, { &A, &B }, { &C });
-                break;
-            case Replicated:
-                task.get();
-                eval.setCir(cir, width);
-                eval.setReplicatedInput(0, Ar);
-                eval.setInput(1, B);
-                eval.asyncEvaluate(rt.noDependencies()).get();
-                eval.getOutput(0, C);
-                break;
-
-            }
-
-            task = enc.reveal(task, 0, C);
-
-            // actually execute the computation
-            task.get();
-        }
-
     };
 
+    auto t0 = std::thread(routine, 0);
     auto t1 = std::thread(routine, 1);
     auto t2 = std::thread(routine, 2);
 
@@ -295,8 +333,8 @@ void Sh3_BinaryEngine_and_test()
         auto cir = lib.int_int_bitwiseAnd(size, size, size);
         cir->levelByAndDepth();
 
-        Sh3_BinaryEngine_test(cir, [](i64 a, i64 b) {return a & b; }, true, mask);
-        Sh3_BinaryEngine_test(cir, [](i64 a, i64 b) {return a & b; }, false, mask);
+        Sh3_BinaryEngine_test(cir, [](i64 a, i64 b) {return a & b; }, true, "AND", mask);
+        Sh3_BinaryEngine_test(cir, [](i64 a, i64 b) {return a & b; }, false, "AND", mask);
     }
 
     // na_and
@@ -325,7 +363,7 @@ void Sh3_BinaryEngine_and_test()
 
         Sh3_BinaryEngine_test(cd, [](i64 a, i64 b) {
             return ~a & b;
-        }, false, mask);
+            }, false, "na_AND", mask);
 
     }
 
@@ -337,11 +375,11 @@ void Sh3_BinaryEngine_add_test()
 
     BetaLibrary lib;
     u64 size = 8;
-    u64 mask = ~((~0ull) << size); 
+    u64 mask = ~((~0ull) << size);
     auto cir = lib.int_int_add(size, size, size, BetaLibrary::Optimized::Depth);
 
-    Sh3_BinaryEngine_test(cir, [mask](i64 a, i64 b) {return (a + b) & mask; }, true, mask);
-    Sh3_BinaryEngine_test(cir, [mask](i64 a, i64 b) {return (a + b) & mask; }, false, mask);
+    Sh3_BinaryEngine_test(cir, [mask](i64 a, i64 b) {return (a + b) & mask; }, true, "Plus", mask);
+    Sh3_BinaryEngine_test(cir, [mask](i64 a, i64 b) {return (a + b) & mask; }, false, "Plus", mask);
 
 }
 
@@ -349,10 +387,10 @@ void Sh3_BinaryEngine_add_test()
 void Sh3_BinaryEngine_add_msb_test()
 {
     BetaLibrary lib;
-    u64 size =8;
+    u64 size = 8;
     u64 mask = ~((~0ull) << size);
     auto cir = lib.int_int_add_msb(size);
 
-    Sh3_BinaryEngine_test(cir, [size](i64 a, i64 b) {return ((a + b) >> (size - 1)) & 1; }, true, mask);
-    Sh3_BinaryEngine_test(cir, [size](i64 a, i64 b) {return ((a + b) >> (size - 1)) & 1; }, false, mask);
+    Sh3_BinaryEngine_test(cir, [size](i64 a, i64 b) {return ((a + b) >> (size - 1)) & 1; }, true, "msb", mask);
+    Sh3_BinaryEngine_test(cir, [size](i64 a, i64 b) {return ((a + b) >> (size - 1)) & 1; }, false, "msb", mask);
 }

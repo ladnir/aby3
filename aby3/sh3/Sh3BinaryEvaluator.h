@@ -20,7 +20,7 @@ namespace aby3
         using block_type = block; 
 #endif
 
-#define BINARY_ENGINE_DEBUG
+//#define BINARY_ENGINE_DEBUG
 
 #ifdef BINARY_ENGINE_DEBUG
     private:
@@ -55,6 +55,9 @@ namespace aby3
         void distributeInputs();
 
         oc::block hashDebugState();
+
+        //Sh3Runtime* mDebugRT=nullptr;
+        //std::stringstream mLog;
 #endif
 
         oc::BetaCircuit* mCir;
@@ -78,6 +81,15 @@ namespace aby3
         Sh3Task asyncEvaluate(Sh3Task dependency);
         
         
+        void init(Sh3ShareGen& gen)
+        {
+            mShareGen.init(gen.mPrevCommon.get(), gen.mNextCommon.get());
+        }        
+        void init(block prevSeed, block nextSeed)
+        {
+            mShareGen.init(prevSeed, nextSeed);
+        }
+
         void roundCallback(CommPkg& comms, Sh3Task task);
 
         void getOutput(u64 i, sPackedBin& out);
@@ -110,6 +122,7 @@ namespace aby3
 
         block_type* getShares();
         Sh3ShareGen mShareGen;
+        //int mTag = 0, mTagR;
         //std::array<oc::PRNG, 2> mGens;
 	};
 

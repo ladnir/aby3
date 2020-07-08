@@ -1040,9 +1040,11 @@ namespace osuCrypto
 
         aby3::Sh3BinaryEvaluator eval;
 
+#ifdef BINARY_ENGINE_DEBUG
         if (DBServer_debug)
             eval.enableDebug(mIdx, mRt.mComm.mPrev, mRt.mComm.mNext);
-
+#endif
+        eval.init(mEnc.mShareGen);
         eval.setCir(&cir, size);
 
         u64 i = 0;
@@ -1056,11 +1058,13 @@ namespace osuCrypto
         t2.get();
         eval.setInput(i++, A[2]);
 
+#ifdef BINARY_ENGINE_DEBUG
         std::vector<std::vector<aby3::Sh3BinaryEvaluator::DEBUG_Triple>>plainWires;
         eval.distributeInputs();
 
         if (DBServer_debug)
             plainWires = eval.mPlainWires_DEBUG;
+#endif
 
         mRt.runAll();
 
@@ -1263,9 +1267,11 @@ namespace osuCrypto
 
         aby3::Sh3BinaryEvaluator eval;
 
+#ifdef BINARY_ENGINE_DEBUG
         if (DBServer_debug)
             eval.enableDebug(mIdx, mRt.mComm.mPrev, mRt.mComm.mNext);
-
+#endif
+        eval.init(mEnc.mShareGen);
         eval.setCir(&cir, size);
         eval.setInput(0, leftJoinCol.mCol);
         t0.get();
@@ -1275,11 +1281,13 @@ namespace osuCrypto
         t2.get();
         eval.setInput(3, A[2]);
 
+#ifdef BINARY_ENGINE_DEBUG
         std::vector<std::vector<aby3::Sh3BinaryEvaluator::DEBUG_Triple>>plainWires;
         eval.distributeInputs();
 
         if (DBServer_debug)
             plainWires = eval.mPlainWires_DEBUG;
+#endif
 
         mRt.runAll();
 
@@ -1309,6 +1317,8 @@ namespace osuCrypto
             //{
             //    binEvals[i].enableDebug(mIdx, mPrev, mNext);
             //}
+
+            binEvals[i].init(mEnc.mShareGen);
             binEvals[i].setCir(&mLowMCCir, shareCount);
 
             binEvals[i].setInput(0, cols[i].mCol);

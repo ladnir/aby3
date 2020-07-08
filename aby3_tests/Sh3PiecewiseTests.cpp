@@ -167,6 +167,9 @@ void Sh3_Piecewise_test(const oc::CLP& cmd)
 		pw0.DebugEnc.init(0, oc::ZeroBlock, oc::ZeroBlock);
 		pw1.DebugEnc.init(1, oc::ZeroBlock, oc::ZeroBlock);
 		pw2.DebugEnc.init(2, oc::ZeroBlock, oc::ZeroBlock);
+		pw0.init(oc::toBlock(1), oc::toBlock(2));
+		pw1.init(oc::toBlock(2), oc::toBlock(3));
+		pw2.init(oc::toBlock(3), oc::toBlock(1));
 
 		pw0.mCoefficients.resize(numThresholds + 1);
 		pw1.mCoefficients.resize(numThresholds + 1);

@@ -116,6 +116,17 @@ namespace aby3
 			return eval(dep, inputs.i64Cast(), outputs.i64Cast(), D, evaluator, print);
 		}
 
+
+		void init(Sh3ShareGen& gen)
+		{
+			binEng.init(gen);
+		}
+		void init(block prevSeed, block nextSeed)
+		{
+			binEng.init(prevSeed, nextSeed);
+		}
+
+
 		std::vector<sbMatrix> mInputRegions;
 		std::vector<sbMatrix> circuitInput0;
 		sbMatrix circuitInput1;

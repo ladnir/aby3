@@ -321,7 +321,10 @@ f64Matrix<D8> reveal(sf64Matrix<D8>& A, CommPkg& comm)
     comm.mPrev.recv((i64*)A1.mData.data(), A1.size());
 
     if (A1.i64Cast() != A[1])
-        throw RTE_LOC;
+    {
+        oc::lout << "A1  " << A1.i64Cast() << "\nA1' " << A[1] << std::endl;
+        throw std::runtime_error("inconistent shares. " LOCATION);
+    }
 
     for (u64 i = 0; i < ret.size(); ++i)
     {
@@ -577,9 +580,9 @@ void Sh3_Evaluator_asyncMul_matrixFixed_test(const oc::CLP& cmd)
     auto t1 = std::thread(routine, 1);
     auto t2 = std::thread(routine, 2);
 
-    t0.join();
-    t1.join();
-    t2.join();
+    try { t0.join(); } catch (...) { failed = true; };
+    try { t1.join(); } catch (...) { failed = true; };
+    try { t2.join(); } catch (...) { failed = true; };
 
     if (failed)
         throw std::runtime_error(LOCATION);

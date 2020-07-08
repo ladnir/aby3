@@ -116,7 +116,6 @@ namespace aby3
 			std::cout << std::endl;
 		}
 
-
 		//auto decShift = std::pow(2.0, decimal);
 		//Matrix<bool> inputThresholds(inputs.size(), mThresholds.size());
 		oc::Matrix<u8> inputRegions = getInputRegions(inputs, decimal);
