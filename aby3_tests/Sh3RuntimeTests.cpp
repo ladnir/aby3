@@ -318,7 +318,7 @@ Sh3Task revealAll(Sh3Task dep, si64 dest, i64 val)
 }
 
 void and_task_test(u64 partyIdx) {
-	std::cout << "testing &'ing input tasks" << std::endl;
+	//std::cout << "testing &'ing input tasks" << std::endl;
 	//IOService ios;
 	//Sh3Encryptor enc;
 	//Sh3Evaluator eval;
@@ -354,9 +354,9 @@ void and_task_test(u64 partyIdx) {
 		task &= revealAll(runtime, A[i], result[i]);
 	task.get();
 
-	for (u64 i = 0; i < rows; ++i)
-		std::cout << result[i] << ", ";
-	std::cout << std::endl;
+	//for (u64 i = 0; i < rows; ++i)
+	//	std::cout << result[i] << ", ";
+	//std::cout << std::endl;
 }
 
 

@@ -183,6 +183,7 @@ void Sh3_BinaryEngine_test(
 
     auto routine = [&](int pIdx) {
         //auto i = 0;
+
         i64Matrix a(width, 1), b(width, 1), c(width, 1), ar(1, 1);
         i64Matrix aa(width, 1), bb(width, 1);
 
@@ -223,27 +224,30 @@ void Sh3_BinaryEngine_test(
             //if (pIdx == 0)
             //    oc::lout << "---------------------------------------" << std::endl;
 
+            Sh3ShareGen gen;
+            gen.init(toBlock(pIdx), toBlock((pIdx + 1) % 3));
+
             C.mShares[0](0) = 0;
             C.mShares[1](0) = 0;
             switch (mode)
             {
             case Manual:
                 task.get();
-                eval.setCir(cir, width);
+                eval.setCir(cir, width, gen);
                 eval.setInput(0, A);
                 eval.setInput(1, B);
                 eval.asyncEvaluate(rt.noDependencies()).get();
                 eval.getOutput(0, C);
                 break;
             case Auto:
-                task = eval.asyncEvaluate(task, cir, { &A, &B }, { &C });
+                task = eval.asyncEvaluate(task, cir, gen, { &A, &B }, { &C });
                 break;
             case Replicated:
                 for (u64 i = 0; i < width; ++i)
                     a(i) = ar(0);
 
                 task.get();
-                eval.setCir(cir, width);
+                eval.setCir(cir, width, gen);
                 eval.setReplicatedInput(0, Ar);
                 eval.setInput(1, B);
                 eval.asyncEvaluate(rt.noDependencies()).get();

@@ -9,7 +9,7 @@ namespace osuCrypto
     int DBServer_ssp = 40;
     bool DBServer_debug = false;
     bool debug_print = false;
-    void DBServer::init(u64 idx, Session& prev, Session& next)
+    void DBServer::init(u64 idx, Session& prev, Session& next, PRNG& prng)
     {
         mIdx = idx;
 
@@ -18,8 +18,7 @@ namespace osuCrypto
         aby3::CommPkg comm{ prev.addChannel(), next.addChannel() };
         mRt.init(idx, comm);
 
-        mPrng.SetSeed(ZeroBlock);
-        mEnc.init(idx, toBlock(idx), toBlock((idx + 1) % 3));
+        mPrng.SetSeed(prng.get());
 
         const auto blockSize = 80;
         const auto rounds = 13;
@@ -56,8 +55,20 @@ namespace osuCrypto
         }
     }
 
+    void DBServer::initSeeds()
+    {
+        block seed = mPrng.get(), prevSeed;
+        mRt.mComm.mNext.send(seed);
+        mRt.mComm.mPrev.recv(prevSeed);
+        mEnc.init(mIdx, prevSeed, seed);
+        mHasSeed = true;
+    }
+
     SharedTable DBServer::localInput(Table& t)
     {
+        if (mHasSeed == false)
+            initSeeds();
+
         SharedTable ret;
         ret.mColumns.resize(t.mColumns.size());
 
@@ -92,6 +103,9 @@ namespace osuCrypto
 
     SharedTable DBServer::remoteInput(u64 partyIdx)
     {
+        if (mHasSeed == false)
+            initSeeds();
+
         SharedTable ret;
         auto chl = ((mIdx + 1) % 3 == partyIdx) ? mRt.mComm.mNext : mRt.mComm.mPrev;
 
@@ -268,6 +282,9 @@ namespace osuCrypto
         const SelectQuery& query)
     {
 
+        if (mHasSeed == false)
+            initSeeds();
+
         setTimePoint("intersect_start");
         auto& leftTable = *query.mLeftTable;
         auto& rightTable = *query.mRightTable;
@@ -287,8 +304,6 @@ namespace osuCrypto
             C,
             // inputs 
             query);
-
-
 
 
         std::vector<SharedTable::ColRef> srcColumns; srcColumns.reserve(query.mOutputs.size());
@@ -412,6 +427,9 @@ namespace osuCrypto
         std::vector<SharedTable::ColRef> leftSelects,
         std::vector<SharedTable::ColRef> rightSelects)
     {
+        if (mHasSeed == false)
+            initSeeds();
+
         setTimePoint("union_start");
         //throw RTE_LOC;
 
@@ -1043,7 +1061,7 @@ namespace osuCrypto
         if (DBServer_debug)
             eval.enableDebug(mIdx, mRt.mComm.mPrev, mRt.mComm.mNext);
 
-        eval.setCir(&cir, size);
+        eval.setCir(&cir, size, mEnc.mShareGen);
 
         u64 i = 0;
         for (; i < leftCircuitInput.size(); ++i)
@@ -1266,7 +1284,7 @@ namespace osuCrypto
         if (DBServer_debug)
             eval.enableDebug(mIdx, mRt.mComm.mPrev, mRt.mComm.mNext);
 
-        eval.setCir(&cir, size);
+        eval.setCir(&cir, size, mEnc.mShareGen);
         eval.setInput(0, leftJoinCol.mCol);
         t0.get();
         eval.setInput(1, A[0]);
@@ -1309,7 +1327,7 @@ namespace osuCrypto
             //{
             //    binEvals[i].enableDebug(mIdx, mPrev, mNext);
             //}
-            binEvals[i].setCir(&mLowMCCir, shareCount);
+            binEvals[i].setCir(&mLowMCCir, shareCount, mEnc.mShareGen);
 
             binEvals[i].setInput(0, cols[i].mCol);
         }

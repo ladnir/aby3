@@ -68,15 +68,29 @@ namespace aby3
 
         std::vector<std::future<void>> mRecvFutr;
         sPackedBinBase<block_type> mMem;
-        //std::array<std::vector<block>, 2>  mZeroShares;
 
-        void setCir(oc::BetaCircuit* cir, u64 width);
+
+        Sh3Task asyncEvaluate(
+            Sh3Task dependency,
+            oc::BetaCircuit* cir,
+            Sh3ShareGen& gen,
+            std::vector<const sbMatrix*> inputs,
+            std::vector<sbMatrix*> outputs);
+
+
+        void setCir(oc::BetaCircuit* cir, u64 width, Sh3ShareGen& gen)
+        {
+            block p, n;
+            p = gen.mPrevCommon.get();
+            n = gen.mNextCommon.get();
+            setCir(cir, width, p, n);
+        }
+        void setCir(oc::BetaCircuit* cir, u64 width, block prevSeed, block nextSeed);
 
         void setReplicatedInput(u64 i, const sbMatrix& in);
         void setInput(u64 i, const sbMatrix& in);
         void setInput(u64 i, const sPackedBin& in);
 
-        Sh3Task asyncEvaluate(Sh3Task dependency, oc::BetaCircuit* cir, std::vector<const sbMatrix*> inputs, std::vector<sbMatrix*> outputs);
         Sh3Task asyncEvaluate(Sh3Task dependency);
 
 

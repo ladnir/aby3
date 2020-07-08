@@ -23,18 +23,16 @@ void DB_Intersect(u32 rows, u32 cols, bool sum)
 	Session s12(ios, "127.0.0.1", SessionMode::Server, "12");
 	Session s21(ios, "127.0.0.1", SessionMode::Client, "12");
 
-	 
+	
+	PRNG prng(oc::ZeroBlock);
 	DBServer srvs[3];
-	srvs[0].init(0, s02, s01);
-	srvs[1].init(1, s10, s12);
-	srvs[2].init(2, s21, s20);
+	srvs[0].init(0, s02, s01, prng);
+	srvs[1].init(1, s10, s12, prng);
+	srvs[2].init(2, s21, s20, prng);
 
 
 	// 80 bits;
 	u32 hashSize = 80;
-
-
-	PRNG prng(ZeroBlock);
 
 	auto keyBitCount = srvs[0].mKeyBitCount;
 	std::vector<ColumnInfo>
@@ -109,7 +107,7 @@ void DB_Intersect(u32 rows, u32 cols, bool sum)
 			auto task = srvs[i].mRt.noDependencies();
 
 			sbMatrix AA(C.rows(), 64), BB(C.rows(), 64), CC(C.rows(), 64);
-			task = eval.asyncEvaluate(task, cir, { &AA, &BB }, { &CC });
+			task = eval.asyncEvaluate(task, cir, srvs[i].mEnc.mShareGen, { &AA, &BB }, { &CC });
 
 			Sh3Encryptor enc;
 			if (i == 0)
@@ -171,17 +169,17 @@ void DB_cardinality(u32 rows)
 	Session s21(ios, "127.0.0.1", SessionMode::Client, "12");
 
 
+	PRNG prng(oc::ZeroBlock);
 	DBServer srvs[3];
-	srvs[0].init(0, s02, s01);
-	srvs[1].init(1, s10, s12);
-	srvs[2].init(2, s21, s20);
+	srvs[0].init(0, s02, s01, prng);
+	srvs[1].init(1, s10, s12, prng);
+	srvs[2].init(2, s21, s20, prng);
 
 
 	// 80 bits;
 	u32 hashSize = 80;
 
 
-	PRNG prng(ZeroBlock);
 
 	auto keyBitCount = srvs[0].mKeyBitCount;
 	std::vector<ColumnInfo>
@@ -311,18 +309,17 @@ void DB_threat(u32 rows, u32 setCount)
 	Session s21(ios, "127.0.0.1", SessionMode::Client, "12");
 
 
+	PRNG prng(oc::ZeroBlock);
 	DBServer srvs[3];
-	srvs[0].init(0, s02, s01);
-	srvs[1].init(1, s10, s12);
-	srvs[2].init(2, s21, s20);
-
+	srvs[0].init(0, s02, s01, prng);
+	srvs[1].init(1, s10, s12, prng);
+	srvs[2].init(2, s21, s20, prng);
 
 
 	// 80 bits;
 	u32 hashSize = 80;
 
 
-	PRNG prng(ZeroBlock);
 
 	auto keyBitCount = srvs[0].mKeyBitCount;
 	std::vector<ColumnInfo>
@@ -390,8 +387,8 @@ void DB_threat(u32 rows, u32 setCount)
 		auto task = srvs[i].mRt.noDependencies();
 
 		sbMatrix AA(C.rows(), 32), BB(C.rows(), 32), CC(C.rows(), 32);
-		task = eval.asyncEvaluate(task, cir, { &AA, &BB }, { &CC });
-		task = eval.asyncEvaluate(task, cir, { &AA, &BB }, { &CC });
+		task = eval.asyncEvaluate(task, cir, srvs[i].mEnc.mShareGen, { &AA, &BB }, { &CC });
+		task = eval.asyncEvaluate(task, cir, srvs[i].mEnc.mShareGen, { &AA, &BB }, { &CC });
 		task.get();
 
 		if (i == 0)
@@ -509,7 +506,7 @@ i64 Sh3_add_test(u64 n)
 
 		t.setTimePoint("eval");
 
-		task = eval.asyncEvaluate(task, cir, { &A, &B }, { &C });
+		task = eval.asyncEvaluate(task, cir, enc.mShareGen, { &A, &B }, { &C });
 		task.get();
 		t.setTimePoint("done");
 
@@ -534,7 +531,7 @@ i64 Sh3_add_test(u64 n)
 
 		Sh3BinaryEvaluator eval;
 
-		task = eval.asyncEvaluate(task, cir, { &A, &B }, { &C });
+		task = eval.asyncEvaluate(task, cir, enc.mShareGen, { &A, &B }, { &C });
 
 		// actually execute the computation
 		task.get();

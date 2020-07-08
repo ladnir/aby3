@@ -110,7 +110,7 @@ namespace aby3
 			Sh3Task dep,
 			const sf64Matrix<D>& inputs,
 			sf64Matrix<D>& outputs,
-			Sh3Evaluator& evaluator,
+			Sh3Evaluator& evaluator, 
 			bool print = false)
 		{
 			return eval(dep, inputs.i64Cast(), outputs.i64Cast(), D, evaluator, print);
@@ -132,6 +132,7 @@ namespace aby3
 		Sh3Task getInputRegions(
 			const si64Matrix& inputThresholds, u64 decimal,
 			CommPkg& comm, Sh3Task& task,
+			Sh3ShareGen& gen,
 			bool print = false);
 
 		oc::Matrix<u8> getInputRegions(const i64Matrix& inputs, u64);

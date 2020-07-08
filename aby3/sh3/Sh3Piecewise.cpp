@@ -208,7 +208,7 @@ namespace aby3
 			mInputRegions.resize(mCoefficients.size());
 			UPDATE;
 			//auto rangeTestTask = getInputRegions(inputs, D, comm, self, print);
-			auto rangeTestTask = getInputRegions(inputs, D, dep.getRuntime().mComm, dep, print);
+			auto rangeTestTask = getInputRegions(inputs, D, dep.getRuntime().mComm, dep, evaluator.mShareGen, print);
 
 
 
@@ -381,6 +381,7 @@ namespace aby3
 	Sh3Task Sh3Piecewise::getInputRegions(
 		const si64Matrix & inputs, u64 decimal,
 		CommPkg & comm, Sh3Task & self,
+		Sh3ShareGen& gen,
 		bool print)
 	{
 
@@ -487,7 +488,7 @@ namespace aby3
 
 			auto cir = lib.int_Sh3Piecewise_helper(sizeof(i64) * 8, mThresholds.size());
 
-			binEng.setCir(cir, inputs.size());
+			binEng.setCir(cir, inputs.size(), gen);
 			binEng.setInput(mThresholds.size(), circuitInput1);
 
 			// set the inputs for all of the circuits

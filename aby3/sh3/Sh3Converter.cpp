@@ -55,7 +55,7 @@ namespace aby3
         }
     }
 
-    Sh3Task Sh3Converter::toPackedBin(Sh3Task dep, const si64Matrix& in, sPackedBin& dest)
+    Sh3Task Sh3Converter::toPackedBin(Sh3Task dep, Sh3ShareGen& gen, const si64Matrix& in, sPackedBin& dest)
     {
         return dep.then([&](CommPkg & comm, Sh3Task self) {
             struct State {
@@ -64,7 +64,7 @@ namespace aby3
             };
 
             auto state = std::make_unique<State>();
-            state->mEval.setCir(mLib.convert_arith_to_bin(in.cols(), 64), in.rows());
+            state->mEval.setCir(mLib.convert_arith_to_bin(in.cols(), 64), in.rows(), gen);
 
             throw RTE_LOC;
             //state->mEval.setInput

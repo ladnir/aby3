@@ -23,10 +23,11 @@ void eric(int n)
     Session s21(ios, "127.0.0.1", SessionMode::Client, "12");
 
 
+    PRNG prng(OneBlock);
     DBServer srvs[3];
-    srvs[0].init(0, s02, s01);
-    srvs[1].init(1, s10, s12);
-    srvs[2].init(2, s21, s20);
+    srvs[0].init(0, s02, s01, prng);
+    srvs[1].init(1, s10, s12, prng);
+    srvs[2].init(2, s21, s20, prng);
 
 
 
@@ -71,8 +72,6 @@ void eric(int n)
     voter2Data.init(n, voterSchema);
     dmv2Data.init(n, dvmSchema);
 
-    PRNG prng(ZeroBlock);
-    
     for (auto& c : voter1Data.mColumns) prng.get<i64>(c.mData.data(), c.mData.size());
     for (auto& c : voter2Data.mColumns) prng.get<i64>(c.mData.data(), c.mData.size());
     for (auto& c : dmv1Data.mColumns) prng.get<i64>(c.mData.data(), c.mData.size());

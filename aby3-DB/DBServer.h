@@ -23,11 +23,13 @@ namespace osuCrypto
         u64 mIdx, mKeyBitCount = 80;
         //CommPkg mComm;
         PRNG mPrng;
+        bool mHasSeed = false;
+        void initSeeds();
 
         aby3::Sh3Runtime mRt;
         aby3::Sh3Encryptor mEnc;
 
-        void init(u64 idx, Session& prev, Session& next);
+        void init(u64 idx, Session& prev, Session& next, PRNG& prng);
 
 
         SharedTable localInput(Table& t);

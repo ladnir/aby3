@@ -1,3 +1,7 @@
+
+
+#define _ENABLE_EXTENDED_ALIGNED_STORAGE
+
 #include "Sh3BinaryEvaluator.h"
 #include <cryptoTools/Common/Matrix.h>
 #include <cryptoTools/Common/Log.h>
@@ -50,7 +54,7 @@ namespace aby3
 
     using namespace oc;
 
-    void Sh3BinaryEvaluator::setCir(BetaCircuit* cir, u64 width)
+    void Sh3BinaryEvaluator::setCir(BetaCircuit* cir, u64 width, block prevSeed, block nextSeed)
     {
 
         mLog << "new circuit ---------------------------------" << std::endl;
@@ -58,19 +62,16 @@ namespace aby3
         if (cir->mLevelCounts.size() == 0)
             cir->levelByAndDepth();
 
-        //if (cir->mInputs.size() != 2) throw std::runtime_error(LOCATION);
-
         mCir = cir;
-        //auto bits = sizeof(i64) * 8;
-        //auto simdWidth = (width + bits - 1) / bits;
 
         // each row of mem corresponds to a wire. Each column of mem corresponds to 64 SIMD bits
         mMem.reset(width, mCir->mWireCount, 8);
-        //mMem[0].resize(cir->mWireCount, simdWidth);
-        //mMem[1].resize(cir->mWireCount, simdWidth);
-        //mMem[0].setZero();
-        //mMem[1].setZero();
 
+        mShareIdx = 0;
+        mShareAES[0].setKey(prevSeed);
+        mShareAES[1].setKey(nextSeed);
+        i32 simdWidth128 = static_cast<i32>(mMem.simdWidth());
+        mShareBuff.resize(simdWidth128);
 
 #ifdef BINARY_ENGINE_DEBUG
         if (mDebug)
@@ -517,6 +518,7 @@ namespace aby3
     Sh3Task Sh3BinaryEvaluator::asyncEvaluate(
         Sh3Task dep,
         oc::BetaCircuit* cir,
+        Sh3ShareGen& gen,
         std::vector<const sbMatrix*> inputs,
         std::vector<sbMatrix*> outputs)
     {
@@ -525,10 +527,10 @@ namespace aby3
         if (cir->mOutputs.size() != outputs.size())
             throw std::runtime_error(LOCATION);
 
-        return dep.then([this, cir, inputs = std::move(inputs)](CommPkg& comm, Sh3Task& self)
+        return dep.then([this, cir, &gen, inputs = std::move(inputs)](CommPkg& comm, Sh3Task& self)
         {
             auto width = inputs[0]->rows();
-            setCir(cir, width);
+            setCir(cir, width, gen);
 
             for (u64 i = 0; i < inputs.size(); ++i)
             {
@@ -661,19 +663,15 @@ namespace aby3
         {
             mGateIter = mCir->mGates.begin();
 
-            TODO("Security Warning: use real seeds.");
-            auto seed0 = toBlock((task.getRuntime().mPartyIdx));
-            auto seed1 = toBlock((task.getRuntime().mPartyIdx + 2) % 3);
+            //TODO("Security Warning: use real seeds.");
+            //auto seed0 = toBlock((task.getRuntime().mPartyIdx));
+            //auto seed1 = toBlock((task.getRuntime().mPartyIdx + 2) % 3);
 
 #define NEW_SHARE
-#ifdef NEW_SHARE
-            mShareIdx = 0;
-            mShareAES[0].setKey(seed0);
-            mShareAES[1].setKey(seed1);
-            mShareBuff.resize(simdWidth128);
-#else
-            mShareGen.init(seed0, seed1, simdWidth128 * sizeof(block_type) / sizeof(block));
-#endif
+//#ifdef NEW_SHARE
+//#else
+//            mShareGen.init(seed0, seed1, simdWidth128 * sizeof(block_type) / sizeof(block));
+//#endif
 
             block bb = oc::sysRandomSeed();
             if (mPrng.mBuffer.size())

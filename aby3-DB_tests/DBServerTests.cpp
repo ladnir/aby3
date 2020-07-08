@@ -35,10 +35,11 @@ void DB_computeKeys_test()
     Session s21(ios, "127.0.0.1", SessionMode::Client, "12");
 
 
+    PRNG prng(OneBlock);
     DBServer srvs[3];
-    srvs[0].init(0, s02, s01);
-    srvs[1].init(1, s10, s12);
-    srvs[2].init(2, s21, s20);
+    srvs[0].init(0, s02, s01, prng);
+    srvs[1].init(1, s10, s12, prng);
+    srvs[2].init(2, s21, s20, prng);
 
     auto size = 1046;
     auto keyBitCount = srvs[0].mKeyBitCount;
@@ -136,10 +137,11 @@ void DB_cuckooHash_test()
     Session s21(ios, "127.0.0.1", SessionMode::Client, "12");
 
 
+    PRNG prng(OneBlock);
     DBServer srvs[3];
-    srvs[0].init(0, s02, s01);
-    srvs[1].init(1, s10, s12);
-    srvs[2].init(2, s21, s20);
+    srvs[0].init(0, s02, s01, prng);
+    srvs[1].init(1, s10, s12, prng);
+    srvs[2].init(2, s21, s20, prng);
 
 
     // 80 bits;
@@ -147,7 +149,6 @@ void DB_cuckooHash_test()
     u32 rows = 1 << 10;
     u32 bytes = 8;
 
-    PRNG prng(OneBlock);
     aby3::i64Matrix hashs(rows, (keyBitCount + 63) / 64);
     hashs.setZero();
 
@@ -250,10 +251,11 @@ void DB_compare_test()
     Session s21(ios, "127.0.0.1", SessionMode::Client, "12");
 
 
+    PRNG prng(OneBlock);
     DBServer srvs[3];
-    srvs[0].init(0, s02, s01);
-    srvs[1].init(1, s10, s12);
-    srvs[2].init(2, s21, s20);
+    srvs[0].init(0, s02, s01, prng);
+    srvs[1].init(1, s10, s12, prng);
+    srvs[2].init(2, s21, s20, prng);
 
 
     // 80 bits;
@@ -271,7 +273,7 @@ void DB_compare_test()
     b.mColumns[0].mData.setZero();
 
     std::vector<u8> expIntersection(rows, 0);
-    PRNG prng(OneBlock);
+
 
     for (u64 i = 0; i < rows; ++i)
     {
@@ -490,14 +492,11 @@ void DB_Intersect_test(u32 rows, u32 rows2)
     Session s21(ios, "127.0.0.1", SessionMode::Client, "12");
 
 
+    PRNG prng(OneBlock);
     DBServer srvs[3];
-    srvs[0].init(0, s02, s01);
-    srvs[1].init(1, s10, s12);
-    srvs[2].init(2, s21, s20);
-
-
-
-    PRNG prng(ZeroBlock);
+    srvs[0].init(0, s02, s01, prng);
+    srvs[1].init(1, s10, s12, prng);
+    srvs[2].init(2, s21, s20, prng);
 
     auto keyBitCount = srvs[0].mKeyBitCount;
     Table a(rows, {
@@ -657,16 +656,15 @@ void DB_leftUnion_test()
     Session s21(ios, "127.0.0.1", SessionMode::Client, "12");
 
 
+    PRNG prng(OneBlock);
     DBServer srvs[3];
-    srvs[0].init(0, s02, s01);
-    srvs[1].init(1, s10, s12);
-    srvs[2].init(2, s21, s20);
+    srvs[0].init(0, s02, s01, prng);
+    srvs[1].init(1, s10, s12, prng);
+    srvs[2].init(2, s21, s20, prng);
 
     auto left = 1 << 4;
     auto mid = 1 << 5;
     auto right = 1 << 7;
-
-    PRNG prng(ZeroBlock);
 
     auto keyBitCount = srvs[0].mKeyBitCount;
     Table 
