@@ -210,6 +210,8 @@ void Sh3_BinaryEngine_test(
 
         auto& eval = evals[pIdx];
 
+        eval.mPrng.SetSeed(toBlock(pIdx));
+
 #ifdef BINARY_ENGINE_DEBUG
         if (debug)
             eval.enableDebug(pIdx, debugComm[pIdx].mPrev, debugComm[pIdx].mNext);
@@ -217,7 +219,7 @@ void Sh3_BinaryEngine_test(
 
         for (auto mode : { Manual, Auto, Replicated })
         {
-            eval.init(toBlock(pIdx), toBlock((pIdx + 1) % 3));
+            //eval.init(toBlock(pIdx), toBlock((pIdx + 1) % 3));
             //if (pIdx == 0)
             //    oc::lout << "---------------------------------------" << std::endl;
 
@@ -297,12 +299,13 @@ void Sh3_BinaryEngine_test(
                     oo << "      D " << CC2[0][ci](0) << " " << CC2[1][ci](0) << " " << CC2[2][ci](0) << std::endl;
                     oo << "        " << ccc0 << " " << ccc1 << " " << ccc2 << std::endl;
                     oo << "   recv " << eval.mRecvFutr.size() << std::endl;
-                    //oo << "   " << eval.mLog.str() << std::endl;
 
-                    //oo << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
-                    //oo << evals[1].mLog.str() << std::endl;
-                    //oo << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
-                    //oo << evals[2].mLog.str() << std::endl;
+                    oo << "   " << eval.mLog.str() << std::endl;
+
+                    oo << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+                    oo << evals[1].mLog.str() << std::endl;
+                    oo << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+                    oo << evals[2].mLog.str() << std::endl;
                 }
             }
 

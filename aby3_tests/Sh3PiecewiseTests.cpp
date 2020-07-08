@@ -122,7 +122,7 @@ void Sh3_Piecewise_test(const oc::CLP& cmd)
 	auto e12 = Session(ios, "127.0.0.1:1313", SessionMode::Server, "12");
 	auto e21 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "12");
 
-	auto chl01  =e01.addChannel(); auto dchl01 = e01.addChannel();
+	auto chl01 = e01.addChannel(); auto dchl01 = e01.addChannel();
 	auto chl10 = e10.addChannel(); auto dchl10 = e10.addChannel();
 	auto chl02 = e02.addChannel(); auto dchl02 = e02.addChannel();
 	auto chl20 = e20.addChannel(); auto dchl20 = e20.addChannel();
@@ -144,9 +144,9 @@ void Sh3_Piecewise_test(const oc::CLP& cmd)
 	Sh3Runtime p0, p1, p2;
 	Sh3Evaluator ev0, ev1, ev2;
 
-	p0.init(0, comms[0]); 
-	p1.init(1, comms[1]); 
-	p2.init(2, comms[2]); 
+	p0.init(0, comms[0]);
+	p1.init(1, comms[1]);
+	p2.init(2, comms[2]);
 
 	ev0.init(0, oc::toBlock(3), oc::toBlock(1));
 	ev1.init(1, oc::toBlock(1), oc::toBlock(2));
@@ -167,9 +167,6 @@ void Sh3_Piecewise_test(const oc::CLP& cmd)
 		pw0.DebugEnc.init(0, oc::ZeroBlock, oc::ZeroBlock);
 		pw1.DebugEnc.init(1, oc::ZeroBlock, oc::ZeroBlock);
 		pw2.DebugEnc.init(2, oc::ZeroBlock, oc::ZeroBlock);
-		pw0.init(oc::toBlock(1), oc::toBlock(2));
-		pw1.init(oc::toBlock(2), oc::toBlock(3));
-		pw2.init(oc::toBlock(3), oc::toBlock(1));
 
 		pw0.mCoefficients.resize(numThresholds + 1);
 		pw1.mCoefficients.resize(numThresholds + 1);
@@ -258,8 +255,8 @@ void Sh3_Piecewise_test(const oc::CLP& cmd)
 			p0.mPrint = cmd.isSet("print");
 
 			auto thrd0 = std::thread([&]() {
-				pw0.eval(p0, input0, output0, dec, ev0, true).get(); 
-			});
+				pw0.eval(p0, input0, output0, dec, ev0, true).get();
+				});
 			auto thrd1 = std::thread([&]() {pw1.eval(p1, input1, output1, dec, ev1, true).get(); });
 			auto thrd2 = std::thread([&]() {pw2.eval(p2, input2, output2, dec, ev2, true).get(); });
 

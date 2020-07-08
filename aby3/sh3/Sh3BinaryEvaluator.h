@@ -4,6 +4,7 @@
 #include <cryptoTools/Circuit/BetaCircuit.h>
 #include "Sh3Runtime.h"
 #include <cryptoTools/Crypto/RandomOracle.h>
+#include <cryptoTools/Crypto/PRNG.h>
 #include "Sh3ShareGen.h"
 #include <boost/align/aligned_allocator.hpp>
 #include <vector>
@@ -11,16 +12,16 @@
 namespace aby3
 {
 
-	class Sh3BinaryEvaluator
-	{
-	public:
+    class Sh3BinaryEvaluator
+    {
+    public:
 #if defined(__AVX2__) || defined(_MSC_VER)
         using block_type = __m256i;
 #else
-        using block_type = block; 
+        using block_type = block;
 #endif
 
-//#define BINARY_ENGINE_DEBUG
+#define BINARY_ENGINE_DEBUG
 
 #ifdef BINARY_ENGINE_DEBUG
     private:
@@ -36,16 +37,16 @@ namespace aby3
             mDebugNext = debugNext;
         }
 
-		struct DEBUG_Triple
-		{
-			std::array<u8, 3> mBits;
+        struct DEBUG_Triple
+        {
+            std::array<u8, 3> mBits;
             bool mIsSet;
-			u16 val()const { return mBits[0] ^ mBits[1] ^ mBits[2]; }
+            u16 val()const { return mBits[0] ^ mBits[1] ^ mBits[2]; }
 
-			void assign(const DEBUG_Triple& in0, const DEBUG_Triple& in1, oc::GateType type);
-		};
-		std::vector<std::vector<DEBUG_Triple>> mPlainWires_DEBUG;
-        u64 mDebugPartyIdx=-1;
+            void assign(const DEBUG_Triple& in0, const DEBUG_Triple& in1, oc::GateType type);
+        };
+        std::vector<std::vector<DEBUG_Triple>> mPlainWires_DEBUG;
+        u64 mDebugPartyIdx = -1;
         oc::Channel mDebugPrev, mDebugNext;
 
         u8 extractBitShare(u64 rowIdx, u64 wireIdx, u64 shareIdx);
@@ -55,22 +56,20 @@ namespace aby3
         void distributeInputs();
 
         oc::block hashDebugState();
-
-        //Sh3Runtime* mDebugRT=nullptr;
-        //std::stringstream mLog;
+        std::stringstream mLog;
 #endif
 
         oc::BetaCircuit* mCir;
-        oc::BetaGate* mGateIter;
-		u64 mLevel;
-		std::vector<u32> mRecvLocs;
+        std::vector<oc::BetaGate>::iterator mGateIter;
+        u64 mLevel;
+        std::vector<u32> mRecvLocs;
         std::vector<u8> mRecvData;
         std::array<std::vector<u8>, 2> mSendBuffs;
 
         std::vector<std::future<void>> mRecvFutr;
         sPackedBinBase<block_type> mMem;
         //std::array<std::vector<block>, 2>  mZeroShares;
-        
+
         void setCir(oc::BetaCircuit* cir, u64 width);
 
         void setReplicatedInput(u64 i, const sbMatrix& in);
@@ -79,16 +78,7 @@ namespace aby3
 
         Sh3Task asyncEvaluate(Sh3Task dependency, oc::BetaCircuit* cir, std::vector<const sbMatrix*> inputs, std::vector<sbMatrix*> outputs);
         Sh3Task asyncEvaluate(Sh3Task dependency);
-        
-        
-        void init(Sh3ShareGen& gen)
-        {
-            mShareGen.init(gen.mPrevCommon.get(), gen.mNextCommon.get());
-        }        
-        void init(block prevSeed, block nextSeed)
-        {
-            mShareGen.init(prevSeed, nextSeed);
-        }
+
 
         void roundCallback(CommPkg& comms, Sh3Task task);
 
@@ -96,11 +86,11 @@ namespace aby3
         void getOutput(const std::vector<oc::BetaWire>& wires, sPackedBin& out);
 
         void getOutput(u64 i, sbMatrix& out);
-		void getOutput(const std::vector<oc::BetaWire>& wires, sbMatrix& out);
+        void getOutput(const std::vector<oc::BetaWire>& wires, sbMatrix& out);
 
-		bool hasMoreRounds() const {
-			return mLevel <= mCir->mLevelCounts.size();
-		}
+        bool hasMoreRounds() const {
+            return mLevel <= mCir->mLevelCounts.size();
+        }
 
 
         oc::block hashState()
@@ -115,15 +105,17 @@ namespace aby3
         }
 
         //std::unique_ptr<block_type[]> mShareBacking;
-		std::vector<block_type, boost::alignment::aligned_allocator<block_type>> mShareBuff;
+        std::vector<block_type, boost::alignment::aligned_allocator<block_type>> mShareBuff;
         //span<block_type> mShareBuff;
         u64 mShareIdx;
         std::array<oc::AES, 2> mShareAES;
 
         block_type* getShares();
         Sh3ShareGen mShareGen;
-        //int mTag = 0, mTagR;
+        block_type mCheckBlock;
+
+        oc::PRNG mPrng;
         //std::array<oc::PRNG, 2> mGens;
-	};
+    };
 
 }

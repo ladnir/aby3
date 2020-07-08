@@ -9,7 +9,7 @@ namespace osuCrypto
     int DBServer_ssp = 40;
     bool DBServer_debug = false;
     bool debug_print = false;
-    void DBServer::init(u64 idx, Session & prev, Session & next)
+    void DBServer::init(u64 idx, Session& prev, Session& next)
     {
         mIdx = idx;
 
@@ -56,22 +56,22 @@ namespace osuCrypto
         }
     }
 
-    SharedTable DBServer::localInput(Table & t)
+    SharedTable DBServer::localInput(Table& t)
     {
         SharedTable ret;
         ret.mColumns.resize(t.mColumns.size());
 
         u64 rows = t.rows();
 
-		mRt.mComm.mNext.asyncSendCopy(rows);
-		mRt.mComm.mPrev.asyncSendCopy(rows);
+        mRt.mComm.mNext.asyncSendCopy(rows);
+        mRt.mComm.mPrev.asyncSendCopy(rows);
 
         std::vector<std::array<u64, 2>> sizes(t.mColumns.size());
         for (u64 i = 0; i < t.mColumns.size(); ++i)
             sizes[i] = { t.mColumns[i].getBitCount(), (u64)t.mColumns[i].getTypeID() };
 
-		mRt.mComm.mNext.asyncSendCopy(sizes);
-		mRt.mComm.mPrev.asyncSend(std::move(sizes));
+        mRt.mComm.mNext.asyncSendCopy(sizes);
+        mRt.mComm.mPrev.asyncSend(std::move(sizes));
 
         for (u64 i = 0; i < t.mColumns.size(); ++i)
         {
@@ -79,8 +79,8 @@ namespace osuCrypto
             ret.mColumns[i].mName = t.mColumns[i].mName;
             ret.mColumns[i].resize(rows, t.mColumns[i].getBitCount());
 
-			mRt.mComm.mNext.asyncSendCopy(t.mColumns[i].mName);
-			mRt.mComm.mPrev.asyncSendCopy(t.mColumns[i].mName);
+            mRt.mComm.mNext.asyncSendCopy(t.mColumns[i].mName);
+            mRt.mComm.mPrev.asyncSendCopy(t.mColumns[i].mName);
 
             aby3::sbMatrix& a1 = ret.mColumns[i];
 
@@ -233,35 +233,35 @@ namespace osuCrypto
             throw RTE_LOC;
     }
 
-    SharedTable DBServer::intersect(SharedTable & A, SharedTable & B)
+    SharedTable DBServer::intersect(SharedTable& A, SharedTable& B)
     {
         auto aa = A[A.mColumns[0].mName];
         auto bb = B[B.mColumns[0].mName];
         return join(aa, bb, { aa });
     }
 
-	// join on leftJoinCol == rightJoinCol and select the select values.
+    // join on leftJoinCol == rightJoinCol and select the select values.
 
-	SharedTable DBServer::join(SharedTable::ColRef leftJoinCol, SharedTable::ColRef rightJoinCol, std::vector<SharedTable::ColRef> selects)
-	{
-		SelectQuery query;
-		//query.noReveal("nr");
-		auto jc = query.joinOn(leftJoinCol, rightJoinCol);
+    SharedTable DBServer::join(SharedTable::ColRef leftJoinCol, SharedTable::ColRef rightJoinCol, std::vector<SharedTable::ColRef> selects)
+    {
+        SelectQuery query;
+        //query.noReveal("nr");
+        auto jc = query.joinOn(leftJoinCol, rightJoinCol);
 
-		for (auto& s : selects)
-		{
-			if (&s.mCol == &leftJoinCol.mCol || &s.mCol == &rightJoinCol.mCol)
-			{
-				query.addOutput(s.mCol.mName, jc);
-			}
-			else
-			{
-				query.addOutput(s.mCol.mName, query.addInput(s));
-			}
-		}
+        for (auto& s : selects)
+        {
+            if (&s.mCol == &leftJoinCol.mCol || &s.mCol == &rightJoinCol.mCol)
+            {
+                query.addOutput(s.mCol.mName, jc);
+            }
+            else
+            {
+                query.addOutput(s.mCol.mName, query.addInput(s));
+            }
+        }
 
-		return joinImpl(query);
-	}
+        return joinImpl(query);
+    }
 
 
     SharedTable DBServer::joinImpl(
@@ -277,12 +277,12 @@ namespace osuCrypto
         SharedTable C;
         std::vector<SharedColumn*> leftCircuitInput, rightCircuitInput, circuitOutput;
         std::vector<std::array<SharedColumn*, 2>> leftPassthroughCols;
-        
+
         constructOutTable(
             // outputs
             leftCircuitInput,
             rightCircuitInput,
-            circuitOutput, 
+            circuitOutput,
             leftPassthroughCols,
             C,
             // inputs 
@@ -306,7 +306,7 @@ namespace osuCrypto
                 // if the select column is from the right table (which gets permuted), but in the column that we are 
                 // joining on, then observe that we can actaully use the left table's join column, since they will be equal
                 // for all items in the intersection. This is more efficient since it does not need to go through the circuit.
-                else if (&colRef.mTable == &rightTable &&&colRef.mCol == query.mRightCol)
+                else if (&colRef.mTable == &rightTable && &colRef.mCol == query.mRightCol)
                     srcColumns.push_back(leftTable[query.mLeftCol->mName]);
 
                 // finally, if the select column is from the right table we will make the src column the output
@@ -325,7 +325,7 @@ namespace osuCrypto
         setTimePoint("intersect_preamble");
 
 
-        std::array<SharedTable::ColRef, 2> AB{ 
+        std::array<SharedTable::ColRef, 2> AB{
             leftTable[query.mLeftCol->mName],
             rightTable[query.mRightCol->mName]
         };
@@ -609,11 +609,11 @@ namespace osuCrypto
 
 
     void DBServer::constructOutTable(
-        std::vector<SharedColumn*> &leftCircuitInput,
-        std::vector<SharedColumn*> &rightCircuitInput,
-        std::vector<SharedColumn*> &circuitOutCols,
-        std::vector<std::array<SharedColumn*,2>>& leftPassthroughCols,
-        SharedTable &C,
+        std::vector<SharedColumn*>& leftCircuitInput,
+        std::vector<SharedColumn*>& rightCircuitInput,
+        std::vector<SharedColumn*>& circuitOutCols,
+        std::vector<std::array<SharedColumn*, 2>>& leftPassthroughCols,
+        SharedTable& C,
         const SelectQuery& query)
     {
         auto& rightTable = *query.mRightTable;
@@ -642,7 +642,7 @@ namespace osuCrypto
             C.mColumns[j].resize(numRows, C.mColumns[j].mType->getBitCount());
             C.mColumns[j].mShares[0].setZero();
             C.mColumns[j].mShares[1].setZero();
-            
+
             if (query.isLeftPassthrough(query.mOutputs[j]))
             {
                 auto& mem = query.mMem[query.mOutputs[j].mMemIdx];
@@ -660,7 +660,7 @@ namespace osuCrypto
         {
             if (query.isCircuitInput(query.mInputs[j]))
             {
-                if(&query.mInputs[j].mCol.mTable == query.mRightTable)
+                if (&query.mInputs[j].mCol.mTable == query.mRightTable)
                     rightCircuitInput.push_back(&query.mInputs[j].mCol.mCol);
                 else
                     leftCircuitInput.push_back(&query.mInputs[j].mCol.mCol);
@@ -905,9 +905,9 @@ namespace osuCrypto
         for (u64 h = 0; h < 3; ++h)
         {
             snet.help(mRt.mComm.mPrev, mRt.mComm.mNext, mPrng,
-				gsl::narrow<u32>(destRows), 
-				gsl::narrow<u32>(srcRows), 
-				gsl::narrow<u32>(bytes));
+                gsl::narrow<u32>(destRows),
+                gsl::narrow<u32>(srcRows),
+                gsl::narrow<u32>(bytes));
         }
     }
 
@@ -915,7 +915,7 @@ namespace osuCrypto
         MatrixView<u8> cuckooHashTable,
         u64 destRows,
         CuckooParam& cuckooParams,
-        aby3::i64Matrix & keys)
+        aby3::i64Matrix& keys)
     {
         if (mIdx != 1)
             throw std::runtime_error("");
@@ -938,13 +938,13 @@ namespace osuCrypto
         //    throw std::runtime_error("");
 
         OblvSwitchNet snet(std::to_string(mIdx));
-		
+
         std::array<OblvSwitchNet::Program, 3> progs;
         for (u64 h = 0; h < 3; ++h)
         {
             progs[h].init(
-				gsl::narrow<u32>(cuckooHashTable.rows()), 
-				gsl::narrow<u32>(keys.rows()));
+                gsl::narrow<u32>(cuckooHashTable.rows()),
+                gsl::narrow<u32>(keys.rows()));
         }
 
         for (u64 i = 0; i < view.size(); ++i)
@@ -1040,15 +1040,13 @@ namespace osuCrypto
 
         aby3::Sh3BinaryEvaluator eval;
 
-#ifdef BINARY_ENGINE_DEBUG
         if (DBServer_debug)
             eval.enableDebug(mIdx, mRt.mComm.mPrev, mRt.mComm.mNext);
-#endif
-        eval.init(mEnc.mShareGen);
+
         eval.setCir(&cir, size);
 
         u64 i = 0;
-        for(; i < leftCircuitInput.size(); ++i)
+        for (; i < leftCircuitInput.size(); ++i)
             eval.setInput(i, *leftCircuitInput[i]);
 
         t0.get();
@@ -1058,13 +1056,11 @@ namespace osuCrypto
         t2.get();
         eval.setInput(i++, A[2]);
 
-#ifdef BINARY_ENGINE_DEBUG
         std::vector<std::vector<aby3::Sh3BinaryEvaluator::DEBUG_Triple>>plainWires;
         eval.distributeInputs();
 
         if (DBServer_debug)
             plainWires = eval.mPlainWires_DEBUG;
-#endif
 
         mRt.runAll();
 
@@ -1267,11 +1263,9 @@ namespace osuCrypto
 
         aby3::Sh3BinaryEvaluator eval;
 
-#ifdef BINARY_ENGINE_DEBUG
         if (DBServer_debug)
             eval.enableDebug(mIdx, mRt.mComm.mPrev, mRt.mComm.mNext);
-#endif
-        eval.init(mEnc.mShareGen);
+
         eval.setCir(&cir, size);
         eval.setInput(0, leftJoinCol.mCol);
         t0.get();
@@ -1281,13 +1275,11 @@ namespace osuCrypto
         t2.get();
         eval.setInput(3, A[2]);
 
-#ifdef BINARY_ENGINE_DEBUG
         std::vector<std::vector<aby3::Sh3BinaryEvaluator::DEBUG_Triple>>plainWires;
         eval.distributeInputs();
 
         if (DBServer_debug)
             plainWires = eval.mPlainWires_DEBUG;
-#endif
 
         mRt.runAll();
 
@@ -1317,8 +1309,6 @@ namespace osuCrypto
             //{
             //    binEvals[i].enableDebug(mIdx, mPrev, mNext);
             //}
-
-            binEvals[i].init(mEnc.mShareGen);
             binEvals[i].setCir(&mLowMCCir, shareCount);
 
             binEvals[i].setInput(0, cols[i].mCol);
@@ -1423,13 +1413,13 @@ namespace osuCrypto
         u64 totalByteCount = 0;
         for (auto& c : rightCircuitInput)
             totalByteCount += c->getByteCount();
-        BetaBundle 
-            a0(totalByteCount * 8), 
-            a1(totalByteCount * 8), 
+        BetaBundle
+            a0(totalByteCount * 8),
+            a1(totalByteCount * 8),
             a2(totalByteCount * 8),
             out(1);
 
-        std::vector<BetaBundle> 
+        std::vector<BetaBundle>
             leftBundles(leftCircuitInput.size()),
             outputBundles(circuitOutput.size()),
             midBundles(leftCircuitInput.size() + rightCircuitInput.size());
@@ -1447,7 +1437,7 @@ namespace osuCrypto
 
 
         r.addOutputBundle(out);
-        for(u64 i =0; i <circuitOutput.size(); ++i)
+        for (u64 i = 0; i < circuitOutput.size(); ++i)
         {
             outputBundles[i].mWires.resize(circuitOutput[i]->getBitCount());
             r.addOutputBundle(outputBundles[i]);
@@ -1459,7 +1449,7 @@ namespace osuCrypto
             auto idx = leftInputOrder[i].first;
             auto used = leftInputOrder[i].second;
 
-            if(used)
+            if (used)
                 midBundles[idx].mWires = leftBundles[i].mWires;
         }
 
@@ -1474,7 +1464,7 @@ namespace osuCrypto
                 midBundles[inputPos] =
                     outputBundles[query.mOutputs[mem.mOutputIdx].mPosition];
             }
-            else if(mem.mUsed)
+            else if (mem.mUsed)
             {
                 midBundles[inputPos].mWires.resize(query.mInputs[inputPos].mCol.mCol.getBitCount());
                 r.addTempWireBundle(midBundles[inputPos]);
@@ -1550,7 +1540,7 @@ namespace osuCrypto
             }
         }
 
-        
+
 
 
         query.apply(r, midBundles, outputBundles);
@@ -1559,7 +1549,7 @@ namespace osuCrypto
         {
             for (u64 j = 0; j < outputBundles[i].size(); ++j)
             {
-                if(r.mWireFlags[outputBundles[i].mWires[j]] == BetaWireFlag::Uninitialized)
+                if (r.mWireFlags[outputBundles[i].mWires[j]] == BetaWireFlag::Uninitialized)
                     throw RTE_LOC;
             }
         }

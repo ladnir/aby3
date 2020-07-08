@@ -76,7 +76,7 @@ namespace aby3
 		std::vector<std::vector<Coef>> mCoefficients;
 
 		void eval(
-			const eMatrix<double> & inputs,
+			const eMatrix<double>& inputs,
 			eMatrix<double>& outputs,
 			u64 D,
 			bool print = false);
@@ -116,17 +116,6 @@ namespace aby3
 			return eval(dep, inputs.i64Cast(), outputs.i64Cast(), D, evaluator, print);
 		}
 
-
-		void init(Sh3ShareGen& gen)
-		{
-			binEng.init(gen);
-		}
-		void init(block prevSeed, block nextSeed)
-		{
-			binEng.init(prevSeed, nextSeed);
-		}
-
-
 		std::vector<sbMatrix> mInputRegions;
 		std::vector<sbMatrix> circuitInput0;
 		sbMatrix circuitInput1;
@@ -145,7 +134,7 @@ namespace aby3
 			CommPkg& comm, Sh3Task& task,
 			bool print = false);
 
-		oc::Matrix<u8> getInputRegions(const i64Matrix& inputs,u64);
+		oc::Matrix<u8> getInputRegions(const i64Matrix& inputs, u64);
 
 
 		Sh3Task getFunctionValues(
