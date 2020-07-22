@@ -19,7 +19,7 @@
 
 inline bool eq(const __m256i& lhs, const __m256i& rhs)
 {
-    std::aligned_storage<32, 32> ll, rr;
+    std::array<char, 32> ll, rr;
 
     _mm256_store_si256((__m256i*) & ll, lhs);
     _mm256_store_si256((__m256i*) & rr, rhs);
