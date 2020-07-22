@@ -28,7 +28,7 @@ namespace aby3
                 (u8*)(d.data() + d.size()),
                 sizeof(i64) * d.cols());
 
-            sse_transpose(inView, memView);
+            transpose(inView, memView);
         }
     }
 
@@ -51,7 +51,7 @@ namespace aby3
                 (u8*)(d.data() + d.size()),
                 sizeof(i64) * d.cols());
 
-            sse_transpose(inView, memView);
+            transpose(inView, memView);
         }
     }
 

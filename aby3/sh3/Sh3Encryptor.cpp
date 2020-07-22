@@ -229,7 +229,7 @@ namespace aby3
         auto outCols = (dest.shareCount() + bits - 1) / bits;
         oc::MatrixView<u8> in((u8*)m.data(), m.rows(), m.cols() * sizeof(i64));
         oc::MatrixView<u8> out((u8*)dest.mShares[0].data(), outRows, outCols * sizeof(i64));
-        oc::sse_transpose(in, out);
+        oc::transpose(in, out);
 
         for (u64 i = 0; i < dest.mShares[0].size(); ++i)
             dest.mShares[0](i) = dest.mShares[0](i) ^ mShareGen.getBinaryShare();
@@ -260,7 +260,7 @@ namespace aby3
             oc::MatrixView<u8> out((u8*)dest.mShares[0].data(), outRows, outCols * sizeof(i64));
 
             if (transpose)
-                oc::sse_transpose(m, out);
+                oc::transpose(m, out);
             else
                 memcpy(out.data(), m.data(), m.size());
 
@@ -523,7 +523,7 @@ namespace aby3
             oc::MatrixView<u8> bb((u8*)buff.data(), A.bitCount(), A.simdWidth() * sizeof(i64));
             oc::MatrixView<u8> rr((u8*)r.data(), r.rows(), r.cols() * sizeof(i64));
             memset(r.data(), 0, r.size() * sizeof(i64));
-            sse_transpose(bb, rr);
+            transpose(bb, rr);
         });
     }
     Sh3Task Sh3Encryptor::revealAll(Sh3Task dep, const sPackedBin& A, i64Matrix& r)
@@ -563,7 +563,7 @@ namespace aby3
         oc::MatrixView<u8> bb((u8*)buff.data(), A.bitCount(), A.simdWidth() * sizeof(i64));
         oc::MatrixView<u8> rr((u8*)r.data(), r.rows(), r.cols() * sizeof(i64));
         memset(r.data(), 0, r.size() * sizeof(i64));
-        sse_transpose(bb, rr);
+        transpose(bb, rr);
     }
 
     Sh3Task Sh3Encryptor::revealAll(Sh3Task dep, const sPackedBin& A, PackedBin& r)
