@@ -1,0 +1,144 @@
+\section{Omitted Proofs}
+
+\subsection{Permutation Network}\label{sec:perm-proof}
+
+We now formally prove that the oblivious permutation network protocol in \figureref{fig:switching-net}	and repeated in \figureref{fig:perm-net-repeat} is secure with respect to the  \f{perm} functionality of  \figureref{fig:perm-ideal-2}.
+
+\begin{figure}
+	\framebox{\begin{minipage}{0.95\linewidth}\small
+			Parameters: $3$ parties denoted as \programmer, \sender and \receiver. Elements are strings in $\Sigma:=\{0,1\}^\sigma$. An input, output vector size of $n, m$.
+			\smallskip
+			
+			
+			{\bf [Permute]} Upon the command $(\textsc{Permute}, \pi)$ from  \programmer and $(\textsc{Permute}, A)$ from  \sender. Require that $\pi: [m]\rightarrow [n]$ is \emph{injective} and  $A\in \Sigma^{n}$. Then:
+			\begin{enumerate}[leftmargin=.5cm]
+				%\item If $n<m$,  redefine $A := A || (\{0\}^\sigma)^{m-n}$ and  $n:=m$.
+				\item  \programmer uniformly samples a bijection $\pi_0 : [n]\rightarrow[n]$ and  let $\pi_1 :[n] \rightarrow[m]$ s.t. $\pi_1\circ \pi_0 = \pi$.  \programmer sends $\pi_0 $ and  $S\gets \Sigma^{n}$  to  \sender.
+				\item  \sender sends $B := ( A_{\pi_0(1)} \oplus S_1, ..., A_{\pi_0(n)} \oplus S_n)$ to  \receiver.
+				\item  \programmer sends $\pi_1$ and $T\gets\Sigma^{m}$ to  \receiver who outputs $\shareTwo{A'}_0:=\{B_{\pi_1(1)} \oplus T_1,...,B_{\pi_1(m)}\oplus T_m\}$.  \programmer outputs $\shareTwo{A'}_1:=\{ S_{\pi_1(1)}\oplus T_1,...,S_{\pi_1(m)}\oplus T_m\}$.
+			\end{enumerate}
+			
+	\end{minipage}}
+	\caption{The Oblivious Permutation Network protocol $\proto{perm}$ repeated. }
+	\label{fig:perm-net-repeat}	
+\end{figure}
+
+\begin{figure}\small
+	\framebox{\begin{minipage}{0.95\linewidth}
+			Parameters: $3$ parties denoted as the \programmer, \sender and \receiver. Elements are strings in $\Sigma:=\{0,1\}^\sigma$. An input vector size of $n$ and output size of $m$.
+			
+			{\bf [Permute]} Upon the command $(\textsc{Permute}, \pi)$ from the \programmer and $(\textsc{Permute}, A)$ from the \sender:
+			\begin{enumerate}
+				\item Interpret $\pi: [m]\rightarrow [n]$ as an injective function and $A\in \Sigma^n$. 
+				\item Compute $A'\in \Sigma^m$ s.t. $\forall i\in [m], A_{\pi(i)} = A'_i$.
+				\item Generate $\shareTwo{A'}$ and send $\shareTwo{A'}_0$ to \programmer and $\shareTwo{A'}_1$ to \receiver.
+			\end{enumerate}
+	\end{minipage}}
+	\caption{The Oblivious Permutation Network ideal functionality \f{perm}.}
+	\label{fig:perm-ideal-2}	
+\end{figure}
+
+\begin{theorem}
+	Protocol $\proto{perm}$ of \figureref{fig:perm-net-repeat} securely realized the ideal functionality \f{perm} of \figureref{fig:perm-ideal-2} given at most one party is corrupted in the semi-honest model.
+\end{theorem}
+\begin{proof}
+	Correctness follows directly from $\pi_1\circ \pi_0 = \pi$ and that the masks cancel out.
+	With respect to simulation, consider the following three cases:
+	\begin{enumerate}
+		\item \emph{Corrupt \programmer}: The view of \programmer contains no messages and therefore is trivial to simulation. 
+		\item \emph{Corrupt \sender}:  The view of \programmer contains $\pi_1, S$ which are sent by \programmer. The simulator can uniformly sample $\pi_1:[m]\rightarrow[n]$ from all such injective functions and uniformly sample $S\gets\Sigma^n$. Clearly $S$ has the same distribution.
+		
+		With respect to $\pi_1$, observe if $\pi_1$ if first fixed uniformly at random then there are exactly $(n-m)!$ ways to choose $\pi_0$. Moreover, for each choice of $\pi_1$ there is a disjoint set of possible $\pi_0$ values. Therefore, \programmer sampling $\pi_0$ uniformly at random results in the distribution of $\pi_1$ also being uniform.
+		
+		%consider the following hybrid: \programmer first uniformly sample $\pi_1:[m]\rightarrow[n]$ and then defines $\pi_0:[n]\rightarrow[n]$ appropriately. For each choice of $\pi_1$, there are always exactly ${n\choose m}$ options for $\pi_0$. What is more, these options are unique to this choice of $\pi_1$.
+		\item \emph{Corrupt \receiver}: The view of \receiver contains $B:= ( A_{\pi_0(1)} \oplus S_1, ..., A_{\pi_0(n)} \oplus S_n)$  and $\pi_1, T\in \Sigma^m$. $\pi_1,T$ are sampled uniformly and therefore trivial to simulation. similarly, each $B_i=A_{\pi_0(i)}\oplus S_i$ where $S_i$ is uniformly distributed in their view. Therefore $B_i$ is similarly distributed. 
+	\end{enumerate}
+\end{proof}
+
+
+\subsection{Duplication Network}\label{sec:dup-proof}
+
+
+We now formally prove that the oblivious duplication network protocol in \figureref{fig:switching-net}	and repeated in \figureref{fig:perm-net-repeat} is secure with respect to the  \f{dup} functionality of  \figureref{fig:dup-ideal-2}.
+
+\begin{figure}
+	\framebox{\begin{minipage}{0.95\linewidth}\small
+			Parameters: $3$ parties denoted as \programmer, \sender and \receiver. Elements are strings in $\Sigma:=\{0,1\}^\sigma$. An input, output vector size of $n, m$.
+			\smallskip
+			
+			{\bf [Duplicate]} Upon the command $(\textsc{Duplicate}, \pi)$ from  \programmer and $(\textsc{Duplicate}, A)$ from  \sender. Require that $\pi: [2,n]\rightarrow [n]$ s.t $\pi(i)\in \{i,\pi(i-1)\}$ for $i\in [2,n]$ and  $A\in\Sigma^{n}$. Then:
+			\begin{enumerate}[leftmargin=.5cm]
+				
+				\item  \programmer  computes the vector $b\in\{0,1\}^{m}$ such that $b_1=1$ and for $i\in[2,n],$ $b_i=1$ if $\pi(i)=\pi(i-1)$ and 0 otherwise.
+				
+				\item \receiver samples $\shareTwo{A'}_1, W^0,W^1\gets \Sigma^{n}$ and $\phi\gets\{0,1\}^n$. \receiver redefine $\shareTwo{A'_1}_1:=\shareTwo{A_1}_1$. For $i\in \{2,...,m\}$, \receiver sends 
+				\begin{align*}
+				M^0_i&:= \shareTwo{A_i}_1\ \ \, \, \oplus \shareTwo{A'_i}_1 \oplus W^{\phi_i}_i\\
+				M^1_i&:= \shareTwo{A'_{i-1}}_1 \oplus \shareTwo{A'_i}_1 \oplus W^{\overline{\phi_i}}_i
+				\end{align*}
+				and $\phi$ to  \programmer. \receiver sends $\shareTwo{A'}_1,W^0, W^1$ to  \sender.  
+				\item\programmer sends $\rho:=\phi\oplus b$ to  \sender who responds with $\{ W^{\rho_i}_i : i\in [m] \}$.  \programmer defines $\shareTwo{A'_1}_0:=\shareTwo{A_1}_0$ and for $i\in \{2,...,m\}$ computes 
+				$$
+				\shareTwo{A'_i}_0:= M^{b_i}_i \oplus W^{\rho_i}_i\oplus b_i\shareTwo{A'_{1-1}}_0
+				$$
+				\programmer  outputs $\shareTwo{A'_i}_0$ and \sender,\receiver output $\shareTwo{A'_i}_1$.
+			\end{enumerate}
+			
+	\end{minipage}}
+	\caption{The Oblivious Duplication Network protocol \proto{dup} repeated. }
+	\label{fig:dup-net-repeat}	
+\end{figure}
+
+
+\begin{figure}\small
+	\framebox{\begin{minipage}{0.95\linewidth}
+			Parameters: $3$ parties denoted as the \programmer, \sender and \receiver. Elements are strings in $\Sigma:=\{0,1\}^\sigma$. An input vector size of $n$ and output size of $m$.
+			
+			{\bf [Duplicate]} Upon the command $(\textsc{Duplicate}, \pi)$ from the \programmer and $(\textsc{Permute}, A)$ from the \sender:
+			\begin{enumerate}
+				\item Interpret $\pi: [m]\rightarrow [n]$ as a function s.t. $\pi(1)=1, \pi(i)\in \{i,\pi(i-1)\}$ for $i\in[2,n]$ and $A\in \Sigma^n$. 
+				\item Compute $A'\in \Sigma^m$ s.t. $\forall i\in [m], A_{\pi(i)} = A'_i$.
+				\item Generate $\shareTwo{A'}$ and send $\shareTwo{A'}_0$ to \programmer and $\shareTwo{A'}_1$ to \sender and \receiver.
+			\end{enumerate}
+	\end{minipage}}
+	\caption{The Oblivious Duplication Network ideal functionality \f{dup}.}
+	\label{fig:dup-ideal-2}	
+\end{figure}
+
+
+\begin{theorem}
+	Protocol $\proto{dup}$ of \figureref{fig:dup-net-repeat} securely realized the ideal functionality \f{dup} of \figureref{fig:dup-ideal-2} given at most one party is corrupted in the semi-honest model.
+\end{theorem}
+\begin{proof}
+	Correctness follows an inductive argument. Observe that parties directly define $
+		\shareTwo{A'_1}=\shareTwo{A_1}
+	$
+	and therefore $A'_1$ is correct since $\pi(1)=1$ by definition. Inductively let us assume that $\shareTwo{A'_{i-1}}$ is correct and we will show the correctness of $\shareTwo{A'_i}$.  
+	Observe that for $i\in[2,n]$
+	\begin{align*}
+		A'_i&=\shareTwo{A'_i}_0 \oplus \shareTwo{A'_i}_1\\
+		    &=(M^{b_i}_i\qquad\qquad\qquad\qquad\qquad\qquad\quad\ \  \oplus W^{\rho_i}_i\oplus b_i\shareTwo{A'_{i-1}}_0) \oplus (\shareTwo{A'_i}_1)\\
+ 		    &=(\overline{b_i}A_i\oplus b_i\shareTwo{A'_{i-1}}_1 \oplus \shareTwo{A'_{i}}_1\oplus W^{b_i\oplus\phi_i}_i\oplus W^{\rho_i}_i\oplus b_i\shareTwo{A'_{i-1}}_0) \oplus (\shareTwo{A'_i}_1) \\
+		    &=\overline{b_i}A_i \oplus b_i A'_{i-1}
+	\end{align*}
+	
+	With respect to simulation, consider the following three cases:
+	\begin{enumerate}
+		\item \emph{Corrupt \programmer}: The view of \programmer contains $M^0, M^1\in \Sigma^n, \phi\in \{0,1\}^n$ from \receiver and $W^{b_i\oplus\phi_i}_i$ from \sender. First observe that in the view of \programmer, $\shareTwo{A'_i}_1$, $W^{\overline{b_i\oplus\phi_i}}_i$ are uniform. Moreover, 
+	\begin{align*}	
+	M^{b_i}_i=&...\oplus\shareTwo{A'_i}_1\\
+	M^{\overline{b_i}}_i=&...\oplus W^{\overline{b_i\oplus\phi_i}}_i	
+	\end{align*}
+	Therefore they are distributed uniformly. Finally, $W^{{b_i\oplus\phi_i}}_i$ is uniform since $M^{b_i}_i$ no longer depends on it. 
+	
+		\item \emph{Corrupt \sender}: 
+		\item \emph{Corrupt \receiver}:  
+	\end{enumerate}
+\end{proof}
+
+
+
+
+\subsection{Switching Network}\label{sec:switch-proof}
+\subsection{Shared Network}\label{sec:shared-proof}
+

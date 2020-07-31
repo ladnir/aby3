@@ -1,0 +1,9 @@
+- improvements in writing quality / experiments.
+- duplication network is confusing
+  -- warmup was not clear
+  -- missing proof of correctness/security
+
+- compare with 2pc switch net. And perm network (GC and HE).
+
+- obliv perm is actually an oblivious injection. Make this clear. See Review 1 for complaint.
+

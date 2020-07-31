@@ -30,6 +30,7 @@ All cryptographic operations are performed with computational security parameter
 	\multirow{2}{*}{Sum}              & This                           \hfill ,3                   & 0.03  & 0.04     & 0.3      & 6.8      &     158.8 &   3.7 & 4.0      & 7.9      & 51.0     &   1,099.6 \\ \cline{2-12}
 	                                  & \cite{cryptoeprint:2017:738}    \hfill ,2                  & 7.0   & 115.0    & 1,860.0  & 29,700.0 & 475,000.0 &    -- & --       & --       & --       &       -- \\ \hline
 \end{tabular}
+\vspace{-0.3cm}
 \caption{	\label{fig:compare}The running time in seconds for various join operations. The input tables each contain $n$ rows. The  \cite{PSWW18} protocol has two implementation where  \cite{PSWW18}b is optimized for the WAN setting. -- denotes that the running time is not available. * denotes that the running times were linearly extrapolated from the values of $n$ provided by the publication.}
 \vspace{-0.2cm}
 \end{figure*}
@@ -60,6 +61,7 @@ All cryptographic operations are performed with computational security parameter
 		Threat Log $\sim$ 4               & This                           \hfill ,3        & 0.6   & 9.7      & 155.4    & 2,487.8  & 39,804.4 \\ \hline
 		Threat Log $\sim$ 8               & This                           \hfill ,3        & 1.4   & 22.8     & 365.7    & 5,854.9  & 93,677.5 \\ \hline
 	\end{tabular}
+\vspace{-0.3cm}
 	\caption{\label{fig:comm}	The total communication overhead in MB for various join operations and applications. The input tables each contain $n$ rows. The  \cite{PSWW18} protocol has two implementation where  \cite{PSWW18}b is optimized for the WAN setting. -- denotes that the running time is not available. }
 	\vspace{-0.2cm}
 \end{figure*}
@@ -90,7 +92,9 @@ The second point of comparison is performing an inner join protocol on two table
 		Threat Log $N=4$           & 0.05  & 0.09     & 0.9      & 17.9     &    388.4 &  1,553.9 &   6.6 &      6.8 & 13.1     & 108.7    & 1,739.2  &  6,956.8 \\ \hline
 		Threat Log $N=8$          & 0.10  & 0.19     & 1.7      & 47.1     &  1,021.0 & 16,336.1 &  14.9 &     15.3 & 30.0     & 264.3    & 4,228.8  & 16,915.2 \\ \hline
 	\end{tabular}
+\vspace{-0.3cm}
 	\caption{\label{fig:app} The running time in seconds for the Voter Registration and Threat Log applications. The input tables each contain $n$ rows.  }
+	\vspace{-0.3cm}
 \end{figure*}
 
 \paragraph{Cardinality} The set cardinality protocol presented here also outperforms all previous protocols. As described in \sectionref{sec:card}, our cardinality protocol allows the omission of the switching network which reduces the amount of communication and overall running time. We demonstrate the performance by comparing with the two-party protocols of Pinkas et al. \cite{PSWW18} and De Cristofaro et al. \cite{DBLP:conf/cans/CristofaroGT12}. The protocol of  \cite{PSWW18} was benchmarked on two multi-core i7 machines at 3.7GHz and 16GB of RAM with similar network settings. For the protocol of \cite{DBLP:conf/cans/CristofaroGT12}, we performed rough estimates on the time required for our machine to perform the computation without any communication overhead. For sets of size $n=2^{20}$ our protocol requires 3.1 seconds in the LAN setting and 15.8 in the WAN setting. The next fastest protocol is \cite{PSWW18} which requires 86.6 seconds in the LAN setting and 390 seconds in the WAN setting. In both cases this represents more than a $20\times$ difference in running time.  \cite{PSWW18} considers a variant of their protocol optimized for the WAN setting which reduces their communication at the expense of increased running time. The protocol of \cite{DBLP:conf/cans/CristofaroGT12} requires the most running time by a large margin due to the protocol being based on exponentiation. Just to locally perform these public key operations requires roughly 4200 seconds of computation on our benchmark machine, a difference of $1350\times$. However, the protocol of \cite{DBLP:conf/cans/CristofaroGT12} also requires the least amount of communication, consisting of 99MB for $n=2^{20}$ while our protocol requires 521MB followed by \cite{PSWW18}  with almost 10GB.
