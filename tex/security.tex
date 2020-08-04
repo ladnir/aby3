@@ -215,8 +215,23 @@ We now formally prove that the oblivious switching network protocol in \figurere
 
 
 \begin{theorem}\label{thm:join}
-	Protocol $\proto{join}$ of \figureref{fig:full_proto} securely realized the ideal functionality \f{join} of \figureref{fig:full_ideal} given at most one party is corrupted in the semi-honest \f{shared},\f{encode}-hybrid model with statistical security parameters $\lambda$.
+	Protocol $\proto{join}$ of \figureref{fig:full_proto} securely realized the ideal functionality \f{join} of \figureref{fig:full_ideal} given at most one party is corrupted in the semi-honest \f{Permute},\f{Switch},\f{encode}-hybrid model with statistical security parameters $\lambda$.
 \end{theorem}
 \begin{proof}
+	First we demonstrate the correctness of the protocol. Recall that the set of non-\null join keys $\{(X_{J_1}||...||X_{J_l})[i] \mid i\in [n]\}$ are all distinct. The same holds true for the $Y$ table. As such, $P_0$ receives $n$ uniformly random values from \f{encode}. As discussed in \ref{sec:encode}, given that these encodings are of length at least $\lambda + 2 \log_2(n)$ bits, then with probability $1-2^{-\lambda}$ all the encodings are distinct.
+	
+	Recall that $P_1$ then constructs a cuckoo hash table using the encodings $\mathbb{E}_y$. Given that cuckoo hash table is parameterized as described in  \cite{DRRT18}, this succeeds with overwhelming probability, i.e. $1-2^{-\lambda}$.
+	
+	The correctness of the rest of the protocol is straight forward. The shared table $\share{Y}$ are permuted to form a shared cuckoo hash table $\share{T}$. Based on the encodings  $\mathbb{E}_x$, the shares in the table $T$ are mapped to the corresponding row of $X$. It is easy to verify that if $Y$ has a matching row then it will have been mapped. Finally, \f{mpc} is used to compute the circuit which constructs the output table.
+	
+	With respect to simulation, consider the following cases:
+	\begin{enumerate}
+		\item \emph{Corrupt $P_0$}: The transcript of $P_0$ contains the encodings $\mathbb{E}_x$, the output $\shareTwo{\widehat{Y}^l}_0$ from \f{Switch}, and the output of $\f{mpc}$. Given that the inputs to \f{encode} are either set to \null or all distinct values, the output $\mathbb{E}_x$ is uniformly distributed and therefore can be sample as such by the simulator. Similarly, the output of $\f{Switch},\f{mpc}$ are both uniform.
+		
+		\item \emph{Corrupt $P_1$}:  The transcript of $P_1$ contains the encodings $\mathbb{E}_y$, the output $\shareTwo{\widehat{T}}_1$ from \f{Permute}, the output $\shareTwo{\widehat{Y}^l}_1$ from \f{Switch}, and the output of $\f{mpc}$. All of these are distributed uniformly. The simulation of this transcript follows the same as that of $P_0$.
+		
+		\item \emph{Corrupt $P_2$}: The transcript of $P_2$ contains the output $\shareTwo{\widehat{T}}_0$ from \f{Permute}, the output $\shareTwo{\widehat{Y}^l}_0$ from \f{Switch}, and the output of $\f{mpc}$. All of these are distributed uniformly. The simulation of this transcript follows the same as that of $P_0$.
+	\end{enumerate}
+	
 \end{proof}
 

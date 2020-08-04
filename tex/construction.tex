@@ -55,7 +55,7 @@ Once the shares of $\widehat{Y}^0[i]={\ytable[{h_0(x_i)}]}, \widehat{Y}^1[i]={\y
 
 Left joins work in a similar way except that all rows of $X$ are output and marked not \texttt{NULL}. Finally, unions can be computed by including all of $Y$ in the output and all of the rows of $X$ where the comparison bit $\share{b}$ is zero. Regardless of the type of join, the protocols do not reveal any information about the tables. In particular, not even the cardinality of the join is revealed due to the use of \texttt{NULL} rows.
 
-\subsection{Randomized Encodings}
+\subsection{Randomized Encodings}\label{sec:encode}
 
 The randomized encoding functionality \f{encode} of \figureref{fig:randomized-encode-ideal} enables the parties to coordinate their secret shares without revealing the underlying values. In particular, the parties will construct a cuckoo hash table using these encodings. The functionality takes as input several tuples $(\share{B_i},\share{X_i},\Party{i})$ where $B_i\in\{0,1\}^d$ is an array of $d$ bits, $ X_i\in(\{0,1\}^\sigma)^{d}$ is a array of $d$ strings and  $\Party{i}$ that denotes that party $\Party{i}$ should be output the encodings for this tuple. The functionality assigns a random $\ell$ bit encoding for each input $x\in \{0,1\}^\sigma$. For $j\in[d]$, if the bit $B_i[j]=0$ then the functionality outputs the encoding for $X_i[j]$ and otherwise a random $\ell$ bit string. Looking forward, $B_i[j]=1$ will mean that the key $X_i[j]$ is actually set to \Null and a random encoding should be returned.
 
@@ -87,7 +87,7 @@ The LowMC cipher is parameterized by a block size $\ell$, keys size $\kappa$, s-
 
 One issue with the LowMC approach alone is that the input size is fixed to be at most $\ell\in\{80,100\}$ bits. However, we will see that the larger join protocol requires an arbitrary input size $\sigma$. This is accommodated by applying a universal hash function to the input shares. Specifically, the parties jointly pick a random matrix $E\gets\{0,1\}^{\sigma\times \ell}$. The parties can then locally multiply each secret shared input before it is sent into the LowMC block cipher.
 
-The security of this transformation follows from $xE\neq x'E$ with overwhelming probability if $x\neq x'$. In particular, $f(x)=xE$ is a universal hash function given that $E$ is independent of $x$. As such the probability that $f(x)=f(x')$ for any $x\neq x'$  is $2^{-\ell}$. Applying the birthday bound we obtain that probability of any collisions among the tuples is $2^{-\ell+p}$ where $p=\log_2 D^2/2=2\log_2(D)-1$ and $D=\sum_i d_i$.
+The security of this transformation follows from $xE\neq x'E$ with overwhelming probability if $x\neq x'$. In particular, $f(x)=xE$ is a universal hash function given that $E$ is independent of $x$. As such the probability that $f(x)=f(x')$ for any $x\neq x'$  is $2^{-\ell}$. Applying the birthday bound we obtain that probability of any collisions among the tuples is $2^{-\ell+p}$ where $p=\log_2 D^2/2=2\log_2(D)-1$ and $D=\sum_i d_i$ is the total number of encodings.
 
 Conditioned on the inputs to the block cipher being unique, the outputs of the block cipher is also distinct and indistinguishable from random $\ell$ bit strings. As such, in the simulation the real outputs can be replaced with that of the ideal functionality so long as $2^{-\ell+p}$ is statistically negligible, i.e. $\ell-p\geq\lambda$.
 
