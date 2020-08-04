@@ -44,7 +44,6 @@ First we describe our join algorithm without any privacy and then we will discus
 
 The main challenge in bringing the described algorithm to the secret shared setting is constructing the cuckoo hash table $\ytable$ and selecting rows from $\ytable$ without leaking sensitive information. We achieve this with the use an MPC friendly \emph{randomized encoding} and a new three-party protocol called an \emph{oblivious switching network}.
 
-%Our core protocol is a technique for obliviously mapping together rows with equal join-keys. For the $i$th secret shared row $\share{X}[i]$ and for some $j_0,j_1$, our protocol obliviously maps rows $\share{Y[j_0]},\share{Y[j_1]}$ to the $i$th row of two new tables $\share{\widehat{Y}^0},\share{\widehat{Y}^1}$ such that if $Y$ contains a row with matching keys then either $\share{\widehat{Y}^0}[i]$ or $\share{\widehat{Y}^1}[i]$ will be this row. If no such key exists in $Y$ then an arbitrary rows from $Y$ are mapped to these locations. Once the mapping is performed the final output table can be constructed by an MPC protocol\cite{aby3} that directly compares the keys for the row of $\share{X}[i]$ with $\share{\widehat{Y}^0}[i]$ and $\share{\widehat{Y}^1}[i]$. If the keys match then the output row is constructed and otherwise a dummy \Null row is constructed. 
 
 Let us continue to assume that the columns $X_1$ and $Y_1$ are the join-keys. Our protocol begins by generating a \emph{randomized encoding} for each of the secret shared join-key $\share{x_i}\in \share{X_1}$ and $ \share{y_i}\in \share{Y_1}$. \figureref{fig:randomized-encode-ideal} contains the ideal functionality for this encoding which takes secret shares from the parties, apply a PRF $F_k$ to the reconstructed value using a internally sampled key $k$, and returns the resulting value to one of the three parties. For $\share{ x_i}:= \share{X_1}[i]$, \Party{0} will learn $F_k(x_i)$ while \Party{1} will learn $F_k(y_i)$ for $\share{ y_i}:=\share{Y_1}[i]$. Since the join-keys $x_i$ (resp. $y_i$) are unique and $k$ is not known, this can be simulated by sending random values to \Party{0} (resp. \Party{1}).
 
@@ -86,32 +85,12 @@ We realize this functionality using the LowMC block cipher\cite{lowmc}. When imp
 
 The LowMC cipher is parameterized by a block size $\ell$, keys size $\kappa$, s-boxes per layer $m$ and the desired data complexity $d$. To set these parameters, observe that the adversary only sees a bounded number of block cipher outputs (encodings) per key. As such, the data complexity can be bounded by this value. For our implementation we upper bound the number of outputs by $d= 2^{30}$. The remaining parameters are set to be $\ell\in\{80, 100\}$ and $m=14$ which results in $r=13$ rounds and computational security of $\kappa=128$ bits\cite{lowmc}. The circuit for $\ell=80$ contains 546 \textsc{and} gates (meaning each party will send only 546 bits per encoding).
 
-%We show simulation of this approach with statistical correctness of $\lambda$ bits. First, by the assumption that LowMC is indistinguishable from an ideal cipher, 
-%
-%\paragraph{Long Encodings} 
-
-
 One issue with the LowMC approach alone is that the input size is fixed to be at most $\ell\in\{80,100\}$ bits. However, we will see that the larger join protocol requires an arbitrary input size $\sigma$. This is accommodated by applying a universal hash function to the input shares. Specifically, the parties jointly pick a random matrix $E\gets\{0,1\}^{\sigma\times \ell}$. The parties can then locally multiply each secret shared input before it is sent into the LowMC block cipher.
 
 The security of this transformation follows from $xE\neq x'E$ with overwhelming probability if $x\neq x'$. In particular, $f(x)=xE$ is a universal hash function given that $E$ is independent of $x$. As such the probability that $f(x)=f(x')$ for any $x\neq x'$  is $2^{-\ell}$. Applying the birthday bound we obtain that probability of any collisions among the tuples is $2^{-\ell+p}$ where $p=\log_2 D^2/2=2\log_2(D)-1$ and $D=\sum_i d_i$.
 
 Conditioned on the inputs to the block cipher being unique, the outputs of the block cipher is also distinct and indistinguishable from random $\ell$ bit strings. As such, in the simulation the real outputs can be replaced with that of the ideal functionality so long as $2^{-\ell+p}$ is statistically negligible, i.e. $\ell-p\geq\lambda$.
 
-
-%$n*n=n^2$
-%$(D-1) + (D-2)+...+1 = \sum_{i=1}^D (D-i)= D^2/2 = (2n)^2/2=2n^2$
-
-%
-%To preserve security we require the probability of the following game outputting 1 be negligible in $\lambda$. 
-%\begin{quote}
-%Have the adversary select two sets $X,Y\subset \{0,1\}^{m}$ of size $n_1,n_2\in poly(\lambda)$  respectively and then a uniformly random matrix $E\gets \{0,1\}^{m\times \sigma}$ is sampled. If there exists distinct $x\in X$ and $y\in Y$ such that $xE = yE$, output 1, otherwise 0. 
-%\end{quote}
-
-%First observe that this use of $E$ is a universal hash function. 
-
-%Therefore, fixing any distinct $x\in X, y\in Y$, it holds that $\Pr[xE=yE]=2^{-\sigma}$. Applying a union bound over all pairs of items, the overall probability of a collision is $2^{-\sigma}n_1n_2$. By setting $\sigma \geq \lambda + \log_2(n_1) + \log_2(n_2)$, we ensure that the collision probability is bounded by the statistical  security $2^{-\lambda}$.
-
-%In practice, we set $\lambda=40$ and choose $\sigma =80$ if $n_1=n_2=n\leq 2^{20}$ and $\sigma=100$ otherwise (supporting $n\leq 2^{30}$). 
 
 
 
@@ -151,22 +130,15 @@ introduce a \emph{new} oblivious switching network protocol tailored for the hon
 \newcommand{\sender}{\ensuremath{P_{\textsf{s}}}\xspace}
 \newcommand{\receiver}{\ensuremath{P_{\textsf{r}}}\xspace}
 
-The ideal functionality of our protocol is given in \figureref{fig:perm-ideal} with three parties, a programmer \programmer, a sender \sender and a receiver \receiver. \programmer has a description of  $\pi$ while \sender has a vector $A$ containing $n$ elements each consisting of $\sigma$ bits. \programmer and  \receiver are each output a share of $\shareTwo{A'}$ s.t. $A'=(A_{\pi(1)}, ..., A_{\pi(m)})$.  Later we will discuss the case where the input vector $A$ is secret shared.
-
+The ideal functionality of our protocol is given in \figureref{fig:perm-ideal} with three parties, a programmer \programmer, a sender \sender and a receiver \receiver. \programmer has a description of  $\pi$ while \programmer,\sender have a secret sharing of a vector $A\in \Sigma^n$ where $\Sigma=\{0,1\}^\sigma$.  \programmer and  \receiver are each output a share of $\shareTwo{A'}$ s.t. $A'=(A_{\pi(1)}, ..., A_{\pi(m)})$. For ease of presentation, we will initially assume $A$ is the private input of \sender. 
 
 \begin{figure}\small
 	\framebox{\begin{minipage}{0.95\linewidth}
-			Parameters: $3$ parties denoted as the \programmer, \sender and \receiver. Elements are strings in $\Sigma:=\{0,1\}^\sigma$. An input vector size of $n$ and output size of $m$.
-			
-			{\bf [Switch]} Upon the command $(\textsc{switch}, \pi)$ from the \programmer and $(\textsc{switch}, A)$ from the \sender:
-			\begin{enumerate}
-				\item Interpret $\pi: [m]\rightarrow [n]$ and $A\in \Sigma^n$. 
-				\item Compute $A'\in \Sigma^m$ s.t. $\forall i\in [m], A_{\pi(i)} = A'_i$.
-				\item Generate $\shareTwo{A'}$ and send $\shareTwo{A'}_0$ to \programmer and $\shareTwo{A'}_1$ to \receiver.
-			\end{enumerate}
+
+\input{ideal-fig-switch}
 	\end{minipage}}
-\vspace{-0.2cm}
-	\caption{The Oblivious Switching Network ideal functionality \f{switch}.}
+	\vspace{-0.2cm}
+	\caption{The Oblivious Switching Network ideal functionality \f{Switch}. See \figureref{fig:perm-ideal-2}, \ref{fig:dup-ideal-2} for \f{Permute} and \f{Duplicate}.}
 	\label{fig:perm-ideal}	
 	\vspace{-0.5cm}
 \end{figure}
@@ -174,18 +146,26 @@ The ideal functionality of our protocol is given in \figureref{fig:perm-ideal} w
 
 \paragraph{Permutation Network}\label{sec:perm}
 
-We begin with a restricted class of switching networks where the programming function $\pi$ is injective. {That is, each input element $A_i$ will be mapped to a maximum\footnote{Strictly speaking, this protocol implementation a generalization of a permutation network since it allows some elements to not appear in the output, i.e. $m<n$ and $\pi:[m]\rightarrow[n]$.} of one location in the output.} As we will see later, this property will simplify the implementation since we do not need to duplicate any value. 
+We begin with a restricted class of switching networks where the programming function $\pi$ is injective. {That is, each input element $A_i$ will be mapped to a maximum\footnote{Strictly speaking, this protocol implementation a generalization of a permutation network since it allows some elements to not appear in the output, i.e. $m<n$ and $\pi:[m]\rightarrow[n]$.} of one location in the output.} As we will see later, this property will simplify the implementation since we do not need to duplicate any element. 
 Intuitively, the Permute protocol of \figureref{fig:switching-net} instructs \sender to first   shuffled $A$ in a random order (as specified by $\pi_0$) and then secret share it between \programmer \& \receiver. Then \programmer \& \receiver will reorder these shares (as specified by $\pi_1$) to be in the desired order (i.e. $\pi$). This is done as follows, \programmer samples two random functions $\pi_0,\pi_1$ such that $\pi_1 \circ \pi_0 = \pi$, $\pi_0:[n]\rightarrow [n]$ is bijective and $\pi_1:[m]\rightarrow [n]$ is injective.  \programmer sends   $\pi_1$ to  \receiver and $\pi_0, S\gets \{0,1\}^{\sigma\times n}$ to  \sender who sends $B := (A_{\pi_0(1)} \oplus S_0, ...,A_{\pi_0(n)} \oplus S_n )$ to  \receiver. The final shares of $A'=\pi(A)$ are defined as  \programmer holding $\shareTwo{A'}_0:=(S_{\pi_1(1)}, ..., S_{\pi_1(m)})$ and the \receiver holding $\shareTwo{A'}_1:=(B_{\pi_1(1)}, ..., B_{\pi_1(m)})$. 
 
 The simulation of this protocol is perfect. The view of \sender contains a uniform permutation $\pi_0$ and vector $S$.  Similarly, the view of  \receiver contains $\pi_1$ which is uniformly distributed (when $\pi_0$ is unobserved) and the uniform vector $B$. A simulator can sample these directly on behalf of the honest parties. See \sectionref{sec:perm-proof} for details.
 
 In our computational secure setting,  $\pi_0,S$ can be generated locally by \Party{0} and \Party{1} using a common source of randomness, e.g. a seeded PRG. This reduces the rounds to 1.  
 
+
+\paragraph{Shared Inputs} As presented here in the text our protocols assume the vector $A$ being transformed is the private input of the \sender. However, the full protocols will require the input $A$ to secret shared. Let us assume we have some switching network protocol $\Pi$ which takes input $A$ from \sender, $\pi$ from \programmer and output shares of $\pi(A)$. Then this can be transform to shared input $\shareTwo{A}$ by now having \sender input their share $\shareTwo{A}_1$. \programmer and \receiver receive $\shareTwo{B}$ from the functionality. The final result can then be computed as \receiver holding $\shareTwo{A'}_1:=\shareTwo{B}_1$ while \programmer  locally defines $\shareTwo{A'}_0:=\shareTwo{B}_0\oplus \pi(\shareTwo{A}_0)$. It is easy to verify that $A'=\pi(\shareTwo{A}_1)\oplus \pi(\shareTwo{A}_0)=\pi(A)$. The protocol descriptions in \figureref{fig:switching-net} include this shared input modification. However, here in the text we will continue to assume $A$ is the sole input of \sender.
+
+
 \paragraph{Duplication Network}\label{sec:dup}
 
-The Duplication protocol of \figureref{fig:switching-net} considers a second type of restricted network where $\pi : [n]\rightarrow[n]$, s.t.  $\pi(1)=1$ and $\pi(i)\in \{i, \pi(i-1)\}$ for $i=2,...,n$. That is, each output position is either a copy of the same input position or is a duplicate of the previous output position, e.g. let the truth table of $\pi$ be $(\pi(1),...,\pi(6))=(1,1,3,4,4,4)$ and therefore $A'=(A_1,A_1,A_3,A_4,A_4,A_4)$. Note the only change is that $A_1,A_4$ were duplicated into the next position(s). This transformation can be characterized by a vector $b\in\{0,1\}^{n}$ where $b_i=1$ denotes that the output position $i$ should be a copy of output position $i-1$, i.e. $b=(0,1,0,0,1,1)$ for the example above. Therefore we get the relation $A'_i=\overline{b_i}A_i \oplus b_iA_{i-1}'$ for $i\in[2,n]$.
+The Duplication protocol of \figureref{fig:switching-net} considers a second type of restricted network where $\pi : [n]\rightarrow[n]$, s.t.  $\pi(1)=1$ and $\pi(i)\in \{i, \pi(i-1)\}$ for $i=2,...,n$. That is, each output position is either a copy of the same input position (i.e. $\pi(i)=i$) or is a duplicate of the previous output position (i.e. $\pi(i)=\pi(i-1)$). For example, let the truth table of $\pi$ be $(\pi(1),...,\pi(6))=(1,1,3,4,4,4)$ and therefore $A'=(A_1,A_1,A_3,A_4,A_4,A_4)$. Note the only change is that $A_1,A_4$ were duplicated into the next position(s). This transformation can be characterized by a vector $b\in\{0,1\}^{n}$ where $b_i=1$ denotes that the output position $i$ should be a copy of output position $i-1$, i.e. $b=(0,1,0,0,1,1)$ for the example above. Therefore we get the relation $A'_i=\overline{b_i}A_i \oplus b_iA_{i-1}'$ for $i\in[2,n]$.
 
-As a warm-up, let us fix some index $i$ and consider the simpler relation where $A'_i=\overline{b_i}A_i \oplus b_iA_{i-1}$, i.e. $A_i'$ is either $A_i$ or $A_{i-1}$ and not $A_{i-1}'$ as described before. Conceptually, we will implement this using an OT-like protocol with  OT messages $(A_i,A_{i-1})$ and select-bit $b_i$. \sender samples three uniform strings $\shareTwo{A'_{i}}_1, w_0,w_1\gets \{0,1\}^\sigma$ and a uniform bit $\phi\gets \{0,1\}$. \sender constructs two messages $m_0=A_{i}\oplus \shareTwo{A'_{i}}_1\oplus w_\phi$ and $m_1= A_{i-1}\oplus \shareTwo{A'_{i}}_1 \oplus w_{\phi\oplus 1}$.  \sender sends $w_0,w_1$ to  \receiver and sends $m_0,m_1,\phi$ to  \programmer who sends $\rho=\phi\oplus b_i$ to  \receiver. The final shares\footnote{Due to technique reasons about simulating output the full protocol  additionally randomizes the output shares. } are constructed by having  \receiver send $w_\rho$ to  \programmer
+As a warm-up, let us fix some index $i$ and consider the simpler relation where 
+$$
+	A'_i=\overline{b_i}A_i \oplus b_iA_{i-1},
+$$
+i.e. $A_i'$ is either $A_i$ or $A_{i-1}$ and not $A_{i-1}'$ as described before. Conceptually, we will implement this using an OT-like protocol with  OT messages $(A_i,A_{i-1})$ and select-bit $b_i$. \sender samples three uniform strings $\shareTwo{A'_{i}}_1, w_0,w_1\gets \Sigma$ and a uniform bit $\phi\gets \{0,1\}$. \sender constructs two messages $m_0=A_{i}\oplus \shareTwo{A'_{i}}_1\oplus w_\phi$ and $m_1= A_{i-1}\oplus \shareTwo{A'_{i}}_1 \oplus w_{\phi\oplus 1}$.  \sender sends $w_0,w_1$ to  \receiver and sends $m_0,m_1,\phi$ to  \programmer who sends $\rho=\phi\oplus b_i$ to  \receiver. The final shares\footnote{Due to technique reasons about simulating output the full protocol  additionally randomizes the output shares. } are constructed by having  \receiver send $w_\rho$ to  \programmer
  who computes $\shareTwo{A'_{i}}_0:=m_{b_i}\oplus w_{\rho}$. In our computationally secure setting observe that sending $w_0,w_1,\phi$ can be optimized away using a seed.
  
 %\footnote{Note that this protocol outputs the share $\shareTwo{A'}_1$ to \sender and \receiver. The output to the \sender can be eliminated by having \programmer \& \receiver re-randomize their share. However, for efficiency we do not do this.}
@@ -193,17 +173,15 @@ As a warm-up, let us fix some index $i$ and consider the simpler relation where 
 %The simulation of this protocol is also perfect. \programmer learns $m_0=A_{i}\oplus \shareTwo{A'_{i}}_1\oplus w_\phi, m_1=A_{i-1}\oplus \shareTwo{A'_{i}}_1\oplus w_{1\oplus \phi}, w_{b_i\oplus \phi}$. As such, they can compute $\shareTwo{A'_i}_0=A_{i-b_i}\oplus \shareTwo{A'_{i}}_1$ but $A_{i-\overline{b_i}}\oplus \shareTwo{A'_{i}}_1$ is uniformly distributed since they do not know $w_{\overline{b_i\oplus \phi}}$. See \sectionref{sec:dup-proof} for details. In our computationally secure setting observe that sending $w_0,w_1,\phi$ can be optimized away using a seed.
 
 
-The protocol just described considers the setting where the parties select between $A_{i},A_{i-1}$. However, we require that at each iteration the messages being selected is either $A_{i}$ or $A'_{i-1}$ where $\shareTwo{A_{i-1}'}$ was computed in the previous iteration. Fortunately this can be achieved at no overhead by leveraging that fact that \programmer knows $b_i$ and $\shareTwo{A'_{i-1}}_0$ ahead of time. At index $i$, \sender uses $\shareTwo{A'_{i-1}}_1$ instead of $A_{i-1}$ while the \programmer computes $\shareTwo{A'_{i}}_0:=m_{b_i}\oplus w_{\rho}\oplus b_i\shareTwo{A'_{i-1}}_0$. As such, \programmer is manually adding other other share of $\shareTwo{A'_{i-1}}$ when it is need. The full proof of security is in \sectionref{sec:dup-proof}. To briefly show correctness, let us assume by induction that $\shareTwo{A'_{i-1}}$ is correct, then:
+The protocol just described considers the setting where the parties select between $A_{i},A_{i-1}$. However, we require that at each iteration the messages being selected is either $A_{i}$ or $A'_{i-1}$ where $\shareTwo{A_{i-1}'}$ was computed in the previous iteration. Fortunately this can be achieved at no overhead by leveraging that fact that \programmer knows $b_i$ and $\shareTwo{A'_{i-1}}_0$ ahead of time. At index $i$, \sender uses $\shareTwo{A'_{i-1}}_1$ instead of $A_{i-1}$ while the \programmer computes $\shareTwo{A'_{i}}_0:=m_{b_i}\oplus w_{\rho}\oplus b_i\shareTwo{A'_{i-1}}_0$. As such, \programmer is manually adding other other share of $\shareTwo{A'_{i-1}}$ when it is need.  To briefly show correctness, let us assume by induction that $\shareTwo{A'_{i-1}}$ is correct, then:
 {\small
 \begin{align*}
 A'_i&=(m_{b_i}\qquad\qquad\qquad\qquad\qquad\qquad\quad\ \, \, \oplus w_{\rho}\oplus b_i\shareTwo{A'_{i-1}}_0) \oplus (\shareTwo{A'_i}_1)\\
 	&=(\overline{b_i}A_i\oplus b_i\shareTwo{A'_{i-1}}_1 \oplus \shareTwo{A'_{i}}_1\oplus w_{b_i\oplus\phi}\oplus w_{\rho}\oplus b_i\shareTwo{A'_{i-1}}_0) \oplus (\shareTwo{A'_i}_1) \\
 	&=\overline{b_i}A_i \oplus b_i A'_{i-1}
 \end{align*}}
-\vspace{-0.4cm}
-
-\paragraph{Shared Inputs} As presented our protocols assume the vector $A$ being transformed is the private input of the \sender. However, the protocols below will require the input $A$ to secret shared. This is generically achieved using the Shared routine of \figureref{fig:switching-net}. The parties first locally convert $\share{A}$ into $\shareTwo{A}$ between \sender and \programmer. They run the non-shared version of \f{switch} where  \sender inputs $\shareTwo{A}_1$ and \programmer inputs $\pi$. \programmer and \receiver receive $\shareTwo{\pi(\shareTwo{A}_1)}$ from \f{switch} where \programmer holds $\shareTwo{A'}_1:=\shareTwo{\pi(\shareTwo{A}_1)}_1$. \programmer  locally defines $\shareTwo{A'}_0:=\shareTwo{\pi(\shareTwo{A}_1)}_0\oplus \pi(\shareTwo{A}_0)$. It is easy to verify that $A'=\pi(A)$. This transformation is generic in that it works the Permute, Duplicate and Switch protocols.
-
+%\vspace{-0.4cm}
+The full proof of security is in \sectionref{sec:dup-proof}.
 
 \paragraph{Universal Switching Network}\label{sec:switch}
 
@@ -226,52 +204,13 @@ The simulation of this protocol is presented in \ref{sec:switch-proof} and follo
 			Parameters: $3$ parties denoted as \programmer, \sender and \receiver. Elements are strings in $\Sigma:=\{0,1\}^\sigma$. An input, output vector size of $n, m$.
 			\smallskip
 			
-			
-			{\bf [Permute]} Upon the command $(\textsc{Permute}, \pi)$ from  \programmer and $(\textsc{Permute}, A)$ from  \sender. Require that $\pi: [m]\rightarrow [n]$ is \emph{injective} and  $A\in \Sigma^{n}$. Then:
-				\begin{enumerate}[leftmargin=.5cm]
-					%\item If $n<m$,  redefine $A := A || (\{0\}^\sigma)^{m-n}$ and  $n:=m$.
-					\item  \programmer uniformly samples a bijection $\pi_0 : [n]\rightarrow[n]$ and  let $\pi_1 :[n] \rightarrow[m]$ s.t. $\pi_1\circ \pi_0 = \pi$.  \programmer sends $\pi_0 $ and  $S\gets \Sigma^{n}$  to  \sender.
-					\item  \sender sends $B := ( A_{\pi_0(1)} \oplus S_1, ..., A_{\pi_0(n)} \oplus S_n)$ to  \receiver.
-					\item  \programmer sends $\pi_1$ and $T\gets\Sigma^{m}$ to  \receiver who outputs $\shareTwo{A'}_0:=\{B_{\pi_1(1)} \oplus T_1,...,B_{\pi_1(m)}\oplus T_m\}$.  \programmer outputs $\shareTwo{A'}_1:=\{ S_{\pi_1(1)}\oplus T_1,...,S_{\pi_1(m)}\oplus T_m\}$.
-				\end{enumerate}
-				
-				{\bf [Duplicate]} Upon the command $(\textsc{Duplicate}, \pi)$ from  \programmer and $(\textsc{Duplicate}, A)$ from  \sender. Require that $\pi: [n]\rightarrow [n]$ s.t $\pi(1)=1$ and $ \pi(i)\in \{i,\pi(i-1)\}$ for $i\in [2,n]$ and  $A\in\Sigma^{n}$. Then:
-				\begin{enumerate}[leftmargin=.5cm]
-					
-					\item  \programmer  computes the vector $b\in\{0,1\}^{m}$ such that $b_1=0$ and for $i\in[2,n],$ $b_i=1$ if $\pi(i)=\pi(i-1)$ and 0 otherwise.
-					
-					\item \sender samples $\shareTwo{B}_1, W^0,W^1\gets \Sigma^{n}, \shareTwo{B_1}_0\gets\Sigma$ and $\phi\gets\{0,1\}^n$. \sender redefine $\shareTwo{B_1}_1:=A_1\oplus \shareTwo{B_1}_0$. For $i\in [2,n]$, \sender sends 
-					\begin{align*}
-					M^0_i&:= A_i\qquad \ \, \, \oplus \shareTwo{B_i}_1 \oplus W^{\phi_i}_i\\
-					M^1_i&:= \shareTwo{B_{i-1}}_1 \oplus \shareTwo{B_i}_1 \oplus W^{\overline{\phi_i}}_i
-					\end{align*}
-					and $\shareTwo{B_1}_0,\phi$ to  \programmer. \sender sends $\shareTwo{B}_1,W^0, W^1$ to  \receiver.  
-					\item\programmer sends $\rho:=\phi\oplus b, R\gets\Sigma^n$ to  \receiver who responds with $\{ W^{\rho_i}_i : i\in [2,n] \}$.  For $i\in [2,n]$, \programmer  defines 
-					$$
-						\shareTwo{B_i}_0:= M^{b_i}_i \oplus W^{\rho_i}_i\oplus b_i\shareTwo{B_{i-1}}_0
-					$$
-					\programmer outputs $\shareTwo{A'}_0:=\shareTwo{B}_0\oplus R$ and \receiver outputs $\shareTwo{A'}_1:=\shareTwo{B}_1\oplus R$.
-				\end{enumerate}
-				
-				{\bf [Switch]} Upon the command $(\textsc{Switch}, \pi)$ from  \programmer and $(\textsc{Switch}, A)$ from  \sender where $\pi: [m]\rightarrow [n]$ and $A\in \Sigma^{n}$. Then:
-				\begin{enumerate}[leftmargin=.5cm]
-					
-					\item  \programmer samples an injection $\pi_1:[m]\rightarrow [n]$ s.t. for $i\in image(\pi)$ and $k=|preimage(\pi, i)|$,  $\exists j$ where $\pi_1(j)=i$ and $\{\pi_1(j+1), ...,\pi_1(j+k) \}\cap image(\pi)=\emptyset$. 
-					 \programmer  sends $(\textsc{Permute}, \pi_1)$ to \proto{switch} and  \sender sends $(\textsc{Permute}, A)$.  \programmer receives $\shareTwo{B}_{0}\in \Sigma^{m}$ in response and  \receiver receives $\shareTwo{B}_{1}\in \Sigma^{m}$. 
-					
-					\item  \programmer defines $\pi_2:[m]\rightarrow[m]$ s.t. for $i\in image(\pi)$ and $k:=|preimage(\pi, i)|$ and $j$ where $\pi_1(j)=i$, then $\pi_2(j)=...=\pi_2(j+k)=j$. \programmer and \receiver respectively send $(\textsc{Shared},\textsc{Duplicate}, \pi_2, \shareTwo{B}_0)$ and $(\textsc{Shared},\textsc{Duplicate}, \shareTwo{B}_{1})$ to \proto{switch}. As a result \programmer obtains $\shareTwo{C}_0\in \Sigma^m$ from \proto{switch} and \sender obtains $\shareTwo{C}_1\in \Sigma^m$.
-					
-					\item \programmer computes the permutation $\pi_3:[m]\rightarrow[m]$ such that for  $i\in image(\pi)$ and $k=|preimage(\pi, i)|$, $\{\pi_3(\ell) : \ell\in preimage(\pi, i)\}=\{j, ..., j +k\}$ where $i=\pi_1(j)$.	 \programmer sends $(\textsc{Shared},\textsc{Permute}, \pi_3, \shareTwo{C}_0)$ to \proto{switch} and  \sender sends $(\textsc{Shared},\textsc{Permute},\shareTwo{C}_1)$.  \programmer receives $S\in \Sigma^{m}$ in response. \programmer and \receiver respectively receives and outputs $\shareTwo{A'}_0,\shareTwo{A'}_1\in \Sigma^{m }$.
-				\end{enumerate}
-				
-				{\bf [Shared]} Upon the command $(\textsc{Shared},cmd, \pi, \shareTwo{A}_0)$ from \programmer and $(\textsc{Shared}, cmd, \shareTwo{A}_1)$ from \sender. Require that $cmd\in \{\textsc{Permute},$ $\textsc{Duplicate},$ $\textsc{Switch}\}$, $\pi: [m]\rightarrow [n]$ and  $A\in \Sigma^{n}$.
-				\begin{enumerate}[leftmargin=.5cm]
-					\item \programmer sends $(cmd, \pi)$ to \proto{switch} and \sender sends $(cmd, \shareTwo{A}_1)$. 
-					\item In response, \programmer and \receiver respectively receive $\shareTwo{B}_0$ and $\shareTwo{B}_1$. \programmer outputs $\shareTwo{A'}_0:=\shareTwo{B}_0\oplus \pi(\shareTwo{A}_0)$ and \receiver outputs $\shareTwo{A'}_1:=\shareTwo{B}_1$.
-				\end{enumerate}
+			\input{prot-fig-perm}
+			\input{prot-fig-dup}
+			\input{prot-fig-switch}
+			\input{prot-fig-shared}
 	\end{minipage}}
 \vspace{-0.2cm}
-	\caption{The Oblivious Switching Network protocol \proto{switch}. }
+	\caption{The Oblivious Switching Network protocols \proto{Permute}, \proto{Duplicate}, \proto{Switch}. }
 	\label{fig:switching-net}	
 	\vspace{-0.4cm}
 \end{figure}
@@ -393,12 +332,12 @@ We note that under some restrictions on the tables being joined, a more efficien
 
 				\item \Party{1} constructs a cuckoo hash table $t$ for the set $\mathbb{E}_y$. Define $\pi_0$ such that $\pi_0(j)=i$ where $\mathbb{E}_y[i]=t[j]$.
 				
-				\item \Party{0} and \Party{1} convert \share{Y} to \shareTwo{Y}. \Party{1} sends $(\textsc{SharedSwitch}, \pi_0, \shareTwo{Y}_1)$ to \f{switch} and \Party{0} sends $(\textsc{SharedSwitch}, \shareTwo{Y}_0)$.
-				\Party{1} receives $\shareTwo{\ytable}_{1}$ and \Party{2} receives $\shareTwo{\ytable}_{0}$ from \f{switch}.
+				\item \Party{0} and \Party{1} convert \share{Y} to \shareTwo{Y}. \Party{1} sends $(\textsc{Permute}, \pi_0, \shareTwo{Y}_1)$ to \f{Permute} and \Party{0} sends $(\textsc{Permute}, \shareTwo{Y}_0)$.
+				\Party{1} receives $\shareTwo{\ytable}_{1}$ and \Party{2} receives $\shareTwo{\ytable}_{0}$ from \f{Permute}.
 				
 				\item Let $h_1,...,h_w$ be the cuckoo hash functions. \Party{1} defines $\pi_1,...,\pi_w$ such that $\pi_l(i)=j$ where $h_l(\mathbb{E}_x[i])=j$.
 				
-				\item For $l\in[w]$, \Party{1} sends $(\textsc{SharedSwitch}, \pi_l, \shareTwo{T}_1)$ to \f{switch} and \Party{2} sends $(\textsc{SharedSwitch}, \shareTwo{T}_0)$. \Party{0} receives $\shareTwo{\widehat{Y}^l}_0$ and \Party{1} receives $\shareTwo{\widehat{Y}^l}_1$ from \f{switch}.
+				\item For $l\in[w]$, \Party{1} sends $(\textsc{Switch}, \pi_l, \shareTwo{T}_1)$ to \f{Switch} and \Party{2} sends $(\textsc{Switch}, \shareTwo{T}_0)$. \Party{0} receives $\shareTwo{\widehat{Y}^l}_0$ and \Party{1} receives $\shareTwo{\widehat{Y}^l}_1$ from \f{Switch}.
 				
 				\item The parties convert  $\{\shareTwo{\widehat{Y}^l}\}_{l\in[w]}$ to $\{\share{\widehat{Y}^l}\}_{l\in[w]}$ and output them.
 			\end{enumerate}

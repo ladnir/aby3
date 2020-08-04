@@ -1,0 +1,6 @@
+{\bf [Permute]} Upon the command $(\textsc{Permute}, \pi, \shareTwo{A}_0)$ from  \programmer and $(\textsc{Permute}, \shareTwo{A}_1)$ from  \sender. Require that $\pi: [m]\rightarrow [n]$ is \emph{injective} and  $\shareTwo{A}_0,\shareTwo{A}_1\in \Sigma^{n}$. Then:
+	\begin{enumerate}[leftmargin=.5cm]
+		\item  \programmer uniformly samples a bijection $\pi_0 : [n]\rightarrow[n]$ and  let $\pi_1 :[n] \rightarrow[m]$ s.t. $\pi_1\circ \pi_0 = \pi$.  \programmer sends $\pi_0 $ and  $S\gets \Sigma^{n}$  to  \sender.
+		\item  \sender sends $B := ( \shareTwo{A_{\pi_0(1)}}_1 \oplus S_1, ...,  \shareTwo{A_{\pi_0(n)}}_1 \oplus S_n)$ to  \receiver.
+		\item  \programmer sends $\pi_1$ and $T\gets\Sigma^{m}$ to  \receiver who outputs $\shareTwo{A'}_0:=\{B_{\pi_1(1)} \oplus T_1,...,B_{\pi_1(m)}\oplus T_m\}$.  \programmer outputs $\shareTwo{A'}_1:=\{ S_{\pi_1(1)}\oplus T_1\oplus  \shareTwo{A_{\pi(1)}}_0,...,S_{\pi_1(m)}\oplus T_m\oplus \shareTwo{A_{\pi(m)}}_0\}$.
+	\end{enumerate}

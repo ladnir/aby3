@@ -1,0 +1,19 @@
+
+
+{\bf [Duplicate]} Upon the command $(\textsc{Duplicate}, \pi, \shareTwo{A}_0)$ from  \programmer and $(\textsc{Duplicate}, \shareTwo{A}_1)$ from  \sender. Require that $\pi: [n]\rightarrow [n]$ s.t $\pi(1)=1$ and $ \pi(i)\in \{i,\pi(i-1)\}$ for $i\in [2,n]$ and  $A\in\Sigma^{n}$. Then:
+\begin{enumerate}[leftmargin=.5cm]
+	
+	\item  \programmer  computes the vector $b\in\{0,1\}^{m}$ such that $b_1=0$ and for $i\in[2,n],$ $b_i=1$ if $\pi(i)=\pi(i-1)$ and 0 otherwise.
+	
+	\item \sender samples $\shareTwo{B}_1, W^0,W^1\gets \Sigma^{n}, \shareTwo{B_1}_0\gets\Sigma$ and $\phi\gets\{0,1\}^n$. \sender redefine $\shareTwo{B_1}_1:=\shareTwo{A_1}_1\oplus \shareTwo{B_1}_0$. For $i\in [2,n]$, \sender sends 
+	\begin{align*}
+	M^0_i&:= \shareTwo{A_i}_1\qquad \ \, \, \oplus \shareTwo{B_i}_1 \oplus W^{\phi_i}_i\\
+	M^1_i&:= \shareTwo{B_{i-1}}_1 \oplus \shareTwo{B_i}_1 \oplus W^{\overline{\phi_i}}_i
+	\end{align*}
+	and $\shareTwo{B_1}_0,\phi$ to  \programmer. \sender sends $\shareTwo{B}_1,W^0, W^1$ to  \receiver.  
+	\item\programmer sends $\rho:=\phi\oplus b, R\gets\Sigma^n$ to  \receiver who responds with $\{ W^{\rho_i}_i : i\in [2,n] \}$. For $i\in [2,n]$, \programmer defines
+	$$
+		\shareTwo{B_i}_0:= M^{b_i}_i \oplus W^{\rho_i}_i\oplus b_i\shareTwo{B_{i-1}}_0
+	$$
+	\programmer outputs $\shareTwo{A'}_0:=\shareTwo{B}_0\oplus R\oplus \pi(\shareTwo{A}_0)$ and \receiver outputs $\shareTwo{A'}_1:=\shareTwo{B}_1\oplus R$.
+\end{enumerate}

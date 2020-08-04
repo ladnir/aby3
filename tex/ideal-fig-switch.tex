@@ -1,0 +1,9 @@
+
+			Parameters: $3$ parties denoted as the \programmer, \sender and \receiver. Elements are strings in $\Sigma:=\{0,1\}^\sigma$. An input vector size of $n$ and output size of $m$.
+			
+			{\bf [Switch]} Upon the command $(\textsc{switch}, \pi, \shareTwo{A}_0)$ from the \programmer and $(\textsc{switch}, \shareTwo{A}_1)$ from the \sender:
+			\begin{enumerate}
+				\item Interpret $\pi: [m]\rightarrow [n]$ and $A\in \Sigma^n$. 
+				\item Compute $A'\in \Sigma^m$ s.t. $\forall i\in [m], A_{\pi(i)} = A'_i$.
+				\item Generate $\shareTwo{A'}$ and send $\shareTwo{A'}_0$ to \programmer and $\shareTwo{A'}_1$ to \receiver.
+			\end{enumerate}

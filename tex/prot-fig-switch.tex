@@ -1,0 +1,11 @@
+
+				{\bf [Switch]} Upon the command $(\textsc{Switch}, \pi, \shareTwo{A}_0)$ from  \programmer and $(\textsc{Switch}, \shareTwo{A}_1)$ from  \sender where $\pi: [m]\rightarrow [n]$ and $\shareTwo{A}_0,\shareTwo{A}_1\in \Sigma^{n}$. 
+				\begin{enumerate}[leftmargin=.5cm]
+					
+					\item  \programmer samples an injection $\pi_1:[m]\rightarrow [n]$ s.t. for $i\in image(\pi)$ and $k=|preimage(\pi, i)|$,  $\exists j$ where $\pi_1(j)=i$ and $\{\pi_1(j+1), ...,\pi_1(j+k) \}\cap image(\pi)=\emptyset$. 
+					 \programmer  sends $(\textsc{Permute}, \pi_1, \shareTwo{A}_0)$ to \f{Permute} and  \sender sends $(\textsc{Permute}, \shareTwo{A}_1)$.  \programmer receives $\shareTwo{B}_{0}\in \Sigma^{m}$ in response and  \receiver receives $\shareTwo{B}_{1}\in \Sigma^{m}$. 
+					
+					\item  \programmer defines $\pi_2:[m]\rightarrow[m]$ s.t. for $i\in image(\pi)$ and $k:=|preimage(\pi, i)|$ and $j$ where $\pi_1(j)=i$, then $\pi_2(j)=...=\pi_2(j+k)=j$. \programmer and \receiver respectively send $(\textsc{Duplicate}, \pi_2, \shareTwo{B}_0)$ and $(\textsc{Duplicate}, \shareTwo{B}_{1})$ to \f{Duplicate}. As a result \programmer obtains $\shareTwo{C}_0\in \Sigma^m$ from \f{Duplicate} and \sender obtains $\shareTwo{C}_1\in \Sigma^m$.
+					
+					\item \programmer computes the permutation $\pi_3:[m]\rightarrow[m]$ such that for  $i\in image(\pi)$ and $k=|preimage(\pi, i)|$, $\{\pi_3(\ell) : \ell\in preimage(\pi, i)\}=\{j, ..., j +k\}$ where $i=\pi_1(j)$.	 \programmer sends $(\textsc{Permute}, \pi_3, \shareTwo{C}_0)$ to \f{Permute} and  \sender sends $(\textsc{Permute},\shareTwo{C}_1)$.  \programmer receives $S\in \Sigma^{m}$ in response. \programmer and \receiver respectively receives and outputs $\shareTwo{A'}_0,\shareTwo{A'}_1\in \Sigma^{m }$.
+				\end{enumerate}
