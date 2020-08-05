@@ -7,7 +7,7 @@
 	
 	\item \sender samples $\shareTwo{B}_1, W^0,W^1\gets \Sigma^{n}, \shareTwo{B_1}_0\gets\Sigma$ and $\phi\gets\{0,1\}^n$. \sender redefine $\shareTwo{B_1}_1:=\shareTwo{A_1}_1\oplus \shareTwo{B_1}_0$. For $i\in [2,n]$, \sender sends 
 	\begin{align*}
-	M^0_i&:= \shareTwo{A_i}_1\qquad \ \, \, \oplus \shareTwo{B_i}_1 \oplus W^{\phi_i}_i\\
+	M^0_i&:= \shareTwo{A_i}_1 \ \ \ \oplus \shareTwo{B_i}_1 \oplus W^{\phi_i}_i\\
 	M^1_i&:= \shareTwo{B_{i-1}}_1 \oplus \shareTwo{B_i}_1 \oplus W^{\overline{\phi_i}}_i
 	\end{align*}
 	and $\shareTwo{B_1}_0,\phi$ to  \programmer. \sender sends $\shareTwo{B}_1,W^0, W^1$ to  \receiver.  
