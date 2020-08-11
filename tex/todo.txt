@@ -1,9 +1,33 @@
 - improvements in writing quality / experiments.
-- duplication network is confusing
-  -- warmup was not clear
-  -- missing proof of correctness/security
+x duplication network is confusing
+  x  warmup was not clear. 
+  x  Clearly state how to generalize (required!)
+  x  missing proof of correctness/security (required!)
+
+x switch net,
+  x give concrete example (required!). 
+  x In the description of the phases, state in english then using fomrula (opposite of what is there now)
+
 
 - compare with 2pc switch net. And perm network (GC and HE).
 
-- obliv perm is actually an oblivious injection. Make this clear. See Review 1 for complaint.
+x obliv perm is actually an oblivious injection. Make this clear. See Review 1 for complaint.
 
+- micro benchmarks.
+
+- compare with VaultDB
+
+- Compare with Google Join-and-Compute protocol
+
+
+
+
+
+
+Minor comments:
+x Size of cuckoo hash table?
+x Note that we are open source. 
+x Review states "Section 3.4, various places, m should be [m]."
+x Include page numbers
+x Justify honest majoirty 3pc
+x State the KKRT can not be made composable without very large overhead. 
