@@ -145,7 +145,6 @@ The ideal functionality of our protocol is given in \figureref{fig:perm-ideal} w
 
 
 \paragraph{Permutation Network}\label{sec:perm}
-
 We begin with a restricted class of switching networks where the programming function $\pi$ is injective. {That is, each input element $A_i$ will be mapped to a maximum\footnote{Strictly speaking, this protocol implementation a generalization of a permutation network since it allows some elements to not appear in the output, i.e. $m<n$ and $\pi:[m]\rightarrow[n]$.} of one location in the output $A'$.} As we will see later, this property will simplify the implementation since we do not need to duplicate any element. 
 Intuitively, the Permute protocol of \figureref{fig:switching-net} instructs \sender to first   shuffled $A$ in a random order (as specified by $\pi_0$) and then secret share it between \programmer \& \receiver. Then \programmer \& \receiver will reorder these shares (as specified by $\pi_1$) to be in the desired order (i.e. $\pi$). This is done as follows, \programmer samples two random functions $\pi_0,\pi_1$ such that $\pi_1 \circ \pi_0 = \pi$, $\pi_0:[n]\rightarrow [n]$ is bijective and $\pi_1:[m]\rightarrow [n]$ is injective.  \programmer sends   $\pi_1$ to  \receiver and $\pi_0, S\gets \Sigma^{n}$ to  \sender who sends $B := (A_{\pi_0(1)} \oplus S_0, ...,A_{\pi_0(n)} \oplus S_n )$ to  \receiver. The final shares of $A'=\pi(A)$ are defined as  \programmer holding $\shareTwo{A'}_0:=(S_{\pi_1(1)}, ..., S_{\pi_1(m)})$ and the \receiver holding $\shareTwo{A'}_1:=(B_{\pi_1(1)}, ..., B_{\pi_1(m)})$. 
 
@@ -200,7 +199,6 @@ A'_i&=(m_{b_i}\qquad\qquad\qquad\qquad\qquad\qquad\quad\ \, \, \oplus w_{\rho}\o
 
 
 \paragraph{Universal Switching Network}\label{sec:switch}
-
 Our Switch protocol of \figureref{fig:switching-net} is a universal switching network for an \emph{arbitrary}  $\pi : [m]\rightarrow [n]$ and is constructed in three phases\cite{MS13}:
  $A\overset{\pi_1}{\rightarrow}B\overset{\pi_2}{\rightarrow}C\overset{\pi_3}{\rightarrow}A'=\pi(A)$. 
  
@@ -220,10 +218,9 @@ More specifically, the transformations are defined as:
 Observe that steps $\pi_1,\pi_3$ can both be implemented using the oblivious permutation protocol while $\pi_2$ can be implemented with a duplication network. \figureref{fig:switching-net} provides a formal description of the full switching network protocol. The simulation of this protocol is presented in \sectionref{sec:switch-proof} and follows from the simulation of the permutation and duplication subprotocols. 
 
 \paragraph{Comparison}
-
 We compare with alternative constructions to illustrate the performance improvement that our switching protocol provides. The first and most traditional is for $\sender$ to use additive homomorphic encryption, e.g. Paillier, to encrypt the shares $\shareTwo{A}_1$ and send these to \programmer. \programmer can apply the mapping function $\pi$ to these encryptions, rerandomize them and send the result back to \sender who decrypts it to obtain their share of $\shareTwo{A'}_1$. This approach has a very high computational overhead compared to ours due to additive homomorphic encryption being an intensive process. 
 
-An alternative approach is that taken by \cite{MS13} which can be viewed as the two party version of our protocol. In their setting the permutation network is the most expensive operation and is implemented using $O(n\log n)$ OTs\cite{IKNP}. Our protocol is both asymptotically more efficient by a $O(\log n)$ factor and has smaller constants since our protocol does not require the relatively more expensive OT primitive. 
+An alternative approach is that taken by \cite{MS13} which can be viewed as the two party version of our protocol. In their setting the permutation network is the most expensive operation and is implemented using $O(n\log n)$ OTs\cite{C:IKNP03}. Our protocol is both asymptotically more efficient by a $O(\log n)$ factor and has smaller constants since our protocol does not require the relatively more expensive OT primitive. 
 
 \subsection{Join Protocols}\label{sec:join}
 
@@ -365,7 +362,7 @@ We note that under some restrictions on the tables being joined, a more efficien
 			
 			{\bf [Join]}  Upon receiving command $(\textsc{Join}, type, \share{X},$ $J, \share{Y}, K, S, P)$ from all parties.
 			\begin{enumerate}[leftmargin=.5cm]
-				\item The parties send $(\textsc{Map},\share{X},J, \share{Y}, K)$ to \proto{join} and receive $\share{{Y'}}$.
+				\item The parties send $(\textsc{Map},\share{X},J, \share{Y}, K)$ to \proto{map} and receive $\share{{Y'}}$.
 								
 				\item Output the table $\share{Z}$ defined by the case $type$:
 				\begin{enumerate}[leftmargin=0.6cm]
@@ -388,7 +385,7 @@ We note that under some restrictions on the tables being joined, a more efficien
 			\end{enumerate}
 	\end{minipage}}
 \vspace{-0.3cm}
-	\caption{Join protocols $\proto{join}$.}
+	\caption{Join protocols $\proto{map}$ and $\proto{join}$.}
 	\label{fig:full_proto}	
 	\vspace{-0.3cm}
 \end{figure}
@@ -397,14 +394,14 @@ We note that under some restrictions on the tables being joined, a more efficien
 
 \begin{figure}
 	\framebox{\begin{minipage}{0.95\linewidth}
-			{\bf [Join]}  Upon receiving command $(\textsc{Join}, type, \share{X},$ $J, \share{Y}, K, S, P)$ from all parties. Let $n_X$ and $n_Y$ denote the number of rows in $X,Y$ respectively. Define $\textsc{Keys}(X,J,i)=(X_j[i])_{j\in J}$. 
+			{\bf [Join]}  Upon receiving command $(\textsc{Join}, type, \share{X},$ $J, \share{Y}, K, S, P)$ from all parties. $J,K$ index the join columns of $X,Y$ respectively. Let $n_X$ and $n_Y$ denote the number of rows in $X,Y$ respectively. Define $\textsc{Keys}(X,J,i)=(X_j[i])_{j\in J}$. 
 			Output the table $\share{Z}$ defined by the case $type$:
 			\begin{enumerate}[leftmargin=1.1cm]
 				\item[$\textsc{Inner}$:] Let the rows of $Z$ be $\{ S(X[i],Y[j]) \mid \exists i,j\text{ s.t. }
-				\neg\XNull[i]\wedge \neg\YNull[j]\wedge \textsc{Keys}(X,J,i)\overset{?}{=}\textsc{Keys}(Y,K,j) \wedge P(X[i],Y[i]) \}$ along with zero or more \Null rows s.t. $Z$ has $n_X$ rows.
+				\neg\XNull[i]\wedge \neg\YNull[j]\wedge \textsc{Keys}(X,J,i){=}\textsc{Keys}(Y,K,j) \wedge P(X[i],Y[i]) \}$ along with zero or more \Null rows s.t. $Z$ has $n_X$ rows.
 				
 				\item[$\textsc{Left}$:] Let the rows of $Z$ be $\{ S(X[i],Y[j]) \mid \exists i,j\text{ s.t. }
-				\neg\XNull[i]\wedge \neg\YNull[j]\wedge \textsc{Keys}(X,J,i)\overset{?}{=}\textsc{Keys}(Y,K,j) \wedge P(X[i],Y[i])\}
+				\neg\XNull[i]\wedge \neg\YNull[j]\wedge \textsc{Keys}(X,J,i){=}\textsc{Keys}(Y,K,j) \wedge P(X[i],Y[i])\}
 				\cup 
 				\{ S(X[i],\Null) \mid \exists i,\forall j\text{ s.t. } \neg\XNull[i]\wedge \textsc{Keys}(X,J,i) \neq\textsc{Keys}(Y,K,j) \wedge P(X[i],\Null)\}$ along with zero or more \Null rows s.t. $Z$ has $n_X$ rows.
 				
@@ -415,7 +412,7 @@ We note that under some restrictions on the tables being joined, a more efficien
 				along with zero or more \Null rows s.t. $Z$ has $n_X+n_Y$ rows.
 				
 				\item[$\textsc{Full}$:] Let the rows of $Z$ be $\{ S(X[i],Y[j]) \mid \exists i,j\text{ s.t. }
-				\neg\XNull[i]\wedge \neg\YNull[j]\wedge \textsc{Keys}(X,J,i)\overset{?}{=}\textsc{Keys}(Y,K,j) \wedge P(X[i],Y[i]) \}
+				\neg\XNull[i]\wedge \neg\YNull[j]\wedge \textsc{Keys}(X,J,i){=}\textsc{Keys}(Y,K,j) \wedge P(X[i],Y[i]) \}
 				\cup 
 				\{ S(\Null, Y[i]) \mid \exists i,\forall j\text{ s.t. }
 				\neg\YNull[i]\wedge \textsc{Keys}(X,J,j)\neq\textsc{Keys}(Y,K,i) \wedge P(\Null, Y[i])\}
@@ -428,7 +425,7 @@ We note that under some restrictions on the tables being joined, a more efficien
 \vspace{-0.3cm}
 	\caption{Join functionality $\f{join}$.}
 	\label{fig:full_ideal}	
-	\vspace{-0.3cm}
+	\vspace{-0.5cm}
 \end{figure}
 
 

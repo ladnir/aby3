@@ -14,10 +14,10 @@ The majority of these protocols consider the two party setting and are based on 
 
 Given this observation we investigate how to leverage the efficiency gains in the three party setting to construct practical protocols for performing set intersection and other SQL-like operations where both the inputs and outputs are secret shared. One critical aspect of this input/output requirement is that join operations can then be \emph{composed} together, where the output of a join can be the input to another. Allowing this composability greatly increases the ability to perform highly complex queries and enables external parties to contribute data simply by secret sharing it between the primary parties which participate in the protocol.
 
-The fact that we support secret-shared inputs also leads to \emph{outsourced secure computation.} Three non-coluding servers can be established, and inputs can be provided by the servers themselves or by external parties simply by secret sharing the input among the servers. This model has been gaining traction in industry. Mozilla recently deployed a service to collect telemetry data about Firefox\cite{...} using two non-colluding servers running the Prio protocol\cite{...}. Other examples include privacy preserving machine learning frameworks which support secret shared inputs such as Facebook's Crypten built for PyTorch\cite{...} and Cape Privacy's FTEncrypted built for TensorFlow\cite{...}. 
+The fact that we support secret-shared inputs also leads to \emph{outsourced secure computation.} Three non-coluding servers can be established, and inputs can be provided by the servers themselves or by external parties simply by secret sharing the input among the servers. This model has been gaining traction in industry. Mozilla recently deployed a service to collect telemetry data about Firefox\cite{mozilla} using two non-colluding servers running the Prio protocol\cite{DBLP:conf/nsdi/Corrigan-GibbsB17}. Other examples include privacy preserving machine learning frameworks which support secret shared inputs such as Facebook's Crypten built for PyTorch\cite{Crypten} and Cape Privacy's FTEncrypted built for TensorFlow\cite{TFEncrypted}. 
 
 Complex joins on secret-shared inputs/outputs are valuable in all of these examples.
-Most privacy preserving machine learning publications\cite{...,...} assume that the data being trained on has already been joined together. However, without a framework like ours it is unclear how this would be accomplished while preserving privacy and efficiency. The generality of our approach allows us to solve these problems and many others, e.g. the two applications presented in \sectionref{sec:app}.
+Most privacy preserving machine learning publications\cite{aby3,Crypten,TFEncrypted,SecureNN,XONN} assume that the data being trained on has already been joined together. However, without a framework like ours it is unclear how this would be accomplished while preserving privacy and efficiency. The generality of our approach allows us to solve these problems and many others, e.g. the two applications presented in \sectionref{sec:app}.
 
 
 \subsection{Functionality}
@@ -30,17 +30,21 @@ Note that each column of a table has the same length but can contain different d
 
 \fi
 Our core protocol requires each table to contain unique values in the column defining the join  (i.e., we can only join on ``unique primary keys''). For example, if we consider the following SQL styled join/intersection query
+\vspace{-0.1cm}
 $$
 \texttt{select } X_2 \texttt{ from } X \texttt{ inner join } Y \texttt{ on } X_1 = Y_1
+\vspace{-0.1cm}
 $$
 then the join-keys are $X_1$ and $Y_1$. This uniqueness condition can be extended to the setting where multiple columns are being compared for equality. 
 \iffullversion
 In this case the tuple of these columns must be unique. 
 \fi
 Later on we will discuss the case when such a uniqueness property does not hold. Our protocols also support a \texttt{where} clause that filters the selection using an arbitrary predicate of the $X$ and $Y$ rows. Furthermore, the \texttt{select} clause can also return a function of the two rows. For example,
+\vspace{-0.1cm}
 \begin{align*}
 \texttt{select }&  X_1,max(X_2, Y_2)  \texttt{ from } X \texttt{ inner join } Y \\
 \texttt{on }& X_1 = Y_1 \texttt{ where } Y_2 > 23.3
+\vspace{-0.1cm}
 \end{align*}
 In general, the supported join operations can be characterized in three parts: 1) The select function $S(\cdot)$ that defines how the rows of $X,Y$ are used to construct each output row, e.g. $S(X,Y)=(X_1, max(X_2,Y_2))$
 \iffullversion
@@ -75,7 +79,7 @@ We present the first practical secure multi-party computation protocol for perfo
 \iffullversion 
 	Alternatively, the cardinality of the intersection can be computed in just 3.1 seconds.
 \fi
-  Beyond these two specific functionalities, our protocol allows arbitrary computation applied to a shared table. Compared to existing three party protocols with similar functionality (composable), our implementation is roughly $1000\times$ faster. When compared with \emph{non-composable} two party protocol, we observe a larger difference ranging from our protocol being $1.25\times$ slower to $4000\times$ faster depending on what functionality is being computed. 
+  Beyond these two specific functionalities, our protocol allows arbitrary computation applied to a shared table. Compared to existing three party protocols with similar functionality (composable), our implementation is roughly $1000\times$ faster. When compared with \emph{non-composable} two party protocol, we observe a larger difference ranging from our protocol being $1.25\times$ slower to $4000\times$ faster depending on the functionality. 
 
 
 Building on our proposed protocol we demonstrate its utility by showcasing two potential applications. The first prototype would involve running our protocol between and within the states of the United States to validate the accuracy of the voter registration data in a privacy preserving way. The Pew Charitable Trust\cite{pew} reported 1 in 8 voter registration records in the United States contains a serious error while 1 in 4 eligible citizens remain unregistered. Our privacy preserving protocol identifies when an individual's address is out of date or more seriously if someone is registered to vote in more than one state which could allow them to cast two votes. 

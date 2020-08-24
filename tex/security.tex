@@ -88,10 +88,9 @@ We now formally prove that the oblivious duplication network protocol in \figure
 	Correctness follows an inductive argument. It is easy to verify $B_1=\shareTwo{A_1}_1$ and that this is correct since $\pi(1)=1$ by definition. Inductively let us assume that ${B_{i-1}}=\shareTwo{A_{\pi(i-1)}}_1$ and we will show that ${B_i}=\shareTwo{A_{\pi(i)}}_1$.  
 	Observe that for $i\in[2,n]$
 	\begin{align*}
-		B_i&=\shareTwo{B_i}_0 \oplus \shareTwo{B_i}_1\\
-		    &=(M^{b_i}_i\qquad\qquad\qquad\qquad\qquad\qquad\qquad\ \ \  \oplus W^{\rho_i}_i\oplus b_i\shareTwo{B_{i-1}}_0) \oplus (\shareTwo{B_i}_1)\\
- 		    &=(\overline{b_i}\shareTwo{A_i}_0\oplus b_i\shareTwo{B_{i-1}}_1 \oplus \shareTwo{B_{i}}_1\oplus W^{b_i\oplus\phi_i}_i\oplus W^{\rho_i}_i\oplus b_i\shareTwo{B_{i-1}}_0) \oplus (\shareTwo{B_i}_1) \\
-		    &=\overline{b_i}\shareTwo{A_i}_0 \oplus b_i B_{i-1}
+	\shareTwo{B_i}_0&=M^{b_i}_i\qquad\qquad\qquad\qquad\qquad\qquad\qquad\ \ \  \oplus W^{\rho_i}_i\oplus b_i\shareTwo{B_{i-1}}_0 \\
+ 		    &=\overline{b_i}\shareTwo{A_i}_0\oplus b_i\shareTwo{B_{i-1}}_1 \oplus \shareTwo{B_{i}}_1\oplus W^{b_i\oplus\phi_i}_i\oplus W^{\rho_i}_i\oplus b_i\shareTwo{B_{i-1}}_0  \\
+		    &=\overline{b_i}\shareTwo{A_i}_0 \oplus b_i B_{i-1}\oplus \shareTwo{B_i}_1
 	\end{align*}
 	And therefore $B=\pi(\shareTwo{A}_1)$ and
 	
@@ -155,7 +154,7 @@ We now formally prove that the oblivious switching network protocol in \figurere
 \begin{proof}
 	Correctness follows from the first oblivious permutation call rearranges the input vector such that each output item which appears $k$ times is followed by $k-1$ items which do not appear in the output. The duplication network then copies each of these output items into the next $k-1$ position. The final permutation places these items in the final order. 
 	
-	With respect to simulation, the transcript of each party contains their transcripts of three subprotocols: Permute, Shared-Duplicate and Shared-Permute. By \theoremref{thm:permute} the Permute subprotocol transcript can be simulated. Similarly, \theoremref{thm:shared} combined with \theoremref{thm:permute},\ref{thm:dup} also imply that the other two transcripts can be simulated. Therefore this implies that the overall protocol can be simulated given that no other communication is performed. 
+	With respect to simulation, the transcript of each party contains their transcripts of three subprotocols: Permute, Shared-Duplicate and Shared-Permute. By \theoremref{thm:permute} the Permute subprotocol transcript can be simulated. Similarly, \theoremref{thm:permute},\ref{thm:dup} also imply that the other two transcripts can be simulated. Therefore this implies that the overall protocol can be simulated given that no other communication is performed. 
 		
 \end{proof}
 %

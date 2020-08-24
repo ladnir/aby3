@@ -93,13 +93,13 @@
 %%%%%%%%%%%%%%%%%%%%
 
 
-\iffalse
+
     \newtheorem{theorem}{Theorem}
     \newtheorem{definition}[theorem]{Definition}
     \newtheorem{claim}[theorem]{Claim}
     %\newtheorem{lemma}[theorem]{Lemma}
     \newtheorem{proposition}[theorem]{Proposition}
-    \fi
+
 %\newtheorem{corol}[theorem]{Corollary}
 %\newtheorem{assumption}[theorem]{Assumption}
 %\newtheorem{obs}[theorem]{Observation}
@@ -146,6 +146,7 @@
     \textcolor{red}{#1}%
 }
 
+\renewcommand{\paragraph}[1]{\vspace{0.1cm}\noindent\emph{#1}.}
 \newcommand{\myparagraph}[1]{\smallskip\noindent{\bf #1:}}
 \newcommand{\DB}{\ensuremath{DB}\xspace}
 \newcommand{\encode}[1]{\ensuremath{\llbracket #1 \rrbracket}}
