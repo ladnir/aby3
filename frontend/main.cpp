@@ -20,12 +20,12 @@ std::vector<std::string> unitTestTag{ "u", "unitTest" };
 void help()
 {
 
-	std::cout << "-u                  ~~ to run all tests" << std::endl;
-	std::cout << "-u n1 [n2 ...]      ~~ to run test n1, n2, ..." << std::endl;
-	std::cout << "-u -list            ~~ to list all tests" << std::endl;
-	std::cout << "-intersect -nn NN   ~~ to run the intersection benchmark with 2^NN set sizes" << std::endl;
-	std::cout << "-eric -nn NN        ~~ to run the eric benchmark with 2^NN set sizes" << std::endl;
-	std::cout << "-threat -nn NN -s S ~~ to run the threat log benchmark with 2^NN set sizes and S sets" << std::endl;
+	std::cout << "-u                        ~~ to run all tests" << std::endl;
+	std::cout << "-u n1 [n2 ...]            ~~ to run test n1, n2, ..." << std::endl;
+	std::cout << "-u -list                  ~~ to list all tests" << std::endl;
+	std::cout << "-intersect -nn NN [-c C]  ~~ to run the intersection benchmark with 2^NN set sizes, C 32-bit data columns." << std::endl;
+	std::cout << "-eric -nn NN              ~~ to run the eric benchmark with 2^NN set sizes" << std::endl;
+	std::cout << "-threat -nn NN -s S       ~~ to run the threat log benchmark with 2^NN set sizes and S sets" << std::endl;
 }
 
 
