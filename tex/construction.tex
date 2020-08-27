@@ -237,7 +237,7 @@ Steps 1 through 4 are performed by the Map routine of \figureref{fig:full_proto}
 
 
 
-\paragraph{Randomized Encodings.}
+\paragraph{Randomized Encodings}
 We begin by generating randomized encodings of the columns being used for the join-keys. For example, 
 \iffullversion
 $$
@@ -258,7 +258,7 @@ For correctness, we require the encoding bit-length $\ell$ to be sufficiently la
 
 %Putting everything together, the parties sample $E\gets\{0,1\}^{m\times \sigma}$ if $m>\sigma$ and $E=I$ otherwise. For $i\in[n]$ and $Z\in\{X[i],Y[i]\}$, let  $\share{Z_{j_1}},...,\share{Z_{j_l}}$ be the join-keys of row $i$. A secret shared value $r\gets\{0,1\}^\sigma$ is sampled and the parties compute $\share{z'}:=\share{Z_{j_1}||...||Z_{j_l}}E \oplus \share{\overline{b}}\share{r}$. \share{z'} is sent to \f{encode}. Party \Party{0} receives the randomized encodings $\mathbb{E}_x$ for the join-keys of $X$ and \Party{1} receives the encodings $\mathbb{E}_y$ for $Y$.
 
-\paragraph{Constructing the Cuckoo Table.}
+\paragraph{Constructing the Cuckoo Table}
 The next phase of the protocol is for \Party{1} to construct a secret shared cuckoo table for $Y$ where each row is inserted based on its encoding in $\mathbb{E}_y$. \Party{1} locally inserts the encodings $\mathbb{E}_y$ into a plain cuckoo hash table $t$ with $m\approx1.5n$ slots using the algorithm specified in \sectionref{sec:prelim} and \cite{DRRT18}. In the presentation we assume two hash functions are used. \Party{1} samples an injective function $\pi : [m]\rightarrow [m]$ such that  $t[j]=\mathbb{E}_y[i]$, then $\pi(j)=i$.
 \iffullversion
  That is, $\pi$ defines the mapping from each row's original position in the table $Y$ to the corresponding position in the cuckoo table $t$.
@@ -279,7 +279,7 @@ The next phase of the protocol is for each row of $X$, select the appropriate ro
 
 To obliviously compare these rows, \Party{0} will construct two switching networks with programming $\pi_1,\pi_2 : [n]\rightarrow [m]$ such that if $h_l(\mathbb{E}_x[i])=j$ then $\pi_l(i)=j$. Each of these will be used to construct the tables $\shareTwo{\widehat{Y}^1},\shareTwo{\widehat{Y}^2}$ which are the result of applying the switching networks $\pi_1,\pi_2$ to $\shareTwo{\ytable}$. For $i\in[n],$ the parties select either $\shareTwo{\widehat{Y}^1}[i]$ or $\shareTwo{\widehat{Y}^2}[i]$ and assign it to $\share{Y'}[i]$ based on which has matching joins keys with $\share{X}[i]$. If there is no match then $\share{Y'}[i]=\Null.$
 
-\paragraph{Inner Join.}
+\paragraph{Inner Join}
 Given the secret shared tables $\share{X},\share{Y'}$ as described above, the parties do a linear pass over the $n$ rows to construct the join between $X$ and $Y$. Recall that the inner join consists of all the selected columns from the rows $X[i],Y[j]$ where  the join-keys of the rows $X[i]$ and $Y[j]$ are equal. 
 
 If row $X[i]$ has a matching row in $Y$ then this row will have been mapped to $Y'[i]$. Next, the \texttt{where} clause further filters the output table as a function of $Y'[i]$ and $X[i]$. 
@@ -308,7 +308,7 @@ Several optimizations can be applied to this protocol. First, observe that only 
 Also observe that the computation perform heavily lends itself to SIMD instructions. That is, the same computation is repeatedly applied to each row of the output table. Modern MPC protocol such as the ABY$^3$ framework \cite{aby3,highthroughput} are optimized for this setting and can process billions of binary circuit gates per second\cite{highthroughput}. In addition the ABY$^3$ framework can switch between using binary and arithmetic circuits based on which is most efficient for the given computation. 
 \fi
 
-\paragraph{Left/Right Join.}
+\paragraph{Left/Right Join}
 A left join query is similar to an inner join except that all of the rows from the left table $X$ are included. All rows that are in the inner join are computed as before. For rows only in $X$, the bit $\YNull'[i]$ will equal one and is used to initialize the missing columns from $Y$ to a default, typically \texttt{NULL}. A right join can be implemented symmetrically.
 
 \paragraph{Union and Set Minus.}
@@ -320,7 +320,7 @@ We construct a full join as $(X$ left join $Y)$ union $Y$. The left join merge t
 
 We note that under some restrictions on the tables being joined, a more efficient protocol for full joins can be achieved. We defer an explanation of this technique to \sectionref{sec:threatlog}.
 
-\paragraph{Security.} The simulation of these protocols directly follow from the composibility of the subroutines \f{encode}, \f{switch} and \f{mpc}. First, the output of \f{encode} simply outputs random strings and it is therefore straightforward to simulate.  \f{switch} and \f{mpc} both output secret shared values. Finally, correctness is straight forward to analysis and holds so long as there is no encoding collisions and cuckoo hashing succeeds. Parameters are chosen appropriately so these failure events happen with probability at most $2^{-\lambda}$. See \ref{sec:join-proof} for a full proof of security.
+\paragraph{Security} The simulation of these protocols directly follow from the composibility of the subroutines \f{encode}, \f{switch} and \f{mpc}. First, the output of \f{encode} simply outputs random strings and it is therefore straightforward to simulate.  \f{switch} and \f{mpc} both output secret shared values. Finally, correctness is straight forward to analysis and holds so long as there is no encoding collisions and cuckoo hashing succeeds. Parameters are chosen appropriately so these failure events happen with probability at most $2^{-\lambda}$. See \ref{sec:join-proof} for a full proof of security.
 
 \begin{figure}
 	\framebox{\begin{minipage}{0.95\linewidth}

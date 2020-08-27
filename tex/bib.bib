@@ -144,6 +144,24 @@ timestamp = {Tue, 28 Mar 2017 15:12:32 +0200},
 biburl    = {https://dblp.org/rec/conf/nsdi/Corrigan-GibbsB17.bib},
 bibsource = {dblp computer science bibliography, https://dblp.org}
 }
+@article{SMCQL,
+	author = {Bater, Johes and Elliott, Gregory and Eggen, Craig and Goel, Satyender and Kho, Abel and Rogers, Jennie},
+	title = {SMCQL: Secure Querying for Federated Databases},
+	year = {2017},
+	issue_date = {February 2017},
+	publisher = {VLDB Endowment},
+	volume = {10},
+	number = {6},
+	issn = {2150-8097},
+	url = {https://doi.org/10.14778/3055330.3055334},
+	doi = {10.14778/3055330.3055334},
+	abstract = {People and machines are collecting data at an unprecedented rate. Despite this newfound abundance of data, progress has been slow in sharing it for open science, business, and other data-intensive endeavors. Many such efforts are stymied by privacy concerns and regulatory compliance issues. For example, many hospitals are interested in pooling their medical records for research, but none may disclose arbitrary patient records to researchers or other healthcare providers. In this context we propose the Private Data Network (PDN), a federated database for querying over the collective data of mutually distrustful parties. In a PDN, each member database does not reveal its tuples to its peers nor to the query writer. Instead, the user submits a query to an honest broker that plans and coordinates its execution over multiple private databases using secure multiparty computation (SMC). Here, each database's query execution is oblivious, and its program counters and memory traces are agnostic to the inputs of others.We introduce a framework for executing PDN queries named smcql. This system translates SQL statements into SMC primitives to compute query results over the union of its source databases without revealing sensitive information about individual tuples to peer data providers or the honest broker. Only the honest broker and the querier receive the results of a PDN query. For fast, secure query evaluation, we explore a heuristics-driven optimizer that minimizes the PDN's use of secure computation and partitions its query evaluation into scalable slices.},
+	journal = {Proc. VLDB Endow.},
+	month = feb,
+	pages = {673–684},
+	numpages = {12}
+}
+
 
 @article{deanon1,
 	author = {Merener, Martin M.},

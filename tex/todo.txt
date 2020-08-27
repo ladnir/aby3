@@ -1,4 +1,5 @@
-- improvements in writing quality / experiments.
+- improvements in writing quality
+  - We have revises several section
 x duplication network is confusing
   x  warmup was not clear. 
   x  Clearly state how to generalize (required!)
@@ -18,8 +19,6 @@ x obliv perm is actually an oblivious injection. Make this clear. See Review 1 f
 - compare with VaultDB
 
 - Compare with Google Join-and-Compute protocol
-
-
 
 
 

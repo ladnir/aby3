@@ -1,6 +1,44 @@
 \iffullversion
 \else
 
+
+\section{Summary of CCS 2020 Revision}
+
+We have made significant efforts to address \emph{all} concerns that have been raised by the reviewers. The most significant changes include:
+\begin{enumerate}
+	\item Improvements in writing quality. We have rewritten/expanded certain sections which we believe lead to some confusion. The two most notable of these is the introduction and the oblivious switching network sections. The introduction now highlights the "outsourced secure computation setting" where the three parties act as servers that are oblivious to the data that they are computing on. We also give real-world motivations/examples for the setting. 
+	
+	\item A common comment was that the Duplication network section is confusing. As such, we have largely rewritten this section. The duplication network now has its own protocol box ($\proto{dup}$ of \figureref{fig:switching-net}) as opposed to being inlined into the switch net protocol. We also now start the explanation with a concrete example of the duplication protocol which is indented to give better intuition. This is followed by a new explanation of the "warmup" along with how to generalize it. A security proof of the protocol has been added to the appendix. 
+	%	x  warmup was not clear. 
+	%	x  Clearly state how to generalize (required!)
+	%	x  missing proof of correctness/security (required!)
+	
+	\item The switching network section now starts with a concrete example that should aid understanding. We have also reworked the explanation in the text to be easier to read. Finally, we also give a comparison with two party computation switching network and permutation network based on Oblivious Transfer and Homomorphic Encryption.
+	
+	\item Some reviewers were confused by the fact that the oblivious permutation is actually an oblivious injection. We made this distinction clearer.
+	
+	\item We have added a discussion on microbenchmarks to the experiment section 6. This describes the relative amount of time each step takes. 
+	
+	
+	\item We now more clearly compare with Google's Join-and-Compute protocol. This protocol was actually already compared with but we did not make it clear that it is the protocol that Google uses. We note that this protocol is significantly slower than ours and is not composable. We are not aware of any two party protocol that has an implementation and is composable.
+	
+	\item We added formal proofs of security for the core protocols (permutation, duplication, switch net, join protocol). These are in the appendix. 
+	
+	\item 
+	One of the reviewers suggested we compared with VaultDB. We appreciate the suggestion and have cited the work but decided not to compare due to their protocol targeting a significantly different setting. Mapping our protocol into their setting would be an interesting future direction. 
+	
+	\item The ideal functionality and protocol boxes for the Join protocol have been reworked to improve readability. 
+\end{enumerate}
+
+Some other minor changes include:
+\begin{enumerate}
+\item  We clearly state of cuckoo hash table $m\approx1.5n$.
+\item  We note that we are open source. 
+\item  Fixed various typos.
+\item  Include page numbers.
+\item  Clearly state that KKRT can not be made composable without very large overhead. 
+\end{enumerate}
+
 \section{Voter Query Details}\label{sec:voterDetails}
 
 
