@@ -192,7 +192,7 @@ namespace aby3
             if (memView.data() + memView.size() > (u8*)(shares.data() + shares.size()))
                 throw std::runtime_error(LOCATION);
 
-            sse_transpose(inView, memView);
+            transpose(inView, memView);
             //std::cout << " in* " << std::endl;
             //for (u64 r = 0; r < inView.bounds()[0]; ++r)
             //{
@@ -1482,7 +1482,7 @@ namespace aby3
             //memset(oout.data(), 0, oout.size());
             //out.mShares[j].setZero();
             memset(out.mShares[j].data(), 0, out.mShares[j].size() * sizeof(i64));
-            sse_transpose(in, oout);
+            transpose(in, oout);
 
 #ifdef BINARY_ENGINE_DEBUG
             if (mDebug)
