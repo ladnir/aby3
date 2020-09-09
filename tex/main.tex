@@ -1,30 +1,70 @@
 \newif\iffullversion
 \fullversionfalse
 %\fullversiontrue
+\newif\ifccs
+\ccstrue
 
-\iffullversion
+\ifccs
+%	%---------------------------------CCS-----------------------------------------------------
+	\documentclass[sigconf]{acmart}
+	\settopmatter{printacmref=false} % Removes citation information below abstract
+	\settopmatter{printfolios=true}
+%	\renewcommand\footnotetextcopyrightpermission[1]{} % removes footnote with conference information in first column
+%	\pagestyle{plain} % removes running headers
+	
+	
+	
+%	\fancyhf{} % Remove fancy page headers 
+%	\fancyhead[C]{Fast Database Joins and PSI for Secret Shared Data} % TODO: replace 9999 with your paper number
+%	\fancyfoot[C]{\thepage}
+%	
+%	\setcopyright{none} % No copyright notice required for submissions
+%	\acmConference[Fast Database Joins and PSI for Secret Shared Data]{ACM Conference on Computer and Communications Security}{Due 15 May 2019}{London, TBD}
+%	\acmYear{2019}
+%	\setcopyright{acmcopyright}
+	\copyrightyear{2020}
+	\acmYear{2020}
+	\acmDOI{}
+	
+	%% These commands are for a PROCEEDINGS abstract or paper.
+	\acmConference[CCS '20]{ACM Conference on Computer and Communications Security}{November 09--13, 2019}{NA}
+	\acmBooktitle{CCS '20: ACM Conference on Computer and Communications Security, November 09--13, 2019, NA}
+	
+	\acmPrice{}
+	\acmISBN{}
+	
+	\settopmatter{printacmref=false, printccs=true, printfolios=true} % We want page numbers on submissions
+	
+\else 
 	\documentclass[11pt,letterpaper]{article}
 	\usepackage[paper=letterpaper,margin=1in]{geometry}
-\else
-%---------------------------------CCS-----------------------------------------------------
-\documentclass[sigconf,anonymous]{acmart}
-\settopmatter{printacmref=false} % Removes citation information below abstract
-\settopmatter{printfolios=true}
-\renewcommand\footnotetextcopyrightpermission[1]{} % removes footnote with conference information in first column
-\pagestyle{plain} % removes running headers
+
 \fi 
 
 \input{headers}
 %\author{Payman Mohassel, \and Peter Rindal, \and Mike Rosulek }
 
-%\maketitle
 \begin{document}
 
-
-
-
-
 \title{Fast Database Joins and PSI for Secret Shared Data}
+
+\ifccs
+\author{Payman Mohassel}
+%\email{payman.mohassel@gmail.com}
+\affiliation{\institution{Facebook}}
+
+\author{Peter Rindal}
+%\email{peterrindal@gmail.com}
+\affiliation{\institution{Visa Research}}
+
+\author{Mike Rosulek}
+%\email{rosulekm@engr.orst.edu}
+\affiliation{\institution{Oregon State University}}
+
+\else
+\maketitle
+\fi
+
 \begin{abstract}
 We present a scalable protocol for database joins on secret shared data in the honest-majority three-party setting. The key features of our protocol are a rich set of SQL-like join/select queries and the ability to compose join operations together due to the inputs and outputs being generically secret shared between the parties. Provided that all joins operate on unique primary keys, no information is revealed to any party during the protocol. In particular, not even the sizes of intermediate joins are revealed. All of our protocols are constant-round and achieve $O(n)$ communication and computation overhead for joining two tables of $n$ rows. 
 
@@ -33,8 +73,19 @@ These properties make our protocol ideal for \emph{outsourced secure computation
 We additionally implement two applications on top of our framework. The first application detects voter registration errors within and between agencies of 50 US states, in a privacy-preserving manner. The second application allows several organizations to compare network security logs to more accurately identify common security threats, e.g. the IP addresses of a bot net. In both cases, the practicality of these applications depends on efficiently performing joins on millions of secret shared records. For example, our three party protocol can perform a join on two sets of 1 million records in 4.9 seconds or, alternatively, compute the cardinality of this join in just 3.1 seconds. 
 \end{abstract}
 
-\iffullversion
-\else
+\ifccs
+\begin{CCSXML}
+	<ccs2012>
+	<concept>
+	<concept_id>10002978.10002979</concept_id>
+	<concept_desc>Security and privacy~Cryptography</concept_desc>
+	<concept_significance>500</concept_significance>
+	</concept>
+	</ccs2012>
+\end{CCSXML}
+
+\ccsdesc[500]{Security and privacy~Cryptography}
+
 \maketitle
 \fi
 

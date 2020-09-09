@@ -429,21 +429,24 @@ We note that under some restrictions on the tables being joined, a more efficien
 \end{figure}
 
 
+
 \subsection{Non-unique Join on Column}
-
-
 When values in the join-column are not unique within a single table, the security guarantees begin to erode. Recall that the randomized encodings for $X,Y$ are revealed to \Party{0}, \Party{1} respectively. Repeated values in the join-columns will lead to duplicate randomized encodings and therefore reveal their location. Learning the distribution of these duplicates reveals that the underlying table has the same distribution. In the event that only one of the tables contains duplicates, the core protocol can naturally be extended to compute the various join operations subject to \Party{0} learning the duplicate distribution. This is achieved by requiring the left table $X$ contain the duplicates rows. After learning the randomized encodings for this table \Party{0} can program the switching networks appropriately to query the duplicate locations in the cuckoo hash table. 
 
-
+\ifccs
+See \appendixref{sec:nonunique} for a discussion on performing joins when both of the join keys are not unique.
+\else
 When both tables contain duplicates we fall back to a less secure protocol architecture. This is required due to the cuckoo table not supporting duplicates. First, \Party{1} samples two random permutations $\pi_0,\pi_1$ and computes $X'=\pi_1(X),Y'=\pi_2(Y)$ using the oblivious permutation protocol. \Party{0} then learns all of the randomized encodings for the permuted tables $X'$ and $Y'$. Given this, \Party{0} can compute the size of the output table and inform the other two parties of it. Alternatively, an upper bound on the output table size can be communicated. Let $n'$ denote this value. \Party{0} can then construct two switching networks which map the rows of $X'$ and $Y'$ to the appropriate rows of the output table. The main disadvantage of this approach is that \Party{0} learns the size of the output, the distribution of duplicate rows and how these duplicate rows are multiplied together. However, unlike \cite{LTW13} which takes a conceptually similar approach, our protocol does not leak any information to \Party{1} and \Party{2}, besides the value $n'$.
 
+\fi
+
 %When both tables contain duplicates we fall back to the less secure protocol architecture of Laur et al.\cite{LTW13}. In particular, this style of protocol  performs an oblivious shuffling of the table rows and then reveals all of the randomized encodings to all of the parties. Given this information the parties can construct the desired join. We suggest that the performance of these two primitive can be improved over \cite{LTW13} by 1) implementing the random shuffle using two random permutation networks from \sectionref{sec:switch} where party 0 and 1 both privately sample one of the permutations. 2) Replace the use of AES with our improved randomized encodings (LowMC and random binary matrix). Given these optimization the overhead of these protocols should be comparable to our standard join techniques. The major shortcoming of this approach is that the duplicate distribution and the size of join is revealed to all of the parties. As discussed in the related work section, this can limit several important application such as threat log comparison. 
+
 
 \subsection{Revealing Results}
 
 Revealing a secret shared table $\share{X}$ requires two operations. First observe that the data in the \texttt{NULL} rows is not cleared out by the join protocols. This is done as an optimization. As such naively reconstructing these rows would lead to significant leakage. Instead $X[i]$  is updated as $X[i]=(\neg\XNull[i])\cdot X[i]$. %This ensures that all \texttt{NULL} rows have a deterministic value and therefore can be simulated. 
 The second operation is to perform an oblivious shuffle of the rows. This operation randomly reorders all the rows without revealing the ordering to any of the parties. In general this step is necessary since the original ordering of the result table is input-dependent. For example, say $X$ is a list of patents info, $Y$ is patent billing status, and $Z$ is a list of patent diseases. Say we reveal $\texttt{select } X.name, Y.balance \texttt{ from } X,Y \texttt{ on } X.id$ $=Y.id$ and $\texttt{select } X.gender, Z.desease \texttt{ from } X,Z \texttt{ on } \allowbreak X.id=Z.id$. Without reordering you could connect $X.name, X.gender, Y.balance$ and $Z.desease$ by the row index and infer secret information. However, by randomly shuffling this connection is destroyed and the reveal can be simulated.
-
 
 %Concretely, this ordering can be used to correlate between two different output tables. For example, the row ordering of say $X\cap Y$ and $X\cap Z$ will be the same up to some rows being \texttt{NULL} while other may not. %In the case of sets this ordering does not reveal additional information since it can be inferred given the ideal output, e.g. set intersection, then the shuffling can be omitted. However, this is not true in general when the items being joined are key-value pairs. 
 
@@ -469,11 +472,3 @@ Our framework also considers a second class of functions on a table that allow c
 
 More generally, any polynomial time function can generically be expressed using the ABY$^3$ framework\cite{aby3}. However, the resulting efficiency may not be adequate for practical deployment.  
 
-\iffalse
-\section{Beyond Three Parties}
-In some settings where many parties are providing tables to be computed on, the three party requirement with at most one corruption may not be adequate. In particular, a larger corruption threshold such as 3-out-of-5 or 4-out-of-7 may be desirable. Our protocol can naturally be extended to these setting with some caveats. First, the binary circuit based MPC protocol\cite{highthroughput}, which our standard three party protocol relies on, can be naturally extended to these larger (honest majority) corruption thresholds. One limitation is that the number of shares is exponential in the number of parties.  Alternatively, several other protocol without this limitation such as\cite{DBLP:conf/crypto/ChidaGHIKLN18} have been proposed. Another implementation challenge is how to instantiate share conversion that some of the aggregation steps rely on. In the three party case \cite{aby3} provides specification. We note that such share conversions can generically be implemented using an MPC protocol but leave efficient instantiations to future work.
-
-This change immediately implies that no minority set of corrupted parties can decrypt/reconstruct the secret shared tables. However, our three party protocol also requires \Party{0} and \Party{1} learning the randomized encodings in the clear. If the adversary learns both sets of randomized encodings they can infer information about the cardinality of the join. As such, our protocol offers two levels of security. When the adversary corrupts \Party{0} and \Party{1} the cardinality of $\mathbb{E}_x \cap \mathbb{E}_y$ is revealed. Otherwise, if an honest majority is present then the view of the corrupted parties can be simulated in the semi-honest setting. 
-
-
-\fi
