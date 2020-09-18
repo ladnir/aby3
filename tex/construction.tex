@@ -365,7 +365,7 @@ We note that under some restrictions on the tables being joined, a more efficien
 				\item The parties send $(\textsc{Map},\share{X},J, \share{Y}, K)$ to \proto{map} and receive $\share{{Y'}}$.
 								
 				\item Output the table $\share{Z}$ defined by the case $type$:
-				\begin{enumerate}[leftmargin=0.6cm]
+				\begin{enumerate}[leftmargin=1.1cm]
 					\item[$\textsc{Inner}$:] For $i\in [n],$  \f{mpc} evaluate $\share{\ZNull}[i]:=\share{\XNull}[i] \vee \share{\YNull'}[i] \vee \neg P(\share{X}[i], \share{Y'}[i])$ and $\share{Z}[i]:=S(\share{X}[i], \share{Y'}[i])$.
 					
 					
@@ -396,7 +396,7 @@ We note that under some restrictions on the tables being joined, a more efficien
 	\framebox{\begin{minipage}{0.95\linewidth}
 			{\bf [Join]}  Upon receiving command $(\textsc{Join}, type, \share{X},$ $J, \share{Y}, K, S, P)$ from all parties. $J,K$ index the join columns of $X,Y$ respectively. Let $n_X$ and $n_Y$ denote the number of rows in $X,Y$ respectively. Define $\textsc{Keys}(X,J,i)=(X_j[i])_{j\in J}$. 
 			Output the table $\share{Z}$ defined by the case $type$:
-			\begin{enumerate}[leftmargin=1.1cm]
+			\begin{enumerate}[leftmargin=1.6cm]
 				\item[$\textsc{Inner}$:] Let the rows of $Z$ be $\{ S(X[i],Y[j]) \mid \exists i,j\text{ s.t. }
 				\neg\XNull[i]\wedge \neg\YNull[j]\wedge \textsc{Keys}(X,J,i){=}\textsc{Keys}(Y,K,j) \wedge P(X[i],Y[i]) \}$ along with zero or more \Null rows s.t. $Z$ has $n_X$ rows.
 				

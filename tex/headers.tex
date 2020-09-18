@@ -38,7 +38,11 @@
 \newcommand{\ZNull}{\ensuremath{Z_\Null}\xspace}
 
 \newcommand{\F}{\ensuremath{\mathbb{F}}\xspace}
+\ifccs
 \renewcommand{\C}{\ensuremath{\mathcal{C}}\xspace}
+\else
+\newcommand{\C}{\ensuremath{\mathcal{C}}\xspace}
+\fi
 \newcommand{\M}{\ensuremath{\mathcal{M}}\xspace}
 \renewcommand{\O}{\ensuremath{\mathcal{O}}\xspace}
 \renewcommand{\P}{\ensuremath{\mathcal{P}}\xspace}

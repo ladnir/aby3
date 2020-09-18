@@ -12,6 +12,9 @@ We implemented our full set of protocols and applications along with a performan
 All cryptographic operations are performed with computational security parameter $\kappa=128$ and statistical security $\lambda=40$. We consider set/table sizes of $n\in\{2^8, 2^{12}, 2^{16}, 2^{20}, 2^{24}\}$ and $n=2^{26}$ in some cases. Times are reported as the average of several trials.
 
 \begin{figure*}[t!]\centering\scriptsize
+	
+	\scalebox{.8}{
+		\hspace{-3cm}
 % \begin{figure*}[h]\centering
 \begin{tabular}{|l |l|| r | r |r |r|r||r | r |r |r|r||r|r|r|r|r|}
 	\cline{3-17}
@@ -34,7 +37,7 @@ All cryptographic operations are performed with computational security parameter
 	Threat Log $N=2$              & This                         \hfill ,3       & 0.02    & 0.03     & 0.2      & 5.1         &        121 &   2.4 & 2.5      & 4.8      & 34.6      &        585 &   0.2 &      3.1 &     50.2 &       804.2 &      12,867 \\ \hline
 	Threat Log $N=4$              & This                          \hfill ,3      & 0.05    & 0.09     & 0.9      & 17.9        &        388 &   6.6 & 6.8      & 13.1     & 108.7     &      1,739 &   0.6 &      9.7 &    155.4 &     2,487.8 &      39,804 \\ \hline
 	Threat Log $N=8$              & This                          \hfill ,3      & 0.10    & 0.19     & 1.7      & 47.1        &      1,021 &  14.9 & 15.3     & 30.0     & 264.3     &      4,228 &   1.4 &     22.8 &    365.7 &     5,854.9 &      93,677 \\ \hline
-\end{tabular}
+\end{tabular}}
 \vspace{-0.3cm}
 \caption{	\label{fig:compare}The running time in seconds and  communication overhead in MB for various join operations and application. The input tables each contain $n$ rows. The  \cite{PSWW18} protocol has two implementation where  \cite{PSWW18}b is optimized for the WAN setting. -- denotes that the running time is not available. * denotes that the running times were linearly extrapolated from the values of $n$ provided by the publication.}
 \vspace{-0.2cm}

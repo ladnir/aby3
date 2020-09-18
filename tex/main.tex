@@ -2,7 +2,7 @@
 \fullversionfalse
 %\fullversiontrue
 \newif\ifccs
-\ccstrue
+\ccsfalse
 
 \ifccs
 %	%---------------------------------CCS-----------------------------------------------------
@@ -37,12 +37,11 @@
 	
 \else 
 	\documentclass[11pt,letterpaper]{article}
-	\usepackage[paper=letterpaper,margin=1in]{geometry}
+	\usepackage[paper=letterpaper,margin=1.5in]{geometry}
 
 \fi 
 
 \input{headers}
-%\author{Payman Mohassel, \and Peter Rindal, \and Mike Rosulek }
 
 \begin{document}
 
@@ -62,6 +61,8 @@
 \affiliation{\institution{Oregon State University}}
 
 \else
+
+\author{Payman Mohassel, \and Peter Rindal, \and Mike Rosulek }
 \maketitle
 \fi
 
