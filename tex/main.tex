@@ -7,33 +7,21 @@
 \ifccs
 %	%---------------------------------CCS-----------------------------------------------------
 	\documentclass[sigconf]{acmart}
-	\settopmatter{printacmref=false} % Removes citation information below abstract
-	\settopmatter{printfolios=true}
-%	\renewcommand\footnotetextcopyrightpermission[1]{} % removes footnote with conference information in first column
-%	\pagestyle{plain} % removes running headers
+
 	
+
+\copyrightyear{2020}
+\acmYear{2020}
+\setcopyright{acmlicensed}\acmConference[CCS '20]{Proceedings of the 2020 ACM SIGSAC Conference on Computer and Communications Security}{November 9--13, 2020}{Virtual Event, USA}
+\acmBooktitle{Proceedings of the 2020 ACM SIGSAC Conference on Computer and Communications Security (CCS '20), November 9--13, 2020, Virtual Event, USA}
+\acmPrice{15.00}
+\acmDOI{10.1145/3372297.3423358}
+\acmISBN{978-1-4503-7089-9/20/11}
+
+	% Authors, replace the red X's with your assigned DOI string during the rightsreview eform process.
 	
-	
-%	\fancyhf{} % Remove fancy page headers 
-%	\fancyhead[C]{Fast Database Joins and PSI for Secret Shared Data} % TODO: replace 9999 with your paper number
-%	\fancyfoot[C]{\thepage}
-%	
-%	\setcopyright{none} % No copyright notice required for submissions
-%	\acmConference[Fast Database Joins and PSI for Secret Shared Data]{ACM Conference on Computer and Communications Security}{Due 15 May 2019}{London, TBD}
-%	\acmYear{2019}
-%	\setcopyright{acmcopyright}
-	\copyrightyear{2020}
-	\acmYear{2020}
-	\acmDOI{}
-	
-	%% These commands are for a PROCEEDINGS abstract or paper.
-	\acmConference[CCS '20]{ACM Conference on Computer and Communications Security}{November 09--13, 2019}{NA}
-	\acmBooktitle{CCS '20: ACM Conference on Computer and Communications Security, November 09--13, 2019, NA}
-	
-	\acmPrice{}
-	\acmISBN{}
-	
-	\settopmatter{printacmref=false, printccs=true, printfolios=true} % We want page numbers on submissions
+	\settopmatter{printacmref=true}
+
 	
 \else 
 	\documentclass[11pt,letterpaper]{article}
@@ -45,7 +33,8 @@
 %\author{Payman Mohassel, \and Peter Rindal, \and Mike Rosulek }
 
 \begin{document}
-
+	\fancyhead{}
+	
 \title{Fast Database Joins and PSI for Secret Shared Data}
 
 \ifccs
