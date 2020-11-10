@@ -3,6 +3,7 @@
 oc::TestCollection aby3_tests([](oc::TestCollection& tc) {
     
     tc.add("BetaCircuit_int_Sh3Piecewise_Test       ", BetaCircuit_int_Sh3Piecewise_Test);
+    tc.add("garble_Test                             ", garble_Test);
                 
     tc.add("Task_schedule_test                      ", Task_schedule_test);
     tc.add("Sh3_Runtime_schedule_test               ", Sh3_Runtime_schedule_test); 

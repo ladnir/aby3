@@ -1,8 +1,10 @@
 #include "aby3/Circuit/Garble.h"
 
+//#define GARBLE_DEBUG
 
 namespace osuCrypto
 {
+#ifdef OC_ENABLE_PUBLIC_WIRE_LABELS
 
 	const std::array<block, 2> Garble::mPublicLabels{ toBlock(0,0), toBlock(~0,~0) };
 
@@ -13,6 +15,35 @@ namespace osuCrypto
 	}
 
 
+
+	block Garble::garbleConstGate(bool constA, bool constB, const std::array<block, 2>& in, const GateType& gt, const block& xorOffset)
+	{
+		auto aa = PermuteBit(in[0]);
+		auto bb = PermuteBit(in[1]);
+
+		if (constA && constB) {
+			return Garble::mPublicLabels[GateEval(gt, aa, bb)];
+		}
+		else {
+			auto v = subGate(constB, aa, bb, gt);
+			return Garble::mPublicLabels[v / 3] | ((in[constA] & zeroAndAllOne[v > 0])) ^ (zeroAndAllOne[v == 1] & xorOffset);
+		}
+	}
+
+	block Garble::evaluateConstGate(bool constA, bool constB, const std::array<block, 2>& in, const GateType& gt)
+	{
+		auto aa = PermuteBit(in[0]);
+		auto bb = PermuteBit(in[1]);
+		if (constA && constB) {
+			return Garble::mPublicLabels[GateEval(gt, aa, bb)];
+		}
+		else {
+			auto v = subGate(constB, aa, bb, gt);
+			return Garble::mPublicLabels[v / 3] | ((in[constA] & zeroAndAllOne[v > 0]));
+		}
+	}
+
+#endif
 
 
 
@@ -57,43 +88,17 @@ namespace osuCrypto
 	}
 
 
-	block Garble::garbleConstGate(bool constA, bool constB, const std::array<block, 2>& in, const GateType& gt, const block& xorOffset)
-	{
-		auto aa = PermuteBit(in[0]);
-		auto bb = PermuteBit(in[1]);
-
-		if (constA && constB) {
-			return Garble::mPublicLabels[GateEval(gt, aa, bb)];
-		}
-		else {
-			auto v = subGate(constB, aa, bb, gt);
-			return Garble::mPublicLabels[v / 3] | ((in[constA] & zeroAndAllOne[v > 0])) ^ (zeroAndAllOne[v == 1] & xorOffset);
-		}
-	}
-
-	block Garble::evaluateConstGate(bool constA, bool constB, const std::array<block, 2>& in, const GateType& gt)
-	{
-		auto aa = PermuteBit(in[0]);
-		auto bb = PermuteBit(in[1]);
-		if (constA && constB) {
-			return Garble::mPublicLabels[GateEval(gt, aa, bb)];
-		}
-		else {
-			auto v = subGate(constB, aa, bb, gt);
-			return Garble::mPublicLabels[v / 3] | ((in[constA] & zeroAndAllOne[v > 0]));
-		}
-	}
-
-
-
 	void Garble::evaluate(
-		const BetaCircuit & cir,
-		const span<block>& wires,
-		std::array<block, 2>& tweaks,
-		const span<GarbledGate<2>>& garbledGates,
+		const BetaCircuit& cir,
+		span<block> wires,
+		span<GarbledGate<2>> garbledGates,
+		block& tweak,
+#ifdef OC_ENABLE_PUBLIC_WIRE_LABELS
 		const std::function<bool()>& getAuxilaryBit,
-		block* DEBUG_labels)
+#endif
+		span<block> DEBUG_labels)
 	{
+		std::array<block, 2> tweaks{ tweak, tweak ^ CCBlock };
 		u64 i = 0;
 		auto garbledGateIter = garbledGates.begin();
 		std::array<block, 2> in;
@@ -118,16 +123,20 @@ namespace osuCrypto
 				auto a = wires[gate.mInput[0]];
 				auto b = wires[gate.mInput[1]];
 				auto& c = wires[gate.mOutput];
+#ifdef OC_ENABLE_PUBLIC_WIRE_LABELS
 				auto constA = isConstLabel(a);
 				auto constB = isConstLabel(b);
 				auto constAB = constA || constB;
+#else
+				static const bool constAB = 0;
+#endif
 
 				if (GSL_LIKELY(!constAB))
 				{
 
 					if (GSL_LIKELY(gt == GateType::Xor || gt == GateType::Nxor))
 					{
-
+#ifdef OC_ENABLE_PUBLIC_WIRE_LABELS
 						if (GSL_LIKELY(neq(a, b)))
 						{
 							c = a ^ b;
@@ -136,8 +145,12 @@ namespace osuCrypto
 						{
 							c = mPublicLabels[getAuxilaryBit()];
 						}
-#ifndef  NDEBUG
-						if (DEBUG_labels) DEBUG_labels[i++] = c;
+#else
+						c = a ^ b;
+#endif
+
+#ifdef GARBLE_DEBUG
+						if (DEBUG_labels.size()) DEBUG_labels[i++] = c;
 #endif
 					}
 					else
@@ -169,8 +182,8 @@ namespace osuCrypto
 						//    " a   " << a << std::endl <<
 						//    " b   " << b << std::endl <<
 						//    " c   " << c << std::endl;
-#ifndef  NDEBUG
-						if (DEBUG_labels) DEBUG_labels[i++] = c;
+#ifdef GARBLE_DEBUG
+						if (DEBUG_labels.size()) DEBUG_labels[i++] = c;
 #endif
 					}
 
@@ -182,15 +195,17 @@ namespace osuCrypto
 				}
 				else
 				{
+#ifdef OC_ENABLE_PUBLIC_WIRE_LABELS
 					in[0] = a; in[1] = b;
 					c = evaluateConstGate(constA, constB, in, gt);
 
-#ifndef  NDEBUG
+#ifdef GARBLE_DEBUG
 					auto ab = constA ? b : a;
 					if (isConstLabel(c) == false &&
 						neq(c, ab))
 						throw std::runtime_error(LOCATION);
-					if (DEBUG_labels) DEBUG_labels[i++] = c;
+					if (DEBUG_labels.size()) DEBUG_labels[i++] = c;
+#endif
 #endif
 				}
 			}
@@ -203,7 +218,7 @@ namespace osuCrypto
 				memcpy(&*(wires.begin() + dest), &*(wires.begin() + src), i32(len * sizeof(block)));
 			}
 		}
-
+#ifdef OC_ENABLE_PUBLIC_WIRE_LABELS
 		//std::cout  << IoStream::unlock;
 		for (u64 i = 0; i < cir.mOutputs.size(); ++i)
 		{
@@ -218,17 +233,24 @@ namespace osuCrypto
 				}
 			}
 		}
+#endif
+
+		tweak = tweaks[0];
 	}
 
 	void Garble::garble(
 		const BetaCircuit& cir,
-		const span<block>& wires,
-		std::array<block, 2>& tweaks,
-		const span<GarbledGate<2>>& gates,
-		const std::array<block, 2>& mZeroAndGlobalOffset,
+		span<block> wires,
+		span<GarbledGate<2>>  gates,
+		block& tweak,
+		block& freeXorOffset,
+#ifdef OC_ENABLE_PUBLIC_WIRE_LABELS
 		std::vector<u8>& auxilaryBits,
-		block* DEBUG_labels)
+#endif
+		span<block> DEBUG_labels)
 	{
+		std::array<block, 2> tweaks{ tweak, tweak ^ CCBlock };
+		std::array<block, 2> mZeroAndGlobalOffset{ ZeroBlock, freeXorOffset};
 		//auto s = DEBUG_labels;
 		u64 i = 0;
 		auto gateIter = gates.begin();
@@ -255,14 +277,19 @@ namespace osuCrypto
 				auto bNot = b ^ mGlobalOffset;
 
 				auto& c = wires[gate.mOutput];
+#ifdef OC_ENABLE_PUBLIC_WIRE_LABELS
 				auto constA = isConstLabel(a);
 				auto constB = isConstLabel(b);
 				auto constAB = constA || constB;
+#else
+				static const bool constAB = 0;
+#endif
 
 				if (GSL_LIKELY(!constAB))
 				{
 					if (GSL_LIKELY(gt == GateType::Xor || gt == GateType::Nxor))
 					{
+#ifdef OC_ENABLE_PUBLIC_WIRE_LABELS
 						// is a == b^1
 						auto oneEq = eq(a, bNot);
 						if (GSL_LIKELY(!(eq(a, b) || oneEq)))
@@ -277,13 +304,17 @@ namespace osuCrypto
 							// must tell the evaluator what the bit is.
 							auxilaryBits.push_back(bit);
 						}
-#ifndef  NDEBUG
-						if (DEBUG_labels) DEBUG_labels[i++] = c;
+#else
+						c = a ^ b ^ mZeroAndGlobalOffset[(u8)gt & 1];
+#endif
+
+#ifdef GARBLE_DEBUG
+						if (DEBUG_labels.size()) DEBUG_labels[i++] = c;
 #endif
 					}
 					else
 					{
-#ifndef  NDEBUG
+#ifdef GARBLE_DEBUG
 						Expects(!(gt == GateType::a ||
 							gt == GateType::b ||
 							gt == GateType::na ||
@@ -339,25 +370,29 @@ namespace osuCrypto
 						//    " a   " << a << "  " << (a ^ mGlobalOffset) << std::endl <<
 						//    " b   " << b << "  " << (b ^ mGlobalOffset) << std::endl <<
 						//    " c   " << c << "  " << (c ^ mGlobalOffset) << std::endl;
-#ifndef  NDEBUG
-						if (DEBUG_labels) DEBUG_labels[i++] = c;
+#ifdef GARBLE_DEBUG
+						if (DEBUG_labels.size()) DEBUG_labels[i++] = c;
 #endif
 					}
 				}
 				else
 				{
+
+#ifdef OC_ENABLE_PUBLIC_WIRE_LABELS
+
 					auto ab = constA ? b : a;
 
 					in[0] = a; in[1] = b;
 					c = garbleConstGate(constA, constB, in, gt, mGlobalOffset);
 
-#ifndef  NDEBUG
+#ifdef GARBLE_DEBUG
 					if (isConstLabel(c) == false &&
 						neq(c, ab) &&
 						neq(c, ab ^ mGlobalOffset))
 						throw std::runtime_error(LOCATION);
 
-					if (DEBUG_labels) DEBUG_labels[i++] = c;
+					if (DEBUG_labels.size()) DEBUG_labels[i++] = c;
+#endif
 #endif
 
 				}
@@ -387,14 +422,17 @@ namespace osuCrypto
 			{
 				if (cir.mWireFlags[out[j]] == BetaWireFlag::InvWire)
 				{
+#ifdef OC_ENABLE_PUBLIC_WIRE_LABELS
 					if (isConstLabel(wires[out[j]]))
 						wires[out[j]] = wires[out[j]] ^ mPublicLabels[1];
 					else
+#endif
 						wires[out[j]] = wires[out[j]] ^ mGlobalOffset;
 				}
 			}
 		}
 		//std::cout  << IoStream::unlock;
+		tweak = tweaks[0];
 
 	}
 
