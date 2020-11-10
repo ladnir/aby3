@@ -3,9 +3,9 @@
 set -e
 
 if [ ! -d eigen ]; then
-    wget -c 'http://bitbucket.org/eigen/eigen/get/3.3.4.tar.bz2' -O ./eigen.tar.bz2
+    wget -c 'https://gitlab.com/libeigen/eigen/-/archive/3.3.4/eigen-3.3.4.tar.bz2' -O ./eigen.tar.bz2
     tar xfj eigen.tar.bz2
-    mv eigen-eigen-5a0156e40feb eigen
+    mv eigen-3.3.4 eigen
     rm  eigen.tar.bz2
 fi
 
