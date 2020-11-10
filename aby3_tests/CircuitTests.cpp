@@ -117,7 +117,7 @@ void garble_Test()
 		}
 	}
 
-	// pick the garbler's input values.
+	// pick the garbler's input values, in this case at random.
 	BitVector garbPlainInput(bitCount);
 	garbPlainInput.randomize(prng);
 
@@ -138,7 +138,7 @@ void garble_Test()
 		evalsLabels[i][1] = zeroWireLabels[cir->mInputs[1].mWires[i]] ^ freeXorOffset;
 	}
 
-	// somehow to the OTs one the evaluator's input.
+	// somehow do the OTs on the evaluator's input and evalsLabels.
 
 
 	// the garbled circuit.
@@ -181,7 +181,7 @@ void garble_Test()
 	}
 
 
-	// pick some random inputs for the evalutor.
+	// pick some random inputs for the evalutor, in this case at random.
 	BitVector evalsPlainInput(bitCount);
 	evalsPlainInput.randomize(prng);
 
