@@ -192,16 +192,6 @@ void garble_Test()
 		activeWireLabels[cir->mInputs[1].mWires[i]] = evalsLabels[i][evalsPlainInput[i]];
 	}
 
-	for (auto in : cir->mInputs)
-	{
-		for (auto i : in.mWires)
-		{
-			if (activeWireLabels[i] != zeroWireLabels[i] &&
-				activeWireLabels[i] != (zeroWireLabels[i] ^ freeXorOffset))
-				throw std::runtime_error(LOCATION);
-		}
-	}
-
 	// evaluator also needs to set their own tweak.
 	block eTweak = oc::ZeroBlock;
 
