@@ -15,8 +15,6 @@ The repo includes the following application:
 
 A tutorial can be found [here](https://github.com/ladnir/aby3/blob/master/frontend/aby3Tutorial.cpp). It includes a description of how to use the API and a discussion at the end on how the framework is implemented.
 
-Note that this is *not* the same implementation provided in the publication [ABY3: A Mixed Protocol Framework for Machine Learning](https://eprint.iacr.org/2018/403.pdf), however it is very similar. Basicly a less optimized but more usable reimplementation by that was done for the database paper. If you wish to have the original ABY3 implementation, please contact the authors.
-
 ## Warning 
 
 This codebase should **NOT** be considered fully secure. It has not had a security review and there are still several security related issues that have not been fully implemented. Only use this casebase as a proof-of-concept or to benchmark the perfromance. Future work is required for this implementation to be considered secure. 
