@@ -60,7 +60,7 @@ void integerOperations(u64 partyIdx)
 	// The first thing we always do is to create and
 	// IO Service. This will help us perform networking.
 	// We must ensure that this object outlives all of
-	// out protocols.
+	// our protocols.
 	IOService ios;
 
 	// Next we will create our three main classes. 
@@ -116,7 +116,7 @@ void integerOperations(u64 partyIdx)
 	else 
 		enc.remoteInt(runtime, sharedInt).get();
 		
-	// Not that we called .get() on the return type. This will the
+	// Note that we called .get() on the return type. This will tell the
 	// runtime that we want the value right now.
 
 	// You might be wondering why we would want to wait to get the 
