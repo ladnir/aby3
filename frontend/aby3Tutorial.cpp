@@ -333,16 +333,63 @@ void fixedPointOperations(u64 partyIdx)
 //  5) update the model https://github.com/ladnir/aby3/blob/master/aby3-ML/Regression.h#L279
 //  6) go back to #1
 //  
-//  Each of these tasks is performed right when they are called.Each of these calls will internally schedule some aby3 tasks and then perform them.
+//  Each of these tasks is performed right when they are called. 
+//  Each of these calls will internally schedule some aby3 tasks 
+//  and then perform them.
 //  
-//  For example, Multiplying the features(#2) requires one round of interaction which consists of two aby3 tasks : (a)sending the first multiplication message, (b)receiving this message from the other partiesand computing the output message.This class https://github.com/ladnir/aby3/blob/master/aby3-ML/aby3ML.h#L12 is what schedules and executes these tasks. Multiplication is shown here https://github.com/ladnir/aby3/blob/master/aby3-ML/aby3ML.h#L106. It schedules the tasks (a,b) by calling asyncMul(...) and then executes it by calling .get() on the resulting task. 
+//  For example, Multiplying the features(#2) requires one round 
+//  of interaction which consists of two aby3 tasks : (a)sending 
+//  the first multiplication message, (b)receiving this message 
+//  from the other partiesand computing the output message.This 
+//  class https://github.com/ladnir/aby3/blob/master/aby3-ML/aby3ML.h#L12 
+//  is what schedules and executes these tasks. Multiplication is 
+//  shown here https://github.com/ladnir/aby3/blob/master/aby3-ML/aby3ML.h#L106. 
+//  It schedules the tasks (a,b) by calling asyncMul(...) and then 
+//  executes it by calling .get() on the resulting task. 
 //  
-//  	asyncMul(...) can be found here https://github.com/ladnir/aby3/blob/master/aby3/sh3/Sh3Evaluator.cpp#L442 It works as follows: it takes the dependency task and then adds a new task that should be performed once the dependent task is done. This is performed by passing a function to the .then(...) function. This first task (a) begins on line 449 and on line 520. When this task is performed, it schedules another task (b) as shown on line 502. This task completes the multiplication.
+//  asyncMul(...) can be found here https://github.com/ladnir/aby3/blob/master/aby3/sh3/Sh3Evaluator.cpp#L442 
+//  It works as follows: it takes the dependency task and then adds
+//  a new task that should be performed once the dependent task is
+//  done. This is performed by passing a function to the .then(...) 
+//  function. This first task (a) begins on line 449 and on line 520. 
+//  When this task is performed, it schedules another task (b) as shown
+// on line 502. This task completes the multiplication.
 //  
-//  Notice that the overall asyncMul task should complete only when this second the task is done.To achieve this, what we do is return the 'closure' task of the first task.Since the second task was scheduled using the first as a dependency, the closure will only be completed when all `downstream` tasks as done.This closure task is obtained by calling.getClosure() on line 520.
+//  Notice that the overall asyncMul task should complete only when 
+//  this second the task is done.To achieve this, what we do is return 
+//  the 'closure' task of the first task.Since the second task was 
+//  scheduled using the first as a dependency, the closure will only 
+//  be completed when all `downstream` tasks as done.This closure task 
+//  is obtained by calling.getClosure() on line 520.
 //  
-//  Computing the logistic function(#3) is done in the same basic way but there are many more steps.See the aby3 paper on the step.The basics is that you evaluate a piecewise polynomial function which approximates the logistic function.As shown here https://github.com/ladnir/aby3/blob/master/aby3-ML/aby3ML.h#L137 You first describe the piecewise polynomial https://github.com/ladnir/aby3/blob/master/aby3-ML/aby3ML.h#L125 and then evaluate it. There is a general protocol for doing this and its found here https://github.com/ladnir/aby3/blob/master/aby3/sh3/Sh3Piecewise.cpp#L184 This is performed in the following steps:
+//  Computing the logistic function(#3) is done in the same basic 
+//  way but there are many more steps.See the aby3 paper on the 
+//  step. The basics is that you evaluate a piecewise polynomial 
+//  function which approximates the logistic function.As shown here
+//  https://github.com/ladnir/aby3/blob/master/aby3-ML/aby3ML.h#L137 
+//  You first describe the piecewise polynomial https://github.com/ladnir/aby3/blob/master/aby3-ML/aby3ML.h#L125 
+//  and then evaluate it. There is a general protocol for doing this 
+//  and its found here https://github.com/ladnir/aby3/blob/master/aby3/sh3/Sh3Piecewise.cpp#L184 
+//  This is performed in the following steps:
 //  
-//  Determine which region / piece of the piecewise polynomial that the input is in.https://github.com/ladnir/aby3/blob/master/aby3/sh3/Sh3Piecewise.cpp#L184
-//  	At the same time, evaluate the each polynomial on the input https://github.com/ladnir/aby3/blob/master/aby3/sh3/Sh3Piecewise.cpp#L276
-//  Once done with these, multiply the bit indicating whether the input is in the current region with the current polynomial evaluation https://github.com/ladnir/aby3/blob/master/aby3/sh3/Sh3Piecewise.cpp#L300
+//  1) Determine which region / piece of the piecewise polynomial that the input is in.https://github.com/ladnir/aby3/blob/master/aby3/sh3/Sh3Piecewise.cpp#L184
+//  2) At the same time, evaluate the each polynomial on the input https://github.com/ladnir/aby3/blob/master/aby3/sh3/Sh3Piecewise.cpp#L276
+//  3) Once done with these, multiply the bit indicating whether the input is in the current region with the current polynomial evaluation https://github.com/ladnir/aby3/blob/master/aby3/sh3/Sh3Piecewise.cpp#L300
+
+
+//  Computing #1 requires 6=log2(64 bits) rounds. Computing #2 is 1 
+//  round, computing #3 requires 1 round. The `critical path` is 
+//  #1 + #3 which means computing the piecewise poly requires 7 rounds.
+
+//  You can also take a look at the aby3 paper. It is not easy to 
+//  tell just by looking at the code since, as you say, one task
+//  will then schedule more tasks. Each of these is all split 
+//  across many function calls.
+
+//  If a task performs communication, then it will always be performed
+//  in the round that follows the `parent` task(s) that it depends on.
+//  If it does not perform communication this its performed in the current round.
+
+//  Each party is performed on a single thread. All scheduling and execution 
+// of the protocol is performed on a single thread (per party). All tasks are
+// executed inside some call to Sh3Task::get(). 
