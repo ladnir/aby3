@@ -13,7 +13,7 @@ The repo includes the following application:
  * Threat Log Comparison ([see Section 5](https://eprint.iacr.org/2019/518.pdf))
  * ERIC Application ([see Section 5](https://eprint.iacr.org/2019/518.pdf))
 
-A tutorial can be found [here](https://github.com/ladnir/aby3/blob/master/frontend/aby3Tutorial.cpp)
+A tutorial can be found [here](https://github.com/ladnir/aby3/blob/master/frontend/aby3Tutorial.cpp). It includes a description of how to use the API and a discussion at the end on how the framework is implemented.
 
 Note that this is *not* the same implementation provided in the publication [ABY3: A Mixed Protocol Framework for Machine Learning](https://eprint.iacr.org/2018/403.pdf), however it is very similar. Basicly a less optimized but more usable reimplementation by that was done for the database paper. If you wish to have the original ABY3 implementation, please contact the authors.
 
