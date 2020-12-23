@@ -326,12 +326,12 @@ void fixedPointOperations(u64 partyIdx)
 //  
 //  All three parties will call this function on their own thread or program.It does the following :
 //  
-//  Selects a mini - batch based on a common random number generator.https://github.com/ladnir/aby3/blob/master/aby3-ML/Regression.h#L251
-//  	Multiply the features with the linear model https://github.com/ladnir/aby3/blob/master/aby3-ML/Regression.h#L262
-//  Apply the activation function(logistic).https://github.com/ladnir/aby3/blob/master/aby3-ML/Regression.h#L263
-//  	Compute the backpropagation.https://github.com/ladnir/aby3/blob/master/aby3-ML/Regression.h#L268
-//  	update the model https://github.com/ladnir/aby3/blob/master/aby3-ML/Regression.h#L279
-//  go back to #1
+//  1) Selects a mini - batch based on a common random number generator.https://github.com/ladnir/aby3/blob/master/aby3-ML/Regression.h#L251
+//  2) Multiply the features with the linear model https://github.com/ladnir/aby3/blob/master/aby3-ML/Regression.h#L262
+//  3) Apply the activation function(logistic).https://github.com/ladnir/aby3/blob/master/aby3-ML/Regression.h#L263
+//  4) Compute the backpropagation.https://github.com/ladnir/aby3/blob/master/aby3-ML/Regression.h#L268
+//  5) update the model https://github.com/ladnir/aby3/blob/master/aby3-ML/Regression.h#L279
+//  6) go back to #1
 //  
 //  Each of these tasks is performed right when they are called.Each of these calls will internally schedule some aby3 tasks and then perform them.
 //  
