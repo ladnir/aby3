@@ -233,11 +233,11 @@ void garble_Test(const CLP& cmd)
 
 	cir->evaluate(plainInputs, plainOutputs);
 
-		std::cout << "exp " << plainOutputs[0] << std::endl;
-		std::cout << "act " << output << std::endl;
 
 	if (plainOutputs[0] != output)
 	{
+		std::cout << "exp " << plainOutputs[0] << std::endl;
+		std::cout << "act " << output << std::endl;
 		throw std::runtime_error(LOCATION);
 	}
 }
