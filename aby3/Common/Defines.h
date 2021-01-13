@@ -2,7 +2,7 @@
 #include <cryptoTools/Common/Defines.h>
 #include <cryptoTools/Common/Version.h>
 
-#if CRYPTO_TOOLS_VERSION < 10503
+#if CRYPTO_TOOLS_VERSION < 10601
 static_assert(0, "update cryptoTools / libOTe")
 #endif
 
