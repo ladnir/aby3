@@ -81,7 +81,7 @@ void BetaCircuit_int_Sh3Piecewise_Test()
 }
 
 
-void garble_Test()
+void garble_Test(const CLP& cmd)
 {
 
 
@@ -92,14 +92,15 @@ void garble_Test()
 
 	// garbler
 	// ----------------------------------------------------------
+#define GARBLE_DEBUG
 
 	Garble garb;
 
-	PRNG prng(sysRandomSeed());
+	PRNG prng(toBlock(cmd.getOr("s",0)));
 	std::vector<block> zeroWireLabels(cir->mWireCount);
 
-	// set the free xor key.
-	block freeXorOffset = prng.get();
+	// set the free xor key. Bottom bit must be 1.
+	block freeXorOffset = prng.get<block>() | OneBlock;
 
 	// the tweak is important. Each time you set freeXorOffset, 
 	// you should intialize the tweak to zero. After that, the 
@@ -151,6 +152,8 @@ void garble_Test()
 #else
 	garb.garble(*cir, zeroWireLabels, garbledGates, gTweak, freeXorOffset);
 #endif
+
+	std::cout << zeroWireLabels[0] << std::endl;
 
 
 	// optionally construct the decoding information.
@@ -230,11 +233,11 @@ void garble_Test()
 
 	cir->evaluate(plainInputs, plainOutputs);
 
-	if (plainOutputs[0] != output)
-	{
 		std::cout << "exp " << plainOutputs[0] << std::endl;
 		std::cout << "act " << output << std::endl;
 
+	if (plainOutputs[0] != output)
+	{
 		throw std::runtime_error(LOCATION);
 	}
 }
