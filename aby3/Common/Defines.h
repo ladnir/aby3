@@ -3,7 +3,7 @@
 #include <cryptoTools/Common/Version.h>
 
 #if CRYPTO_TOOLS_VERSION < 10601
-static_assert(0, "update cryptoTools / libOTe")
+static_assert(0, "update cryptoTools / libOTe");
 #endif
 
 #define _WIN32_WINNT 0x0501
