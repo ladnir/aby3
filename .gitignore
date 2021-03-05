@@ -17,6 +17,7 @@ Makefile
 /CMakeFiles/
 *.cmake
 CMakeCache.txt
+out/
 
 *.pptx
 *.xlsx

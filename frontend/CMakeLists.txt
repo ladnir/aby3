@@ -19,9 +19,4 @@ target_link_libraries(frontend.exe com-psi_Tests)
 target_link_libraries(frontend.exe aby3_Tests)
 
 
-find_library(
-    tests_cryptoTools_LIB
-    NAMES tests_cryptoTools
-    HINTS "${libOTe_Dirs}/lib/")
-
-target_link_libraries(frontend.exe ${tests_cryptoTools_LIB})
+target_link_libraries(frontend.exe ${cryptoTools_TESTS_LIB})

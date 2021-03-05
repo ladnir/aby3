@@ -1,16 +1,17 @@
 cmake_minimum_required (VERSION 2.8.11)
 
 
-set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/bin)
-set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/lib)
-set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/lib)
-
-set(CMAKE_C_FLAGS "-Wall  -maes -msse2 -msse4.1 -msse3 -mavx -mavx2 -mpclmul -Wfatal-errors -pthread -Wno-ignored-attributes -Wno-int-in-bool-context")
-set(CMAKE_CXX_FLAGS  "${CMAKE_C_FLAGS}  -std=c++14")
-
+if(MSVC)
+else()
+	set(CMAKE_C_FLAGS "-Wall  -maes -msse2 -msse4.1 -msse3 -mavx -mavx2 -mpclmul -Wfatal-errors -pthread -Wno-ignored-attributes -Wno-int-in-bool-context")
+	set(CMAKE_CXX_FLAGS  "${CMAKE_C_FLAGS}  -std=c++14")	# Select flags.
+	SET(CMAKE_CXX_FLAGS_RELEASE "-Ofast -DNDEBUG") 
+	SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO " -O2 -g -ggdb -rdynamic")
+	SET(CMAKE_CXX_FLAGS_DEBUG  "-O0 -g -ggdb -rdynamic")
+endif()
 # Set a default build type for single-configuration
 # CMake generators if no build type is set.
-if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
+if(NOT CMAKE_BUILD_TYPE)
    SET(CMAKE_BUILD_TYPE Release)
 endif()
 
@@ -28,12 +29,6 @@ if(NOT ${CMAKE_BUILD_TYPE} STREQUAL "Release")
 	endif()
 endif()
 
-# Select flags.
-SET(CMAKE_CXX_FLAGS_RELEASE "-Ofast -DNDEBUG") 
-SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO " -O2 -g -ggdb -rdynamic")
-SET(CMAKE_CXX_FLAGS_DEBUG  "-O0 -g -ggdb -rdynamic")
-
-
 #############################################
 #       Library/includes locations          #
 #############################################
@@ -41,12 +36,19 @@ SET(CMAKE_CXX_FLAGS_DEBUG  "-O0 -g -ggdb -rdynamic")
 # default location for libOTe
 set(libOTe_Dirs "${CMAKE_SOURCE_DIR}/../libOTe/")
 
-# default location for miracl
-set(Miracl_Dirs "${libOTe_Dirs}/cryptoTools/thirdparty/linux/miracl/")
 
-# default location for Boost
-set(BOOST_ROOT "${libOTe_Dirs}/cryptoTools/thirdparty/linux/boost/")
+include("${libOTe_Dirs}/cmake/loadCacheVar.cmake")
 
+if(NOT ENABLE_BOOST)
+	message(FATAL_ERROR "libOTe/cryptoTools needs to have boost enabled.")
+endif()
+
+if(NOT ENABLE_CIRCUITS)
+	message(FATAL_ERROR "libOTe/cryptoTools needs to have ENABLE_CIRCUITS defined.")
+endif()
+
+
+include("${libOTe_Dirs}/cmake/libOTeHelper.cmake")
 
 #############################################
 #        Build aby3, com-psi, tests         #
