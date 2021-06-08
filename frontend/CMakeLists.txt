@@ -17,6 +17,5 @@ target_link_libraries(frontend.exe com-psi)
 target_link_libraries(frontend.exe aby3-ML)
 target_link_libraries(frontend.exe com-psi_Tests)
 target_link_libraries(frontend.exe aby3_Tests)
+target_link_libraries(frontend.exe oc::tests_cryptoTools)
 
-
-target_link_libraries(frontend.exe ${cryptoTools_TESTS_LIB})
