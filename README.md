@@ -32,19 +32,18 @@ The library is *cross platform* and has been tested on Windows and Linux. The de
 
 ### Windows
 
- 1) Clone and build [libOTe](https://github.com/osu-crypto/libOTe). 
- 2) Edit `libOTe/cryptoTools/cryptoTools/Common/config.h` to contain `#define ENABLE_CIRCUITS ON`. 
- 3) `git clone https://github.com/ladnir/aby3.git`
- 4) `cd C:\`
- 5) `mkdir libs`
- 6) Download [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) to `C:\libs\eigen`.
- 7) `git clone https://github.com/Naios/function2.git`  to `C:\libs\function2`.
+ 1) Clone and build [libOTe](https://github.com/osu-crypto/libOTe) via `cmake . -DENABLE_CIRCUITS=ON`. 
+ 2) `git clone https://github.com/ladnir/aby3.git`
+ 3) `cd C:\`
+ 4) `mkdir libs`
+ 5) Download [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) to `C:\libs\eigen`.
+ 6) `git clone https://github.com/Naios/function2.git`  to `C:\libs\function2`.
 
-Open `aby3.sln` in visual studio and build it. Note, you can place Eigen and function2 in a different location and update the aby3 project files to reference this location.
+Open `aby3` folder in visual studio and build it (via cmake). Note, you can place Eigen and function2 in a different location and update the aby3 cmake files to reference this location.
 
 To see all the command line options, execute the program 
 
-`frontend.exe` 
+`frontend` 
 
 
 ### Linux / Mac
@@ -70,25 +69,7 @@ make -j
 
 To see all the command line options, execute the program 
  
-`./bin/frontend`
-
-
-### Linking
-
- To use the library in your project, you will need to link the following:
-
-1) .../libOTe
-2) .../libOTe/cryptoTools
-3) .../libOTe/cryptoTools/thirdparty/linux/boost
-4) .../aby3
-
-and link:
-1) .../libOTe/bin/liblibOTe.a
-2) .../libOTe/bin/libcryptoTools.a
-3) .../aby3/bin/libaby3.a
-4) .../libOTe/cryptoTools/thirdparty/linux/boost/stage/lib/libboost_system.a
-5) .../libOTe/cryptoTools/thirdparty/linux/boost/stage/lib/libboost_thread.a
-
+`frontend`
 
 **Note:** On windows the linking paths follow a similar pattern.
 
