@@ -52,8 +52,8 @@ In short, this will build the project
 
 ```
 git clone --recursive https://github.com/osu-crypto/libOTe.git
-cd libOTe/cryptoTools/thirdparty/linux
-bash boost.get
+cd libOTe/cryptoTools/thirdparty/
+python3 getBoost.py
 cd ../../..
 cmake . -DENABLE_CIRCUITS=ON
 make -j
