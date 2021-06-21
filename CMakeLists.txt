@@ -53,8 +53,15 @@ endif()
 #       Library/includes locations          #
 #############################################
 
-# default location for libOTe
-set(libOTe_Dirs "${CMAKE_SOURCE_DIR}/../libOTe/")
+if(MSVC)
+	if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+		list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/thirdparty/win-debug/")
+	endif()
+	list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/thirdparty/win/")
+else()
+	list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/thirdparty/unix/")
+endif()
+
 find_package(libOTe HINTS "${libOTe_Dirs}")
 
 if(NOT ENABLE_BOOST)

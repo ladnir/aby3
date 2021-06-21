@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cryptoTools/Common/Timer.h>
 #include <cryptoTools/Common/TestCollection.h>
+#include <cstdio>
 //////////////////
 //     MAIN     //
 //////////////////
@@ -217,6 +218,7 @@ void lowMC_FileCircuit_test() {
     cir.evaluate(inputs, outputs, true);
 
     t.setTimePoint("circuit eval done");
+    std::remove(filename.c_str());
 
 
     //std::cout << outputs[0] << std::endl;
@@ -355,6 +357,7 @@ void lowMC_BinFileCircuit_test() {
     t.setTimePoint("circuit eval done");
 
 
+    std::remove(filename.c_str());
     //std::cout << outputs[0] << std::endl;
 
     //std::cout << t << std::endl;

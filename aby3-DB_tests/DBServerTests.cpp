@@ -37,9 +37,9 @@ void DB_computeKeys_test()
 
     PRNG prng(OneBlock);
     DBServer srvs[3];
-    srvs[0].init(0, s02, s01, prng);
-    srvs[1].init(1, s10, s12, prng);
-    srvs[2].init(2, s21, s20, prng);
+    srvs[0].init(0, s02, s01, prng, false);
+    srvs[1].init(1, s10, s12, prng, false);
+    srvs[2].init(2, s21, s20, prng, false);
 
     auto size = 1046;
     auto keyBitCount = srvs[0].mKeyBitCount;

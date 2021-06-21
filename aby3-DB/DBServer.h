@@ -29,7 +29,7 @@ namespace osuCrypto
         aby3::Sh3Runtime mRt;
         aby3::Sh3Encryptor mEnc;
 
-        void init(u64 idx, Session& prev, Session& next, PRNG& prng);
+        void init(u64 idx, Session& prev, Session& next, PRNG& prng, bool writeLowMC = true);
 
 
         SharedTable localInput(Table& t);

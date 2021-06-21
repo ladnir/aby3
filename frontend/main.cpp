@@ -9,7 +9,7 @@
 #include <aby3-ML/main-linear.h>
 #include <aby3-ML/main-logistic.h>
 
-#include "cryptoTools/tests_cryptoTools/UnitTests.h"
+#include "tests_cryptoTools/UnitTests.h"
 #include "cryptoTools/Crypto/PRNG.h"
 
 using namespace oc;
