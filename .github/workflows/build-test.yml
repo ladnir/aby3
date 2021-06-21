@@ -27,7 +27,7 @@ jobs:
             submodules: recursive
 
       # Runs a set of commands using the runners shell
-      - name: build boost
+      - name: build deps
         run:  python3 build.py --setup --par=4
 
       - name: build aby3
