@@ -78,7 +78,7 @@ def getEigen(install, prefix, par):
             prefix = "/usr/local"
 
         mkdirCmd = sudo + "mkdir -p " + prefix + "/include/Eigen/"
-        InstallCmd = sudo + "cp ./Eigen " + prefix + "/include -rf" 
+        InstallCmd = sudo + "cp  -rf ./Eigen " + prefix + "/include" 
 
         print("\n=========== getEigen.py =============")
         print(mkdirCmd)

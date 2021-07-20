@@ -349,7 +349,7 @@ namespace aby3
                     mShareCount = shareCount;
 
                     auto sizeT = bitCount * wordCount;
-                    auto sizeBytes = (sizeT + 1) * sizeof(T);
+                    std::size_t sizeBytes = (sizeT + 1) * sizeof(T);
                     auto totalT = 2 * sizeT + 1; // plus one to make sure we have enought space for aligned storage.
 
                     mBacking.reset(new u8[totalT * sizeof(T)]); 

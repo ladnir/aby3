@@ -60,7 +60,7 @@ def getFunction2(install, prefix, par):
             prefix = "/usr/local"
 
         mkdirCmd = sudo + "mkdir -p " + prefix + "/include/function2/"
-        InstallCmd = sudo + "cp ./include/function2 " + prefix + "/include -rf" 
+        InstallCmd = sudo + "cp  -rf ./include/function2 " + prefix + "/include" 
 
         print("\n=========== getFunction2.py =============")
         print(mkdirCmd)

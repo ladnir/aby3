@@ -60,7 +60,7 @@ def getJson(install, prefix, par):
             prefix = "/usr/local"
         
         mkdirCmd = sudo + "mkdir -p " + prefix + "/include/nlohmann/"
-        InstallCmd = sudo + "cp ./include/nlohmann " + prefix + "/include -rf" 
+        InstallCmd = sudo + "cp -rf ./include/nlohmann " + prefix + "/include" 
 
         print("\n=========== getJson.py =============")
         print(mkdirCmd)
