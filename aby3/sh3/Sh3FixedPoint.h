@@ -204,7 +204,7 @@ namespace aby3
 			const eMatrix<i64>& l = i64Cast();
 			const eMatrix<i64>& r = rhs.i64Cast();
 			view = l * r;
-			for (u64 i = 0; i < size(); ++i)
+			for (u64 i = 0; i < view.size(); ++i)
 				view(i) >>= mDecimal;
 			return ret;
 		}
