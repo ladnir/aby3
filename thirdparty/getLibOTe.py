@@ -11,7 +11,7 @@ def getLibOTe(install, prefix, par,libOTe, boost, relic):
         os.system("git clone --recursive https://github.com/osu-crypto/libOTe.git")
 
     os.chdir(cwd + "/libOTe")
-    os.system("git checkout 5584d1a48f46f313c4d3d96be7807ce06a4c1102 --quiet ")
+    os.system("git checkout 2363505431f744539027a873c2536b9ae3630ff7 --quiet ")
     os.system("git submodule update ")
 
     osStr = (platform.system())
