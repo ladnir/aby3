@@ -36,26 +36,26 @@ jobs:
       - name: unit tests
         run:  ./bin/frontend -u
 
-  build-windows:
-    # The type of runner that the job will run on
-    runs-on: windows-latest
-  
-    # Steps represent a sequence of tasks that will be executed as part of the job
-    steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
-        with:
-            submodules: recursive
-      - uses: seanmiddleditch/gha-setup-ninja@v3
-      - uses: ilammy/msvc-dev-cmd@v1
-
-      # Runs a set of commands using the runners shell
-      - name: build deps
-        run: python3 build.py --setup --par=4
-
-      - name: build aby3
-        run:  python3 build.py --par=4 -- -G Ninja
-
-      - name: unit test
-        run:  ./bin/frontend.exe -u
+#  build-windows:
+#    # The type of runner that the job will run on
+#    runs-on: windows-latest
+#  
+#    # Steps represent a sequence of tasks that will be executed as part of the job
+#    steps:
+#      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+#      - uses: actions/checkout@v2
+#        with:
+#            submodules: recursive
+#      - uses: seanmiddleditch/gha-setup-ninja@v3
+#      - uses: ilammy/msvc-dev-cmd@v1
+#
+#      # Runs a set of commands using the runners shell
+#      - name: build deps
+#        run: python3 build.py --setup --par=4
+#
+#      - name: build aby3
+#        run:  python3 build.py --par=4 -- -G Ninja
+#
+#      - name: unit test
+#        run:  ./bin/frontend.exe -u
           
