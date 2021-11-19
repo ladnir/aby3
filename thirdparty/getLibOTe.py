@@ -48,7 +48,7 @@ def getLibOTe(install, prefix, par,libOTe, boost, relic):
     cmd =  "python3 build.py " + sudo + " --par=" + str(par) + " " + installCmd + " " + debug
     boostCmd = cmd + " --setup --boost "
     relicCmd = cmd + " --setup --relic "
-    libOTeCmd = cmd + " -- -DENABLE_CIRCUITS=ON " + cmakePrefix;
+    libOTeCmd = cmd + " -DENABLE_CIRCUITS=ON " + cmakePrefix;
     
     
     print("\n\n=========== getLibOTe.py ================")
