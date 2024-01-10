@@ -34,7 +34,7 @@ jobs:
         run:  python3 build.py --par=4 
 
       - name: unit tests
-        run:  ./bin/frontend -u
+        run:  ./out/build/linux/frontend -u
 
 #  build-windows:
 #    # The type of runner that the job will run on
