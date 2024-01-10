@@ -10,7 +10,8 @@
 #include "Sh3Converter.h"
 #include <immintrin.h>
 #include <iomanip>
-
+#include <thread>
+#include <chrono>
 //std::ostream& operator<<(std::ostream& out, const __m256i& block);
 //namespace osuCrypto
 //{
