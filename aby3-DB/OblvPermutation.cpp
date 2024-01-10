@@ -7,12 +7,12 @@ namespace osuCrypto
     u32 step = 1 << 14;
 
     void OblvPermutation::send(
-        Channel & programChl,
-        Channel & recvrChl,
+        Channel& programChl,
+        Channel& recvrChl,
         Matrix<u8> src,
         std::string tag)
     {
-        u32 rows = gsl::narrow<u32>(src.rows());
+        u32 rows = (src.rows());
         //std::vector<u32> pi1(src.rows());
         //for (u32 i = 0; i < pi1.size(); ++i)
         //{
@@ -98,14 +98,14 @@ namespace osuCrypto
     }
 
     void OblvPermutation::recv(
-        Channel & programChl,
-        Channel & sendrChl,
+        Channel& programChl,
+        Channel& sendrChl,
         MatrixView<u8> dest,
         u64 srcRows,
         std::string tag,
         OutputType type)
     {
-        u32 recvCount = gsl::narrow<u32>((srcRows + step - 1) / step);
+        u32 recvCount = ((srcRows + step - 1) / step);
 
         std::vector<std::pair<std::future<void>, std::vector<u8>>> recvs1(recvCount);
         std::vector<std::pair<std::future<void>, std::vector<u32>>> recvs2(recvCount);
@@ -135,7 +135,7 @@ namespace osuCrypto
             {
                 for (u32 j = 0; j < perm.size(); ++j)
                 {
-                    if (perm[j] != -1)
+                    if (perm[j] != (u32)-1)
                     {
 
                         u8* destPtr = &*(dest.begin() + perm[j] * dest.stride());
@@ -151,7 +151,7 @@ namespace osuCrypto
             {
                 for (u32 j = 0; j < perm.size(); ++j)
                 {
-                    if (perm[j] != -1)
+                    if (perm[j] != (u32)-1)
                     {
                         u8* destPtr = &*(dest.begin() + perm[j] * dest.stride());
 
@@ -173,8 +173,8 @@ namespace osuCrypto
 
 
     void OblvPermutation::program(
-        Channel & recvrChl,
-        Channel & sendrChl,
+        Channel& recvrChl,
+        Channel& sendrChl,
         std::vector<u32> permutation,
         PRNG& p,
         MatrixView<u8> dest,
@@ -185,7 +185,7 @@ namespace osuCrypto
         auto permPointer = std::make_shared<std::vector<u32>>(std::move(permutation));
 
         auto& perm = *permPointer;
-        auto rows = gsl::narrow<u32>(perm.size());
+        auto rows = (perm.size());
 
         //#ifndef NDEBUG
         //        if (true)
@@ -194,7 +194,7 @@ namespace osuCrypto
         //            set.reserve(dest.size());
         //            for (auto p : perm)
         //            {
-        //                if (p != -1)
+        //                if (p != (u32)-1)
         //                {
         //                    auto r = set.emplace(p);
         //                    if (r.second == false)
@@ -214,7 +214,7 @@ namespace osuCrypto
         block seed = ZeroBlock;// p.get<block>();
                                //sendrChl.asyncSend(seed);
         PRNG prng(seed, 256);
-        PRNG prng2(seed^OneBlock, 256);
+        PRNG prng2(seed ^ OneBlock, 256);
 
         //ostreamLock(std::cout) << "prog count " << (rows - 1 + step) / step << " (" << rows << ") " << tag << std::endl;
 
@@ -238,7 +238,7 @@ namespace osuCrypto
                     auto idx = u32Buffer[k] % j + i;
                     std::swap(perm[i], perm[idx]);
 
-                    //if (perm[i] != -1)
+                    //if (perm[i] != (u32)-1)
                     //{
                     //    auto destPtr = &dest(perm[i], 0);
 
@@ -283,7 +283,7 @@ namespace osuCrypto
 
         for (u32 i = 0; i < rows; ++i)
         {
-            if (perm[i] != -1)
+            if (perm[i] != (u32)-1)
             {
                 auto destPtr = &dest(perm[i], 0);
 

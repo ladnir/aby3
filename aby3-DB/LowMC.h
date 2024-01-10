@@ -118,7 +118,7 @@ namespace osuCrypto
                 cir.addTempWireBundle(temp);
                 cir.addTempWireBundle(temp2);
 
-                for (int i = 0; i < blocksize; ++i)
+                for (int i = 0; i < (int)blocksize; ++i)
                 {
                     cir.addGate(message[i], roundKeys[0][i], GateType::Xor, state[i]);
                 }
@@ -139,7 +139,7 @@ namespace osuCrypto
                 for (u64 r = 0; r < rounds; ++r)
                 {
                     // SBOX
-                    for (int i = 0; i < numofboxes; ++i)
+                    for (int i = 0; i < (int)numofboxes; ++i)
                     {
                         auto& c = state[i * 3 + 0];
                         auto& b = state[i * 3 + 1];
@@ -173,7 +173,7 @@ namespace osuCrypto
 
                     // multiply with linear matrix and add const
                     auto& matrix = LinMatrices[r];
-                    for (int i = 0; i < blocksize; ++i)
+                    for (int i = 0; i < (int)blocksize; ++i)
                     {
                         auto& t = temp[i];
                         int j = -1, firstIdx, secondIdx;
@@ -188,7 +188,7 @@ namespace osuCrypto
 
                         cir.addGate(state[firstIdx], state[secondIdx], GateType::Xor, t);
 
-                        for (; j < blocksize; ++j)
+                        for (; j < (int)blocksize; ++j)
                         {
                             if (row[j])
                             {
@@ -200,7 +200,7 @@ namespace osuCrypto
                     //cir.addPrint(temp);
                     //cir.addPrint("\n");
 
-                    for (int i = 0; i < blocksize; ++i)
+                    for (int i = 0; i < (int)blocksize; ++i)
                     {
 
                         if (roundconstants[r][i])
@@ -213,7 +213,7 @@ namespace osuCrypto
                     //cir.addPrint("\n");
 
                     // add key
-                    for (int i = 0; i < blocksize; ++i)
+                    for (int i = 0; i < (int)blocksize; ++i)
                     {
                         cir.addGate(temp[i], roundKeys[r + 1][i], GateType::Xor, state[i]);
                     }
@@ -369,9 +369,9 @@ namespace osuCrypto
                 std::vector<block_type> mat(blocksize);
                 char c;
 
-                for (int i = 0; i < mat.size(); ++i)
+                for (int i = 0; i < (int)mat.size(); ++i)
                 {
-                    for (int j = 0; j < mat[i].size(); ++j)
+                    for (int j = 0; j < (int)mat[i].size(); ++j)
                     {
                         in.read(&c, 1);
                         if (c == '0')

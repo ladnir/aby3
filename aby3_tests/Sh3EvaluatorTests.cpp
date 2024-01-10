@@ -29,7 +29,7 @@ void Sh3_Evaluator_asyncMul_test()
     auto chl21 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "12").addChannel();
 
 
-    int trials = 10;
+    u64 trials = 10;
     CommPkg comms[3];
     comms[0] = { chl02, chl01 };
     comms[1] = { chl10, chl12 };
@@ -56,7 +56,7 @@ void Sh3_Evaluator_asyncMul_test()
 
         PRNG prng(ZeroBlock);
 
-        for (u64 i = 0; i < trials; ++i)
+        for (u64 i = 0ull; i < trials; ++i)
         {
             i64Matrix a(trials, trials), b(trials, trials), c(trials, trials), cc(trials, trials);
             rand(a, prng);
@@ -68,7 +68,7 @@ void Sh3_Evaluator_asyncMul_test()
 
             auto task = rt.noDependencies();
 
-            for (u64 j = 0; j < trials; ++j)
+            for (u64 j = 0ull; j < trials; ++j)
             {
                 task = eval.asyncMul(task, A, B, C);
                 task = task.then([&](CommPkg& comm, Sh3Task& self) {
@@ -80,7 +80,7 @@ void Sh3_Evaluator_asyncMul_test()
 
             enc.reveal(comm, C, cc);
 
-            for (u64 j = 0; j < trials; ++j)
+            for (u64 j = 0ull; j < trials; ++j)
             {
                 c = a * b;
                 a = c + a;
@@ -103,14 +103,14 @@ void Sh3_Evaluator_asyncMul_test()
         Sh3Runtime rt;
         rt.init(i, comm);
 
-        for (u64 i = 0; i < trials; ++i)
+        for (u64 i = 0ull; i < trials; ++i)
         {
             si64Matrix A(trials, trials), B(trials, trials), C(trials, trials);
             enc.remoteIntMatrix(comm, A);
             enc.remoteIntMatrix(comm, B);
 
             auto task = rt.noDependencies();
-            for (u64 j = 0; j < trials; ++j)
+            for (u64 j = 0ull; j < trials; ++j)
             {
                 task = eval.asyncMul(task, A, B, C);
                 task = task.then([&](CommPkg& comm, Sh3Task& self) {
@@ -140,15 +140,15 @@ std::string prettyShare(u64 partyIdx, const si64& v)
     std::array<u64, 3> shares;
     shares[partyIdx] = v[0];
     shares[(partyIdx + 2) % 3] = v[1];
-    shares[(partyIdx + 1) % 3] = -1;
+    shares[(partyIdx + 1) % 3] = ~0ull;
 
     std::stringstream ss;
     ss << "(";
-    if (shares[0] == -1) ss << "               _ ";
+    if (shares[0] == ~0ull) ss << "               _ ";
     else ss << std::hex << std::setw(16) << std::setfill('0') << shares[0] << " ";
-    if (shares[1] == -1) ss << "               _ ";
+    if (shares[1] == ~0ull) ss << "               _ ";
     else ss << std::hex << std::setw(16) << std::setfill('0') << shares[1] << " ";
-    if (shares[2] == -1) ss << "               _)";
+    if (shares[2] == ~0ull) ss << "               _)";
     else ss << std::hex << std::setw(16) << std::setfill('0') << shares[2] << ")";
 
     return ss.str();
@@ -168,7 +168,7 @@ void Sh3_Evaluator_asyncMul_fixed_test()
     auto chl21 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "12").addChannel();
 
 
-    int trials = 1;
+    u64 trials = 1;
     CommPkg comms[3];
     comms[0] = { chl02, chl01 };
     comms[1] = { chl10, chl12 };
@@ -195,7 +195,7 @@ void Sh3_Evaluator_asyncMul_fixed_test()
 
         PRNG prng(ZeroBlock);
 
-        for (u64 i = 0; i < trials; ++i)
+        for (u64 i = 0ull; i < trials; ++i)
         {
 
             f64<D8> a = (prng.get<i32>() >> 8) / 100.0;
@@ -233,7 +233,7 @@ void Sh3_Evaluator_asyncMul_fixed_test()
             }
             auto diff0 = (c - cc);
             double diff1 = diff0.mValue / double(1ull << c.mDecimal);
-            double diff2 = static_cast<double>(diff0);
+            //double diff2 = static_cast<double>(diff0);
             //ostreamLock(std::cout)
             //	<< "p" << rt.mPartyIdx << ": " << "a   " << prettyShare(rt.mPartyIdx, A.mShare) << " ~ " << a << std::endl
             //	<< "p" << rt.mPartyIdx << ": " << "b   " << prettyShare(rt.mPartyIdx, B.mShare) << " ~ " << b << std::endl
@@ -262,7 +262,7 @@ void Sh3_Evaluator_asyncMul_fixed_test()
         Sh3Runtime rt;
         rt.init(i, comm);
 
-        for (u64 i = 0; i < trials; ++i)
+        for (u64 i = 0ull; i < trials; ++i)
         {
 
             sf64<D8> A; enc.remoteFixed(rt, A);
@@ -359,8 +359,8 @@ void Sh3_Evaluator_truncationPai_test(const oc::CLP& cmd)
     auto chl12 = Session(ios, "127.0.0.1:1313", SessionMode::Server, "12").addChannel();
     auto chl21 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "12").addChannel();
 
-    int size = cmd.getOr("s", 4);
-    int trials = cmd.getOr("t", 1000);
+    u64 size = cmd.getOr("s", 4);
+    u64 trials = cmd.getOr("t", 1000);
     CommPkg comms[3];
     comms[0] = { chl02, chl01 };
     comms[1] = { chl10, chl12 };
@@ -379,7 +379,7 @@ void Sh3_Evaluator_truncationPai_test(const oc::CLP& cmd)
 
     auto dec = Decimal::D8;
 
-    for (u64 t = 0; t < trials; ++t)
+    for (u64 t = 0ull; t < trials; ++t)
     {
 
         auto t0 = evals[0].getTruncationTuple(size, size, dec);
@@ -393,7 +393,7 @@ void Sh3_Evaluator_truncationPai_test(const oc::CLP& cmd)
         //auto small = t0.mRTrunc.mShares[0] + t1.mRTrunc.mShares[0] + t2.mRTrunc.mShares[0];
         //auto large = t0.mR + t1.mR + t2.mR;
 
-        for (u64 i = 0; i < r.size(); ++i)
+        for (u64 i = 0ull; i < (u64)r.size(); ++i)
         {
             auto exp = r(i) >> dec;
             auto exp1 = exp - 4;
@@ -422,8 +422,8 @@ void Sh3_Evaluator_asyncMul_matrixFixed_test(const oc::CLP& cmd)
     auto chl12 = Session(ios, "127.0.0.1:1313", SessionMode::Server, "12").addChannel();
     auto chl21 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "12").addChannel();
 
-    int size = cmd.getOr("s", 4);
-    int trials = cmd.getOr("t", 4);
+    u64 size = cmd.getOr("s", 4);
+    u64 trials = cmd.getOr("t", 4);
     CommPkg comms[3];
     comms[0] = { chl02, chl01 };
     comms[1] = { chl10, chl12 };
@@ -457,7 +457,7 @@ void Sh3_Evaluator_asyncMul_matrixFixed_test(const oc::CLP& cmd)
         eval.DEBUG_disable_randomization = true;
 
 
-        for (u64 tt = 0; tt < trials; ++tt)
+        for (u64 tt = 0ull; tt < trials; ++tt)
         {
             PRNG prng(toBlock(tt));
 
@@ -469,7 +469,7 @@ void Sh3_Evaluator_asyncMul_matrixFixed_test(const oc::CLP& cmd)
             for (u64 i = 0; i < a.size(); ++i) a(i) = (prng.get<u32>() >> 8) / 100.0;
             for (u64 i = 0; i < b.size(); ++i) b(i) = (prng.get<u32>() >> 8) / 100.0;
             c = a * b;
-            auto c64 = a.i64Cast() * b.i64Cast();
+            //auto c64 = a.i64Cast() * b.i64Cast();
 
             A[idx][0].resize(size, size);
             A[idx][1].resize(size, size);
@@ -605,7 +605,7 @@ void Sh3_Evaluator_mul_test()
     auto chl21 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "12").addChannel();
 
 
-    int trials = 10;
+    u64 trials = 10;
     CommPkg comms[3];
     comms[0] = { chl02, chl01 };
     comms[1] = { chl10, chl12 };
@@ -631,7 +631,7 @@ void Sh3_Evaluator_mul_test()
         rt.init(0, comm);
         PRNG prng(ZeroBlock);
 
-        for (u64 i = 0; i < trials; ++i)
+        for (u64 i = 0ull; i < trials; ++i)
         {
             i64Matrix a(trials, trials), b(trials, trials), c(trials, trials), cc(trials, trials);
             rand(a, prng);
@@ -664,7 +664,7 @@ void Sh3_Evaluator_mul_test()
         Sh3Runtime rt;
         rt.init(i, comm);
 
-        for (u64 i = 0; i < trials; ++i)
+        for (u64 i = 0ull; i < trials; ++i)
         {
             si64Matrix A(trials, trials), B(trials, trials), C(trials, trials);
             auto i0 = enc.remoteIntMatrix(rt, A);
@@ -734,6 +734,12 @@ void createSharing(
     si64Matrix& s0,
     si64Matrix& s1,
     si64Matrix& s2);
+void createSharing(
+    PRNG& prng,
+    i64Matrix& value,
+    si64Matrix& s0,
+    si64Matrix& s1,
+    si64Matrix& s2, bool);
 
 
 void createSharing(
@@ -785,7 +791,7 @@ void sh3_asyncArithBinMul_test(const oc::CLP& cmd)
     PRNG prng(ZeroBlock);
     u64 size = cmd.getOr("size", 100);
     u64 trials = cmd.getOr("t", 10);;
-    u64 dec = 16;
+    //u64 dec = 16;
 
     CommPkg comms[3];
     comms[0] = { chl02, chl01 };
@@ -826,7 +832,7 @@ void sh3_asyncArithBinMul_test(const oc::CLP& cmd)
     for (u64 t = 0; t < trials; ++t)
     {
         for (u64 i = 0; i < size; ++i)
-            b(i) = prng.get<bool>();
+            b(i) = prng.get<u8>()&1;
 
         prng.get(a.data(), a.size());
 
@@ -841,10 +847,6 @@ void sh3_asyncArithBinMul_test(const oc::CLP& cmd)
 
         for (u64 i = 0; i < size; ++i)
         {
-            //if (a(i) != a0(i)[0] + a0(i)[1] + a1(i)[0])
-            //	throw std::runtime_error(LOCATION);
-            //std::cout << "a[" << i << "] = " << a0(i)[0] << " + " << a0(i)[1] << " + " << a1(i)[0] << std::endl;
-
             b0.mShares[0](i) &= 1;
             b0.mShares[1](i) &= 1;
             b1.mShares[0](i) &= 1;
@@ -865,28 +867,14 @@ void sh3_asyncArithBinMul_test(const oc::CLP& cmd)
         as1.get();
         as2.get();
 
-        //t0 = std::thread([&]() { p0.asyncArithBinMul(a0, b0, c0).get(); });
-        //t1 = std::thread([&]() { p1.asyncArithBinMul(a1, b1, c1).get(); });
-        //t2 = std::thread([&]() { p2.asyncArithBinMul(a2, b2, c2).get(); });
-        //t0.join();
-        //t1.join();
-        //t2.join();
-
-
-        //std::cout << "c0.0 " << c0.mShares[0] << std::endl;
-        //std::cout << "c0.1 " << c1.mShares[1] << std::endl;
-
-        //std::cout << "c1.0 " << c1.mShares[0] << std::endl;
-        //std::cout << "c1.1 " << c2.mShares[1] << std::endl;
-
-        //std::cout << "c2.0 " << c2.mShares[0] << std::endl;
-        //std::cout << "c2.1 " << c0.mShares[1] << std::endl;
-
         //typedef LynxEngine::Word Word;
         if (c0.mShares[0] != c1.mShares[1])
             throw std::runtime_error(LOCATION);
         if (c1.mShares[0] != c2.mShares[1])
         {
+            std::cout << c1[0](0) << std::endl <<"\n\n";
+            std::cout << c2[1](0) << std::endl;
+
             throw std::runtime_error(LOCATION);
         }
         if (c2.mShares[0] != c0.mShares[1])
@@ -896,22 +884,22 @@ void sh3_asyncArithBinMul_test(const oc::CLP& cmd)
         for (u64 i = 0; i < size; ++i)
         {
 
-            auto ci0 = c0.mShares[0](i);
-            auto ci1 = c1.mShares[0](i);
-            auto ci2 = c2.mShares[0](i);
-            auto di0 = c0.mShares[1](i);
-            auto di1 = c1.mShares[1](i);
-            auto di2 = c2.mShares[1](i);
+            //auto ci0 = c0.mShares[0](i);
+            //auto ci1 = c1.mShares[0](i);
+            //auto ci2 = c2.mShares[0](i);
+            //auto di0 = c0.mShares[1](i);
+            //auto di1 = c1.mShares[1](i);
+            //auto di2 = c2.mShares[1](i);
             //std::cout << "ci0 " << ci0 << " " << di1 << std::endl;
             //std::cout << "ci1 " << ci1 << " " << di2 << std::endl;
             //std::cout << "ci2 " << ci2 << " " << di0 << std::endl;
 
             //cc(i) = p0.shareToWord(c0(i), c1(i)[0]);// ^ c2(i);
             cc(i) = c0.mShares[0](i) + c0.mShares[1](i) + c1.mShares[0](i);
-            auto ai = a(i);
-            auto bi = b(i);
-            auto cci = cc(i);
-            auto ci = c(i);
+            //auto ai = a(i);
+            //auto bi = b(i);
+            //auto cci = cc(i);
+            //auto ci = c(i);
             if (cc(i) != c(i))
             {
                 throw std::runtime_error(LOCATION);
@@ -1021,21 +1009,21 @@ void sh3_asyncPubArithBinMul_test(const oc::CLP& cmd)
             throw std::runtime_error(LOCATION);
         if (c2.mShares[0] != c0.mShares[1])
             throw std::runtime_error(LOCATION);
-        auto ci0 = c0.mShares[0](i);
-        auto ci1 = c1.mShares[0](i);
-        auto ci2 = c2.mShares[0](i);
-        auto di0 = c0.mShares[1](i);
-        auto di1 = c1.mShares[1](i);
-        auto di2 = c2.mShares[1](i);
+        //auto ci0 = c0.mShares[0](i);
+        //auto ci1 = c1.mShares[0](i);
+        //auto ci2 = c2.mShares[0](i);
+        //auto di0 = c0.mShares[1](i);
+        //auto di1 = c1.mShares[1](i);
+        //auto di2 = c2.mShares[1](i);
         //std::cout << "ci0 " << ci0 << " " << di1 << std::endl;
         //std::cout << "ci1 " << ci1 << " " << di2 << std::endl;
         //std::cout << "ci2 " << ci2 << " " << di0 << std::endl;
 
         //cc(i) = p0.shareToWord(c0(i), c1(i)[0]);// ^ c2(i);
         cc(i) = c0.mShares[0](i) + c0.mShares[1](i) + c1.mShares[0](i);
-        auto bi = b(i);
-        auto cci = cc(i);
-        auto ci = c(i);
+        //auto bi = b(i);
+        //auto cci = cc(i);
+        //auto ci = c(i);
         if (cc(i) != c(i))
         {
             throw std::runtime_error(LOCATION);

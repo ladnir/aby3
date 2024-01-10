@@ -153,7 +153,7 @@ void garble_Test(const CLP& cmd)
 	garb.garble(*cir, zeroWireLabels, garbledGates, gTweak, freeXorOffset);
 #endif
 
-	std::cout << zeroWireLabels[0] << std::endl;
+	//std::cout << zeroWireLabels[0] << std::endl;
 
 
 	// optionally construct the decoding information.
@@ -173,7 +173,7 @@ void garble_Test(const CLP& cmd)
 
 	// evaluator
 	// -------------------------------------------------------------------
-	Garble eval;
+	//Garble eval;
 
 	std::vector<block> activeWireLabels(cir->mWireCount);
 

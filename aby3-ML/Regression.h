@@ -47,7 +47,8 @@ void extractBatch(
 	const Matrix& Y,
 	const std::vector<u64>& indices)
 {
-	if (XX.rows() != indices.size()) throw std::runtime_error(LOCATION);
+	if ((u64)XX.rows() != indices.size())
+		throw std::runtime_error(LOCATION);
 
 	for (u64 i = 0; i < indices.size(); ++i)
 	{
@@ -201,7 +202,7 @@ std::array<double,2> test_logisticModel(
 	auto pp = engine.reveal(fxw);
 	auto yy = engine.reveal(y);
 	u64 count = 0;
-	for (u64 i = 0; i < fxw.size(); ++i)
+	for (u64 i = 0; i < (u64)fxw.size(); ++i)
 	{
 		bool c0 = pp(i) > 0.5;
 		bool c1 = yy(i) > 0.5;

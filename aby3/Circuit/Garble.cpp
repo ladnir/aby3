@@ -2,6 +2,10 @@
 
 //#define GARBLE_DEBUG
 
+#ifndef GSL_LIKELY
+#define GSL_LIKELY(X) X
+#endif
+
 namespace osuCrypto
 {
 #ifdef OC_ENABLE_PUBLIC_WIRE_LABELS
@@ -99,9 +103,9 @@ namespace osuCrypto
 		span<block> DEBUG_labels)
 	{
 		std::array<block, 2> tweaks{ tweak, tweak ^ CCBlock };
-		u64 i = 0;
+		//u64 i = 0;
 		auto garbledGateIter = garbledGates.begin();
-		std::array<block, 2> in;
+		//std::array<block, 2> in;
 		//std::cout  << IoStream::lock;
 
 		//u64 i = 0;
@@ -158,7 +162,7 @@ namespace osuCrypto
 						// compute the hashs
 						hashs[0] = (a << 1) ^ tweaks[0];
 						hashs[1] = (b << 1) ^ tweaks[1];
-						mAesFixedKey.ecbEncTwoBlocks(hashs, temp);
+						mAesFixedKey.ecbEncBlocks<2>(hashs, temp);
 						hashs[0] = temp[0] ^ hashs[0];
 						hashs[1] = temp[1] ^ hashs[1];
 
@@ -252,10 +256,10 @@ namespace osuCrypto
 		std::array<block, 2> tweaks{ tweak, tweak ^ CCBlock };
 		std::array<block, 2> mZeroAndGlobalOffset{ ZeroBlock, freeXorOffset};
 		//auto s = DEBUG_labels;
-		u64 i = 0;
+		//u64 i = 0;
 		auto gateIter = gates.begin();
 		//std::cout  << IoStream::lock;
-		std::array<block, 2> in;
+		//std::array<block, 2> in;
 		//u64 i = 0;
 		auto& mGlobalOffset = mZeroAndGlobalOffset[1];
 		//std::cout << mZeroAndGlobalOffset[0] << " " << mZeroAndGlobalOffset[1] << std::endl;
@@ -339,7 +343,7 @@ namespace osuCrypto
 						hash[1] = ((a ^ mGlobalOffset) << 1) ^ tweaks[0];
 						hash[2] = (b << 1) ^ tweaks[1];
 						hash[3] = ((bNot)<< 1) ^ tweaks[1];
-						mAesFixedKey.ecbEncFourBlocks(hash, temp);
+						mAesFixedKey.ecbEncBlocks<4>(hash, temp);
 						hash[0] = hash[0] ^ temp[0]; // H( a0 )
 						hash[1] = hash[1] ^ temp[1]; // H( a1 )
 						hash[2] = hash[2] ^ temp[2]; // H( b0 )

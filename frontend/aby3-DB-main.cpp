@@ -32,7 +32,7 @@ void DB_Intersect(u32 rows, u32 cols, bool sum)
 
 
 	// 80 bits;
-	u32 hashSize = 80;
+	//u32 hashSize = 80;
 
 	auto keyBitCount = srvs[0].mKeyBitCount;
 	std::vector<ColumnInfo>
@@ -53,7 +53,7 @@ void DB_Intersect(u32 rows, u32 cols, bool sum)
 	for (u64 i = 0; i < rows; ++i)
 	{
 		auto out = (i >= intersectionSize);
-		for (u64 j = 0; j < a.mColumns[0].mData.cols(); ++j)
+		for (u64 j = 0; j < (u64)a.mColumns[0].mData.cols(); ++j)
 		{
 			a.mColumns[0].mData(i, j) = i + 1;
 			b.mColumns[0].mData(i, j) = i + 1 + (rows * out);
@@ -177,7 +177,7 @@ void DB_cardinality(u32 rows)
 
 
 	// 80 bits;
-	u32 hashSize = 80;
+	//u32 hashSize = 80;
 
 
 
@@ -194,7 +194,7 @@ void DB_cardinality(u32 rows)
 	for (u64 i = 0; i < rows; ++i)
 	{
 		auto out = (i >= intersectionSize);
-		for (u64 j = 0; j < a.mColumns[0].mData.cols(); ++j)
+		for (u64 j = 0; j < (u64)a.mColumns[0].mData.cols(); ++j)
 		{
 			a.mColumns[0].mData(i, j) = i + 1;
 			b.mColumns[0].mData(i, j) = i + 1 + (rows * out);
@@ -317,7 +317,7 @@ void DB_threat(u32 rows, u32 setCount)
 
 
 	// 80 bits;
-	u32 hashSize = 80;
+	//u32 hashSize = 80;
 
 
 
@@ -334,7 +334,7 @@ void DB_threat(u32 rows, u32 setCount)
 	for (u64 i = 0; i < rows; ++i)
 	{
 		auto out = (i >= intersectionSize);
-		for (u64 j = 0; j < a.mColumns[0].mData.cols(); ++j)
+		for (u64 j = 0; j < (u64)a.mColumns[0].mData.cols(); ++j)
 		{
 			a.mColumns[0].mData(i, j) = i + 1;
 			b.mColumns[0].mData(i, j) = i + 1 + (rows * out);
@@ -368,7 +368,7 @@ void DB_threat(u32 rows, u32 setCount)
 
 			int loops = ss / 2;
 
-			for (u64 j = 0; j < loops; ++j)
+			for (u64 j = 0; j < (u64)loops; ++j)
 			{
 				C = srvs[i].rightUnion(A["key"], B["key"], { A["key"] }, { B["key"] });
 			}
@@ -482,7 +482,7 @@ i64 Sh3_add_test(u64 n)
 		i64Matrix aa(width, 1), bb(width, 1);
 
 		PRNG prng(ZeroBlock);
-		for (u64 i = 0; i < a.size(); ++i)
+		for (u64 i = 0; i < (u64)a.size(); ++i)
 		{
 			a(i) = prng.get<i64>();
 			b(i) = prng.get<i64>();

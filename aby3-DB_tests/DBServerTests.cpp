@@ -41,14 +41,14 @@ void DB_computeKeys_test()
     srvs[1].init(1, s10, s12, prng);
     srvs[2].init(2, s21, s20, prng);
 
-    auto size = 1046;
+    auto size = 1046ull;
     auto keyBitCount = srvs[0].mKeyBitCount;
     Table a(size, { ColumnInfo{ "key", TypeID::IntID, keyBitCount } })
         , b(size, { ColumnInfo{ "key", TypeID::IntID, keyBitCount } });
 
     for (u64 i = 0; i < size; ++i)
     {
-        for (u64 j = 0; j < a.mColumns[0].mData.cols(); ++j)
+        for (u64 j = 0; j < (u64)a.mColumns[0].mData.cols(); ++j)
         {
             a.mColumns[0].mData(i, j) = i >> 1;
             b.mColumns[0].mData(i, j) = a.mColumns[0].mData(i, j);
@@ -70,7 +70,7 @@ void DB_computeKeys_test()
 
         for (u64 i = 0; i < size - 1; i += 2)
         {
-            for (u64 j = 0; j < a.mColumns[0].mData.cols(); ++j)
+            for (u64 j = 0; j < (u64)a.mColumns[0].mData.cols(); ++j)
             {
                 //std::cout << (j ? ", " : std::to_string(i) + " : ") << r(i, j);
                 if (r0(i, j) != r0(i + 1, j))
@@ -147,7 +147,7 @@ void DB_cuckooHash_test()
     // 80 bits;
     auto keyBitCount = srvs[0].mKeyBitCount;
     u32 rows = 1 << 10;
-    u32 bytes = 8;
+    //u32 bytes = 8;
 
     aby3::i64Matrix hashs(rows, (keyBitCount + 63) / 64);
     hashs.setZero();
@@ -408,10 +408,10 @@ void DB_compare_test()
                     //}
 
 
-                    if (c1(j, 0) != *iter * j)
+                    if ((u64)c1(j, 0) != *iter * j)
                         failed = true;
 
-                    if (c2(j, 0) != *iter * j * 2)
+                    if ((u64)c2(j, 0) != *iter * j * 2)
                         failed = true;
                 }
 
@@ -519,7 +519,7 @@ void DB_Intersect_test(u32 rows, u32 rows2)
     // initialize a
     for (u64 i = 0; i < rows; ++i)
     {
-        for (u64 j = 0; j < a.mColumns[0].mData.cols(); ++j)
+        for (u64 j = 0; j < (u64)a.mColumns[0].mData.cols(); ++j)
             a.mColumns[0].mData(i, j) = i + 1;
 
         a.mColumns[1].mData(i) = prng.get<u32>();
@@ -533,7 +533,7 @@ void DB_Intersect_test(u32 rows, u32 rows2)
     for (u64 i = 0; i < rows2; ++i)
     {
         auto out = (i >= intersectionSize);
-        for (u64 j = 0; j < b.mColumns[0].mData.cols(); ++j)
+        for (u64 j = 0; j < (u64)b.mColumns[0].mData.cols(); ++j)
             b.mColumns[0].mData(i, j) = i + 1 + (rows * out);
     }
     i64* bb1 = b.mColumns[1].mData.data();
@@ -568,7 +568,7 @@ void DB_Intersect_test(u32 rows, u32 rows2)
         }
 
 
-        for (u64 i = 0; i < keys.rows(); ++i)
+        for (u64 i = 0; i < (u64)keys.rows(); ++i)
         {
             auto iter = map.find(keys(i, 0));
             if (iter == map.end())
@@ -662,9 +662,9 @@ void DB_leftUnion_test()
     srvs[1].init(1, s10, s12, prng);
     srvs[2].init(2, s21, s20, prng);
 
-    auto left = 1 << 4;
-    auto mid = 1 << 5;
-    auto right = 1 << 7;
+    u64 left = 1 << 4;
+    u64 mid = 1 << 5;
+    u64 right = 1 << 7;
 
     auto keyBitCount = srvs[0].mKeyBitCount;
     Table 
@@ -681,7 +681,7 @@ void DB_leftUnion_test()
 
     std::unordered_map<i64, i64> map;
     map.reserve(mid);
-    auto total = left + mid + right;
+    u64 total = left + mid + right;
 
     auto th0 = right + mid;
     // initialize a
@@ -691,7 +691,7 @@ void DB_leftUnion_test()
         auto v = i + 1;
         if (i < th0)
         {
-            for (u64 j = 0; j < a.mColumns[0].mData.cols(); ++j)
+            for (u64 j = 0; j < (u64)a.mColumns[0].mData.cols(); ++j)
             {
                 b.mColumns[0].mData(i, j) = v;
                 b.mColumns[1].mData(i, 0) = v * 2;
@@ -700,7 +700,7 @@ void DB_leftUnion_test()
 
         if (i >= right)
         {
-            for (u64 j = 0; j < b.mColumns[0].mData.cols(); ++j)
+            for (u64 j = 0; j < (u64)b.mColumns[0].mData.cols(); ++j)
             {
                 a.mColumns[0].mData(i - right, j) = v;
                 a.mColumns[1].mData(i - right, 0) = v * 3;
@@ -743,7 +743,7 @@ void DB_leftUnion_test()
         //srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[2], data2);
         //srvs[i].mEnc.revealAll(srvs[i].mRt.mComm, C.mColumns[3], data3);
 
-        if (keys.rows() != total)
+        if ((u64)keys.rows() != total)
         {
             failed = true;
             std::cout << "bad size, exp: " << total << ", act: " << keys.rows() << std::endl;
@@ -752,7 +752,7 @@ void DB_leftUnion_test()
         //for (u64 i = 0; i < keys.rows(); ++i)
         //    std::cout << "u[" << i << "] = " << keys(i, 0) << std::endl;
 
-        for (u64 i = 0; i < keys.rows(); ++i)
+        for (u64 i = 0; i < (u64)keys.rows(); ++i)
         {
             auto iter = map.find(keys(i, 0));
             if (iter == map.end())
@@ -763,7 +763,7 @@ void DB_leftUnion_test()
             else
             {
     
-                auto idx = iter->second;
+                auto idx = (u64)iter->second;
                 auto exp = idx < th0 ?  b.mColumns[1].mData(idx, 0) : a.mColumns[1].mData(idx - right, 0);
 
                 if (data(i, 0) != exp)

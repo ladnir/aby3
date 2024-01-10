@@ -26,8 +26,22 @@ public:
 		const oc::BitVector& choices,
 		oc::span<oc::i64> recvMsgs);
 
+	struct AsyncRecv
+	{
+		struct State
+		{
+			std::vector<std::array<oc::i64, 2>> mV;
+			std::vector<oc::i64> mV2;
+			std::promise<void> mProm;
+			oc::BitVector mBv;
+			std::atomic<int> mAtomic;
+		};
 
-	static std::future<void> asyncRecv(
+		std::shared_ptr<State> mState;
+
+		void get() const { mState->mProm.get_future().get(); }
+	};
+	static AsyncRecv asyncRecv(
 		oc::Channel& sender,
 		oc::Channel & helper,
 		oc::BitVector&& choices,

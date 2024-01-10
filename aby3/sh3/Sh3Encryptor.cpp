@@ -1,5 +1,6 @@
 #include "Sh3Encryptor.h"
 #include <libOTe/Tools/Tools.h>
+#include <cryptoTools/Crypto/PRNG.h>
 
 #include "cryptoTools/Common/Log.h"
 namespace aby3
@@ -50,6 +51,127 @@ namespace aby3
             });
         }).getClosure();
     }
+
+    sia64 Sh3Encryptor::localAdditive(si64& src, u64 partyIdx)
+    {
+        sia64 ret;
+        if (mPartyIdx == partyIdx)
+            ret = (src.mData[0]+ src.mData[1]);
+        else if (mPartyIdx == (partyIdx+1)%3)
+            ret = src.mData[0];
+        else
+            ret = src.mData[1];
+        
+        return ret;
+    }
+
+    void Sh3Encryptor::shareSimLocal(CommPkg & comm, i64 val, si64& src) 
+    {
+        i64 rem = val-(src[0]+src[1]); 
+        std::array<i64,2> prev = {rem,src[0]};
+        std::array<i64,2> next = {src[1], rem};
+        comm.mPrev.asyncSendCopy(prev.data(), 2*sizeof(i64));
+        comm.mNext.asyncSendCopy(next.data(), 2*sizeof(i64));
+    }
+
+    void Sh3Encryptor::shareSimLocal1(i64 val, si64& src, si64& sPrev, si64& sNext) 
+    {
+        i64 rem = val-(src[0]+src[1]);
+        std::array<i64,2> prev = {src[1], rem};
+        std::array<i64,2> next = {rem, src[0]};
+
+        sPrev = si64(prev);
+        sNext = si64(next);
+    }
+
+    void Sh3Encryptor::shareSimRemote(CommPkg& comm, si64& dest, u64 partyIdx)
+    {
+        std::array<i64,2> shares;
+        if (partyIdx < mPartyIdx)
+            comm.mPrev.asyncRecv(shares);
+        else
+            comm.mNext.asyncRecv(shares);
+        si64 temp(shares); 
+        dest = temp;      
+    }
+
+    // Sh3Task Sh3Encryptor::shareSimLocal(Sh3Task dep, i64 val, si64& src) {
+    //     return dep.then([this, val, &src](CommPkg& comm, Sh3Task& self) {
+    //         i64 rem = val-(src[0]+src[1]); 
+    //         std::array<i64,2> prev = {rem,src[0]};
+    //         std::array<i64,2> next = {src[1], rem};
+    //         comm.mPrev.asyncSendCopy(prev.data(), 2*sizeof(i64));
+    //         comm.mNext.asyncSendCopy(next.data(), 2*sizeof(i64));
+    //     }).getClosure();
+    // }
+
+    Sh3Task Sh3Encryptor::shareSimRemote(Sh3Task dep, si64& dest, u64 partyIdx)
+    {
+        return dep.then([this, partyIdx, &dest] (CommPkg& comm, Sh3Task self) {
+            std::array<i64,2> shares;
+            if (partyIdx < mPartyIdx)
+                comm.mPrev.asyncRecv(shares);
+            else
+                comm.mNext.asyncRecv(shares);
+            si64 temp(shares);
+            dest = temp;
+        }).getClosure();
+    }
+
+    si64 Sh3Encryptor::reshareLocal(CommPkg& comm, sia64 src, u64 partyIdx) 
+    {
+        // add an assert (mPartyIdx == || +1)
+        // std::array<i64,2> alphad;
+        si64 alpha;
+        if (mPartyIdx == partyIdx)
+            mShareGen.mPrevCommon.get(alpha.mData.data(), alpha.mData.size());
+        else
+            mShareGen.mNextCommon.get(alpha.mData.data(), alpha.mData.size());
+        
+        auto chl = (mPartyIdx == partyIdx) ? comm.mNext : comm.mPrev;
+        si64 betai, betai1;
+        // mIdx = 1; alpha=0, beta=2, betai1=1 // i
+        // mIdx = 2; alpha=0, beta=2, betai1=1 // i+1
+        shareSimLocal1(src, alpha, betai, betai1); 
+        
+        if (mPartyIdx == partyIdx)
+            chl.asyncSendCopy(betai.mData);
+        else 
+            chl.asyncSendCopy(betai1.mData);
+        
+        si64 betai1i;  
+        chl.recv(betai1i.mData);
+        
+        if (mPartyIdx == partyIdx)
+            return (betai1 + betai1i);
+        else
+            return (betai + betai1i);
+
+    }
+
+    si64 Sh3Encryptor::reshareRemote(CommPkg& comm) 
+    {
+        si64 alpha0, alpha1;
+        mShareGen.mNextCommon.get(alpha0.mData.data(), alpha0.mData.size());
+        mShareGen.mPrevCommon.get(alpha1.mData.data(), alpha1.mData.size());
+
+        return (alpha0 + alpha1);
+    }
+
+     //Sh3Task reshareLocal(Sh3Task dep, si64& src, si64& dest, i64 partyIdx)
+     //{
+     //    return dep.then([this, partyIdx, &src, &dest] (CommPkg& comm, Sh3Task self) {
+     //        // Do resharing here.
+     //    }).getClosure();
+     //}
+
+     //Sh3Task reshareRemote(Sh3Task dep, si64& dest, i64 partyIdx) 
+     //{  
+     //    return dep.then([](){
+
+     //    }).getClosure();
+
+     //}
 
     Sh3Task Sh3Encryptor::remoteInt(Sh3Task dep, si64 & dest)
     {

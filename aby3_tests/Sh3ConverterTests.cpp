@@ -90,7 +90,7 @@ void printBits(eMatrix<i64>& a, u64 bits)
         std::cout << (j % 10);
     std::cout << '\n';
 
-    for (u64 i = 0; i < a.rows(); ++i)
+    for (u64 i = 0; i < (u64)a.rows(); ++i)
     {
         auto& r = a(i, 0);
         auto base = (u8*)&r;
@@ -167,7 +167,7 @@ void Sh3_convert_b64Matrix_PackedBin_test()
     auto trials = 10;
     auto mod = 256;
 
-    for (u64 t = 0; t < trials; ++t)
+    for (u64 t = 0; t < (u64)trials; ++t)
     {
         PRNG prng(ZeroBlock);
         auto shares = prng.get<u64>() % mod + 1;
@@ -286,7 +286,7 @@ void Sh3_trim_test()
     auto trials = 100;
     auto mod = 256;
 
-    for (u64 t = 0; t < trials; ++t)
+    for (u64 t = 0; t < (u64)trials; ++t)
     {
         PRNG prng(ZeroBlock);
         auto shares = prng.get<u64>() % mod + 1;

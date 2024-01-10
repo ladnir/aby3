@@ -17,8 +17,8 @@ void SharedOT_eval_test(const oc::CLP& cmd)
 	auto chl21 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "12").addChannel();
 
 
-	auto n = cmd.getOr("n", 100);
-	auto t = cmd.getOr("t", 10);
+	u64 n = cmd.getOr("n", 100);
+	u64 t = cmd.getOr("t", 10);
 
 	SharedOT sender, recver, helper;
 
@@ -31,7 +31,7 @@ void SharedOT_eval_test(const oc::CLP& cmd)
 	std::vector<std::array<i64,2>> sendMsgs(n);
 	PRNG prng(ZeroBlock);
 
-	for (u64 tt = 0; tt < t; ++tt)
+	for (u64 tt = 0ull; tt < t; ++tt)
 	{
 		choices.randomize(prng);
 		prng.get(sendMsgs.data(), sendMsgs.size());
@@ -39,9 +39,10 @@ void SharedOT_eval_test(const oc::CLP& cmd)
 		sender.send(chl02, sendMsgs);
 		helper.help(chl12, choices);
 		auto cc = choices;
+		//recver.recv(chl20, chl21, std::move(cc), recvMsgs);
 		recver.asyncRecv(chl20, chl21, std::move(cc), recvMsgs).get();
 
-		for (u64 i = 0; i < n; ++i)
+		for (u64 i = 0ull; i < n; ++i)
 		{
 			if (recvMsgs[i] != sendMsgs[i][choices[i]])
 				throw RTE_LOC;

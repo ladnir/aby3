@@ -98,12 +98,12 @@ namespace aby3
 			return asyncMul(dependency, A.i64Cast(), B.i64Cast(), C.i64Cast(), D);
 		}
 
-
 		Sh3Task asyncMul(
 			Sh3Task dep,
 			const si64Matrix& A,
 			const sbMatrix& B,
-			si64Matrix& C);
+			si64Matrix& C
+		);
 
 		Sh3Task asyncMul(
 			Sh3Task dep,
@@ -115,7 +115,14 @@ namespace aby3
 
         u64 mPartyIdx = -1, mTruncationIdx = 0;
         Sh3ShareGen mShareGen;
-		SharedOT mOtPrev, mOtNext;
+
+		// shared seed with the next party. 
+		// Us and them must be the sender or helper.
+		SharedOT mOtPrevRecver;
+
+		// shared seed with the previous party. 
+		// Us and them must be the sender or helper.
+		SharedOT mOtNextRecver;
     };
 
 

@@ -179,9 +179,9 @@ namespace osuCrypto
         {
             //a2[h](i) = a2[h](i) ^ a3[h](i);
 
-            for (auto i = 0; i < a2[0].rows(); ++i)
+            for (auto i = 0ull; i < a2[0].rows(); ++i)
             {
-                for (auto j = 0; j < a2[0].cols(); ++j)
+                for (auto j = 0ull; j < a2[0].cols(); ++j)
                 {
                     select[h](i, j) ^= a3[h](i, j);
                 }
@@ -200,16 +200,18 @@ namespace osuCrypto
 
         auto cuckooParams = CuckooIndex<>::selectParams(keys.rows(), DBServer_ssp, 0, 3);
         auto numBins = cuckooParams.numBins();
-
+        CuckooIndex<> cuckoo; cuckoo.init(cuckooParams);
 
 
         bool failed = false;
         for (u64 i = 0; i < view.size(); ++i)
         {
-            std::array<u64, 3> hx;
+            std::array<u32, 3> hx;
+            cuckoo.computeLocations({ &view[i], 1 }, oc::MatrixView<u32>(hx.data(), 1, 3));
+
             for (u64 h = 0; h < 3; ++h)
             {
-                hx[h] = CuckooIndex<>::getHash(view[i], h, numBins);
+                //hx[h] = CuckooIndex<>::getHash(view[i], h, numBins);
 
                 auto repeat = false;
                 for (u64 hh = 0; hh < h; ++hh)
@@ -288,7 +290,7 @@ namespace osuCrypto
         setTimePoint("intersect_start");
         auto& leftTable = *query.mLeftTable;
         auto& rightTable = *query.mRightTable;
-        bool hideIntersection = query.mNoRevealName.size();
+        //bool hideIntersection = query.mNoRevealName.size();
 
         // all of the columns out of the right table that need to be selected.
         SharedTable C;
@@ -447,7 +449,7 @@ namespace osuCrypto
 
         auto& leftTable = leftJoinCol.mTable;
         auto& rightTable = rightJoinCol.mTable;
-        auto maxRows = leftTable.rows() + rightTable.rows();
+        //auto maxRows = leftTable.rows() + rightTable.rows();
 
         SelectQuery query;
         auto jc = query.joinOn(leftJoinCol, rightJoinCol);
@@ -564,7 +566,7 @@ namespace osuCrypto
         {
         case 0:
         {
-            if (keys.rows() != circuitInputCols[0]->rows())
+            if ((u64)keys.rows() != circuitInputCols[0]->rows())
                 throw RTE_LOC;
 
             // place the right table's select columns into a cuckoo table using the keys as hash values.
@@ -622,7 +624,7 @@ namespace osuCrypto
             throw std::runtime_error("");
         }
 
-        return std::move(circuitInputShare);
+        return circuitInputShare;
     }
 
 
@@ -713,14 +715,18 @@ namespace osuCrypto
         {
             auto numBins = cuckoo.mBins.size();
             ostreamLock o(std::cout);
-            for (u64 i = 0; i < keys.rows(); ++i)
+            for (u64 i = 0; i < (u64)keys.rows(); ++i)
             {
+
+                std::array<u32, 3> hx;
+                cuckoo.computeLocations({ &view[i], 1 }, oc::MatrixView<u32>(hx.data(), 1, 3));
+
                 o << "A.key[" << i << "] = " << hexString((u8*)&keys(i, 0), 10);
                 for (u64 h = 0; h < 3; ++h)
                 {
-                    auto hx = CuckooIndex<>::getHash(view[i], h, numBins);
+                    //auto hx = CuckooIndex<>::getHash(view[i], h, numBins);
 
-                    o << " " << hx;
+                    o << " " << hx[h];
                 }
 
                 o << std::endl;
@@ -799,7 +805,7 @@ namespace osuCrypto
         //}
 
 
-        return std::move(share0);
+        return (share0);
     }
 
 
@@ -893,7 +899,7 @@ namespace osuCrypto
 
 
 
-        return std::move(share1);
+        return (share1);
     }
 
     std::array<Matrix<u8>, 3> DBServer::selectCuckooPos(MatrixView<u8> cuckooHashTable, u64 rows)
@@ -914,7 +920,7 @@ namespace osuCrypto
             snet.sendRecv(mRt.mComm.mNext, mRt.mComm.mPrev, cuckooHashTable, dest[h]);
         }
 
-        return std::move(dest);
+        return (dest);
     }
 
     void DBServer::selectCuckooPos(u64 destRows, u64 srcRows, u64 bytes)
@@ -923,9 +929,9 @@ namespace osuCrypto
         for (u64 h = 0; h < 3; ++h)
         {
             snet.help(mRt.mComm.mPrev, mRt.mComm.mNext, mPrng,
-                gsl::narrow<u32>(destRows),
-                gsl::narrow<u32>(srcRows),
-                gsl::narrow<u32>(bytes));
+                (destRows),
+                (srcRows),
+                (bytes));
         }
     }
 
@@ -940,6 +946,7 @@ namespace osuCrypto
 
         //auto cuckooParams = CuckooIndex<>::selectParams(keys.rows(), DBServer_ssp, 0, 3);
         auto numBins = cuckooParams.numBins();
+        CuckooIndex<> cuckoo; cuckoo.init(cuckooParams);
 
         span<block> view((block*)keys.data(), keys.rows());
 
@@ -961,19 +968,22 @@ namespace osuCrypto
         for (u64 h = 0; h < 3; ++h)
         {
             progs[h].init(
-                gsl::narrow<u32>(cuckooHashTable.rows()),
-                gsl::narrow<u32>(keys.rows()));
+                (cuckooHashTable.rows()),
+                (keys.rows()));
         }
 
         for (u64 i = 0; i < view.size(); ++i)
         {
-            std::array<u64, 3> hx{
-                CuckooIndex<>::getHash(view[i], 0, numBins),
-                CuckooIndex<>::getHash(view[i], 1, numBins),
-                CuckooIndex<>::getHash(view[i], 2, numBins)
-            };
+            //std::array<u64, 3> hx{
+            //    CuckooIndex<>::getHash(view[i], 0, numBins),
+            //    CuckooIndex<>::getHash(view[i], 1, numBins),
+            //    CuckooIndex<>::getHash(view[i], 2, numBins)
+            //};
+            std::array<u32, 3> hx;
+            cuckoo.computeLocations({ &view[i], 1 }, oc::MatrixView<u32>(hx.data(), 1, 3));
 
-            if (GSL_UNLIKELY(hx[0] == hx[1] || hx[0] == hx[2] || hx[1] == hx[2]))
+
+            if ((hx[0] == hx[1] || hx[0] == hx[2] || hx[1] == hx[2]))
             {
                 if (hx[0] == hx[1])
                     hx[1] = (hx[1] + 1) % numBins;
@@ -1005,7 +1015,7 @@ namespace osuCrypto
         }
 
 
-        return std::move(dest);
+        return (dest);
     }
 
     aby3::sPackedBin DBServer::compare(
@@ -1059,7 +1069,7 @@ namespace osuCrypto
         aby3::Sh3BinaryEvaluator eval;
 
         if (DBServer_debug)
-            eval.enableDebug(mIdx, mRt.mComm.mPrev, mRt.mComm.mNext);
+            eval.enableDebug(mIdx, 0, mRt.mComm.mPrev, mRt.mComm.mNext);
 
         eval.setCir(&cir, size, mEnc.mShareGen);
 
@@ -1243,7 +1253,7 @@ namespace osuCrypto
         //}
 
 
-        return std::move(outFlags);
+        return (outFlags);
     }
 
     aby3::sPackedBin DBServer::unionCompare(
@@ -1282,7 +1292,7 @@ namespace osuCrypto
         aby3::Sh3BinaryEvaluator eval;
 
         if (DBServer_debug)
-            eval.enableDebug(mIdx, mRt.mComm.mPrev, mRt.mComm.mNext);
+            eval.enableDebug(mIdx, 0, mRt.mComm.mPrev, mRt.mComm.mNext);
 
         eval.setCir(&cir, size, mEnc.mShareGen);
         eval.setInput(0, leftJoinCol.mCol);
@@ -1306,7 +1316,7 @@ namespace osuCrypto
         aby3::sPackedBin outFlags(size, 1);
         eval.getOutput(0, outFlags);
 
-        return std::move(outFlags);
+        return (outFlags);
     }
 
     aby3::i64Matrix DBServer::computeKeys(span<SharedTable::ColRef> cols, span<u64> reveals)
@@ -1408,12 +1418,12 @@ namespace osuCrypto
         auto leftIter = leftInputOrder.begin();
         auto rightIter = rightInputOrder.begin();
 
-        for (int i = 0, j = 0; i < query.mInputs.size(); ++i)
+        for (u64 i = 0, j = 0; i < query.mInputs.size(); ++i)
         {
             if (query.isCircuitInput(query.mInputs[i]))
             {
                 if (&query.mInputs[i].mCol.mTable == query.mLeftTable)
-                    *leftIter++ = { j++, query.mMem[query.mInputs[i].mMemIdx].mUsed };
+                    *leftIter++ = { (int)j++, query.mMem[query.mInputs[i].mMemIdx].mUsed };
                 else
                     *rightIter++ = j++;
             }
@@ -1499,7 +1509,7 @@ namespace osuCrypto
         // compute a0 = a0 ^ b ^ 1
         // compute a1 = a1 ^ b ^ 1
         // compute a2 = a2 ^ b ^ 1
-        for (auto i = 0; i < compareBitCount; ++i)
+        for (auto i = 0ull; i < compareBitCount; ++i)
         {
             r.addGate(a0[i], leftBundles[0][i], GateType::Nxor, t0[i]);
             r.addGate(a1[i], leftBundles[0][i], GateType::Nxor, t1[i]);
@@ -1627,7 +1637,7 @@ namespace osuCrypto
         // compute a0 = a0 ^ b ^ 1
         // compute a1 = a1 ^ b ^ 1
         // compute a2 = a2 ^ b ^ 1
-        for (auto i = 0; i < compareBitCount; ++i)
+        for (auto i = 0ull; i < compareBitCount; ++i)
         {
             r.addGate(a0[i], b[i], GateType::Nxor, t0[i]);
             r.addGate(a1[i], b[i], GateType::Nxor, t1[i]);

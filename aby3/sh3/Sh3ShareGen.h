@@ -30,6 +30,18 @@ namespace aby3
             init(prevSeed, seed, buffSize);
         }
 
+        void validate(CommPkg& comm)
+        {
+            auto next = mNextCommon.get<block>();
+            auto prev = mPrevCommon.get<block>();
+
+            comm.mNext.send(next);
+            block pp;
+            comm.mPrev.recv(pp);
+
+            if (pp != prev)
+                throw RTE_LOC;
+        }
 
         u64 mShareIdx = 0, mShareGenIdx = 0;
 		oc::PRNG mNextCommon, mPrevCommon, mCommon;
@@ -95,6 +107,19 @@ namespace aby3
 
             return r;
         }
+
+        //si64 getRandIntShare(int neighbor) {
+        //    if (mShareIdx + 2*sizeof(i64) > mShareBuff[neighbor].size()*sizeof(block))
+        //    {
+        //        refillBuffer();
+        //    }
+        //    si64 r;
+        //    r[0] = *(u64*)((u8*)mShareBuff[neighbor].data() + mShareIdx); 
+        //    r[1] = *(u64*)((u8*)mShareBuff[neighbor].data() + mShareIdx); 
+        //    mShareIdx += 2*sizeof(i64);
+        //    
+        //    return r;
+        //}
 
         sb64 getRandBinaryShare()
         {

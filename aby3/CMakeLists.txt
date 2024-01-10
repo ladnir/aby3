@@ -57,5 +57,10 @@ endif()
 
 target_include_directories(aby3 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../) 
 
+if(MSVC)
+    target_compile_options(aby3 PUBLIC "/Zi")
+endif()
+#target_compile_definitions(aby3 PUBLIC "ABY3_ENABLE_ASSERTS")
 target_link_libraries(aby3 oc::libOTe eigen json function2)
 
+#target_compile_options(aby3 PUBLIC "/fsanitize=address")

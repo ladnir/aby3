@@ -8,9 +8,9 @@
 #include <tests_cryptoTools/UnitTests.h>
 #include <aby3-ML/main-linear.h>
 #include <aby3-ML/main-logistic.h>
-
 #include "tests_cryptoTools/UnitTests.h"
 #include "cryptoTools/Crypto/PRNG.h"
+#include "bench.h"
 
 using namespace oc;
 using namespace aby3;
@@ -29,19 +29,24 @@ void help()
 }
 
 
+
 int main(int argc, char** argv)
 {
-
-
 	try {
-
 
 		bool set = false;
 		oc::CLP cmd(argc, argv);
 
+		if (cmd.isSet("bench"))
+		{
+			bench(cmd);
+			return 0;
+		}
 
 		if (cmd.isSet(unitTestTag))
 		{
+			
+			//auto tests = SPA_tests; 
 			auto tests = tests_cryptoTools::Tests;
 			tests += aby3_tests;
 			tests += DB_tests;

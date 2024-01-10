@@ -42,7 +42,7 @@ namespace aby3
 		sf64Matrix<D> localInput(const eMatrix<double>& vals)
 		{
 			f64Matrix<D> v2(vals.rows(), vals.cols());
-			for (u64 i = 0; i < vals.size(); ++i)
+			for (u64 i = 0; i < (u64)vals.size(); ++i)
 				v2(i) = vals(i);
 
 			return localInput(v2);
@@ -67,7 +67,7 @@ namespace aby3
 
 		void preprocess(u64 n, Decimal d)
 		{
-			TODO("implement this");
+			// this is now a no-op...
 		}
 
 
@@ -79,7 +79,7 @@ namespace aby3
 			mEnc.revealAll(mRt.noDependencies(), vals, temp).get();
 
 			eMatrix<double> ret(vals.rows(), vals.cols());
-			for (u64 i = 0; i < ret.size(); ++i)
+			for (u64 i = 0; i < (u64)ret.size(); ++i)
 				ret(i) = static_cast<double>(temp(i));
 			return ret;
 		}

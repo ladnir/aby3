@@ -21,6 +21,19 @@ namespace aby3
         si64 localInt(CommPkg& comm, i64 val);
         si64 remoteInt(CommPkg& comm);
 
+        sia64 localAdditive(si64& src, u64 partyIdx);
+
+        void shareSimLocal(CommPkg& comm, i64 val, si64& src);
+        void shareSimLocal1(i64 val, si64& src, si64& prev, si64& next);
+        void shareSimRemote(CommPkg& comm, si64& dest, u64 partyIdx);
+        Sh3Task shareSimLocal(Sh3Task dep, i64 a, si64& dest);
+        Sh3Task shareSimRemote(Sh3Task dep, si64& dest, u64 partyIdx);
+
+        si64 reshareLocal(CommPkg& comm, sia64 src, u64 partyIdx);
+        si64 reshareRemote(CommPkg& comm);
+        Sh3Task reshareLocal(Sh3Task dep, si64& src, u64 partyIdx);
+        Sh3Task reshareRemote(Sh3Task dep, si64& dest, u64 partyIdx);
+
 
         Sh3Task localInt(Sh3Task dep, i64 val, si64& dest);
         Sh3Task remoteInt(Sh3Task dep, si64& dest);
@@ -103,9 +116,23 @@ namespace aby3
         void revealAll(CommPkg& comm, const si64Matrix& x, i64Matrix& dest);
         void reveal(CommPkg& comm, u64 partyIdx, const si64Matrix& x);
 
+        i64Matrix revealAll(CommPkg& comm, const si64Matrix& x)
+        {
+            i64Matrix dest(x.rows(), x.cols());
+            revealAll(comm, x, dest);
+            return dest;
+        }
+
         void reveal(CommPkg& comm, const sbMatrix& x, i64Matrix& dest);
         void revealAll(CommPkg& comm, const sbMatrix& x, i64Matrix& dest);
         void reveal(CommPkg& comm, u64 partyIdx, const sbMatrix& x);
+
+        i64Matrix revealAll(CommPkg& comm, const sbMatrix& x)
+        {
+            i64Matrix dest(x.rows(), x.i64Cols());
+            revealAll(comm, x, dest);
+            return dest;
+        }
 
         void reveal(CommPkg& comm, const sPackedBin& x, i64Matrix& dest);
         void revealAll(CommPkg& comm, const sPackedBin& x, i64Matrix& dest);

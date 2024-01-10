@@ -204,7 +204,7 @@ namespace aby3
 			const eMatrix<i64>& l = i64Cast();
 			const eMatrix<i64>& r = rhs.i64Cast();
 			view = l * r;
-			for (u64 i = 0; i < view.size(); ++i)
+			for (u64 i = 0; i < size(); ++i)
 				view(i) >>= mDecimal;
 			return ret;
 		}
@@ -239,14 +239,16 @@ namespace aby3
 		eMatrix<i64>& i64Cast()
 		{
 			static_assert(sizeof(value_type) == sizeof(i64), "required for this operation");
-			return reinterpret_cast<eMatrix<i64>&>(mData);
+			return *reinterpret_cast<eMatrix<i64>*>(voidData());
 		}
 		const eMatrix<i64>& i64Cast() const
 		{
 			static_assert(sizeof(value_type) == sizeof(i64), "required for this operation");
-			return reinterpret_cast<const eMatrix<i64>&>(mData);
+			return *reinterpret_cast<const eMatrix<i64>*>(voidData());
 		}
 	private:
+		void* voidData() const { return (void*)&mData; }
+
 		fpMatrix(const eMatrix<value_type> & v)
 			:mData(v) {}
 		fpMatrix(eMatrix<value_type> && v)

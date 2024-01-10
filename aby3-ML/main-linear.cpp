@@ -38,7 +38,7 @@ int linear_main_3pc_sh(int N, int Dim, int B, int IT, int testN, int pIdx, bool 
 	LinearModelGen gen;
 
 	eMatrix<double> model(Dim, 1);
-	for (u64 i = 0; i < std::min(Dim, 10); ++i)
+	for (u64 i = 0; i < (u64)std::min(Dim, 10); ++i)
 	{
 		model(i, 0) = prng.get<int>() % 10;
 	}
@@ -100,7 +100,7 @@ int linear_main_3pc_sh(int N, int Dim, int B, int IT, int testN, int pIdx, bool 
 		if (cmd.isSet("noOffline") == false)
 		{
 			if (cmd.isSet("eval"))
-				for (u64 t = 0; t < IT; ++t)
+				for (u64 t = 0; t < (u64)IT; ++t)
 					p.preprocess(N * Dim, D);
 			else
 				p.preprocess((B + Dim) *IT, D);
@@ -118,7 +118,7 @@ int linear_main_3pc_sh(int N, int Dim, int B, int IT, int testN, int pIdx, bool 
 	{
 		if (cmd.isSet("eval"))
 		{
-			for (u64 t = 0; t < IT; ++t)
+			for (u64 t = 0; t < (u64)IT; ++t)
 				p.reveal(p.mul(train_data, W2));
 		}
 		else
@@ -182,7 +182,7 @@ int linear_main_3pc_sh(oc::CLP& cmd)
 	std::vector<std::thread> thrds;
 	for (u64 i = 0; i < 3; ++i)
 	{
-		if (cmd.isSet("p") == false || cmd.get<int>("p") == i)
+		if (cmd.isSet("p") == false || cmd.get<u64>("p") == i)
 		{
 			thrds.emplace_back(std::thread([i, N, D, B, IT, testN, &cmd, &ios]() {
 
@@ -260,7 +260,7 @@ int linear_plain_main(CLP& cmd)
 	//f64Matrix<Dec> model(D, 1);
 	eMatrix<double> model(D, 1);
 	//PlainEngine::Matrix model(D, 1);
-	for (u64 i = 0; i < D; ++i)
+	for (u64 i = 0; i < (u64)D; ++i)
 	{
 		model(i, 0) = prng.get<int>() % 10;
 	}
@@ -290,7 +290,7 @@ int linear_plain_main(CLP& cmd)
 
 	SGD_Linear(params, engine, train_data, train_label, W2, &test_data, &test_label);
 
-	for (u64 i = 0; i < D; ++i)
+	for (u64 i = 0; i < (u64)D; ++i)
 	{
 		std::cout << i << " " << gen.mModel(i, 0) << " " << W2(i, 0) << std::endl;
 	}

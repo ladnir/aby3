@@ -1,15 +1,8 @@
-cmake_minimum_required (VERSION 3.18)
+cmake_minimum_required (VERSION 3.15)
 
 project(aby3 VERSION 1.0.0)
 
 if("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}")
-
-	############################################
-	#          If top level cmake              #
-	############################################
-	set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/bin)
-	set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/lib)
-	set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/lib)
 
 
 	if(MSVC)
@@ -35,16 +28,16 @@ if("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}")
 	endif()
 
 	if(NOT ${CMAKE_BUILD_TYPE} STREQUAL "Release")
-	  message(WARNING "\nConfiguration NOT set to Release. Please call cmake with -DCMAKE_BUILD_TYPE=Release  instead of ${CMAKE_BUILD_TYPE}")
+	  message(WARNING "\nCo5nfiguration NOT set to Release. ")
 
 		if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 		  #message(WARNING "Debug build.")
 		elseif("${CMAKE_BUILD_TYPE}" STREQUAL "Release") 
 		  #message(WARNING "Release build.")
-		elseif("${CMAKE_BUILD_TYPE}" STREQUAL  "RELWITHDEBINFO")
-		  #message(WARNING "RELWITHDEBINFO=Release with debug info build.")
+		elseif("${CMAKE_BUILD_TYPE}" STREQUAL  "RelWithDebInfo")
+		  #message(WARNING "RelWithDebInfo=Release with debug info build.")
 		else()
-		  message(ERROR ": Unknown build type - ${CMAKE_BUILD_TYPE}  Please use one of Debug, Release, or RELWITHDEBINFO\n\n" )
+		  message(ERROR ": Unknown build type - ${CMAKE_BUILD_TYPE}  Please use one of Debug, Release, or RelWithDebInfo\n\n" )
 		endif()
 	endif()
 endif()
@@ -80,7 +73,9 @@ add_subdirectory(aby3-DB)
 
 add_subdirectory(aby3-ML)
 add_subdirectory(aby3-DB_tests)
+
 add_subdirectory(aby3_tests)
+
 
 add_subdirectory(frontend)
 

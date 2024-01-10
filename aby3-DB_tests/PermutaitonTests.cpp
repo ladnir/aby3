@@ -228,9 +228,9 @@ void Perm3p_subset_Test()
     Channel chl21 = s21.addChannel();
 
 
-    int rows = 100;
-    int destRows = 50;
-    int bytes = 2;
+    u32 rows = 100;
+    u32 destRows = 50;
+    u32 bytes = 2;
 
     std::vector<u32> perm(rows, -1);
     for (u32 i = 0; i < destRows; ++i)
@@ -291,7 +291,7 @@ void Perm3p_subset_Test()
     bool failed = false;
     for (u32 i = 0; i < rows; ++i)
     {
-        if (perm[i] != -1)
+        if (perm[i] != u32(-1))
         {
             auto s = perm[i];
             for (u32 j = 0; j < bytes; ++j)
@@ -333,16 +333,16 @@ void switch_select_test()
     Channel chl21 = s21.addChannel();
 
 
-    int trials = 100;
-    int srcSize = 40;
-    int destSize = 20;
-    int bytes = 1;
+    u64 trials = 100;
+    u64 srcSize = 40;
+    u64 destSize = 20;
+    u64 bytes = 1;
 
     Matrix<u8> src(srcSize, bytes);
     Matrix<u8> dest0(destSize, bytes), dest1(destSize, bytes);
 
 
-    for (auto t = 9; t < trials; ++t)
+    for (auto t = 0ull; t < trials; ++t)
     {
         PRNG prng(toBlock(t));
 
@@ -361,7 +361,7 @@ void switch_select_test()
         OblvSwitchNet::Program prog;
         prog.init(srcSize, destSize);
 
-        for (u64 i = 0; i < destSize; ++i)
+        for (u64 i = 0; i < (u64)destSize; ++i)
         {
             prog.addSwitch(prng.get<u32>() % srcSize, (u32)i);
             //std::cout << "switch[" << i << "] = " << prog.mSrcDests[i][0] << " -> " << prog.mSrcDests[i][1] << std::endl;
@@ -387,7 +387,7 @@ void switch_select_test()
         t1.join();
         t2.join();
 
-        auto last = -1;
+        auto last = ~0ull;
 
         bool print = false;
         if (print)
@@ -399,7 +399,7 @@ void switch_select_test()
 
             if (s != last)
             {
-                for (auto j = 0; j < bytes; ++j)
+                for (auto j = 0ull; j < bytes; ++j)
                 {
                     if ((dest0(i, j) ^ dest1(i, j)) != src(s, j))
                     {
@@ -410,14 +410,14 @@ void switch_select_test()
                 if (print)
                 {
                     std::cout << "d[" << i << "] = ";
-                    for (auto j = 0; j < bytes; ++j)
+                    for (auto j = 0ull; j < bytes; ++j)
                     {
                         if ((dest0(i, j) ^ dest1(i, j)) != src(s, j))
                             std::cout << Color::Red;
                         std::cout << ' ' << std::setw(2) << std::hex << int(dest0(i, j) ^ dest1(i, j)) << ColorDefault;
                     }
                     std::cout << "\ns[" << i << "] = ";
-                    for (auto j = 0; j < bytes; ++j)
+                    for (auto j = 0ull; j < bytes; ++j)
                         std::cout << ' ' << std::setw(2) << std::hex << int(src(s, j));
 
                     std::cout << std::endl << std::dec;
@@ -454,16 +454,16 @@ void switch_duplicate_test()
     Channel chl21 = s21.addChannel();
 
 
-    int trials = 100;
-    int srcSize = 50;
-    int destSize = srcSize /2;
-    int bytes = 1;
+    u64 trials = 100;
+    u64 srcSize = 50;
+    u64 destSize = srcSize /2;
+    u64 bytes = 1;
 
     Matrix<u8> src(srcSize, bytes);
     Matrix<u8> dest0(destSize, bytes), dest1(destSize, bytes);
 
 
-    for (auto t = 0; t < trials; ++t)
+    for (auto t = 0ull; t < trials; ++t)
     {
         PRNG prng(toBlock(t));
 
@@ -525,7 +525,7 @@ void switch_duplicate_test()
         {
             auto s = prog.mSrcDests[i].mSrc;
 
-            for (auto j = 0; j < bytes; ++j)
+            for (auto j = 0ull; j < bytes; ++j)
             {
                 if ((dest0(i, j) ^ dest1(i, j)) != src(s, j))
                 {
@@ -536,14 +536,14 @@ void switch_duplicate_test()
             if (print)
             {
                 std::cout << "d[" << i << "] = ";
-                for (auto j = 0; j < bytes; ++j)
+                for (auto j = 0ull; j < bytes; ++j)
                 {
                     if ((dest0(i, j) ^ dest1(i, j)) != src(s, j))
                         std::cout << Color::Red;
                     std::cout << ' ' << std::setw(2) << std::hex << int(dest0(i, j) ^ dest1(i, j)) << ColorDefault;
                 }
                 std::cout << "\ns[" << i << "] = ";
-                for (auto j = 0; j < bytes; ++j)
+                for (auto j = 0ull; j < bytes; ++j)
                     std::cout << ' ' << std::setw(2) << std::hex << int(src(s, j));
 
                 std::cout << std::endl << std::dec;
@@ -578,16 +578,16 @@ void switch_full_test()
     Channel chl21 = s21.addChannel();
 
 
-    int trials = 100;
-    int srcSize = 50;
-    int destSize = srcSize / 2;
-    int bytes = 1;
+    u64 trials = 100;
+    u64 srcSize = 50;
+    u64 destSize = srcSize / 2;
+    u64 bytes = 1;
 
     Matrix<u8> src(srcSize, bytes);
     Matrix<u8> dest0(destSize, bytes), dest1(destSize, bytes);
 
 
-    for (auto t = 0; t < trials; ++t)
+    for (auto t = 0ull; t < trials; ++t)
     {
         PRNG prng(toBlock(t));
 
@@ -606,7 +606,7 @@ void switch_full_test()
         OblvSwitchNet::Program prog;
         prog.init(srcSize, destSize);
 
-        for (u64 i = 0; i < destSize; ++i)
+        for (u64 i = 0ull; i < destSize; ++i)
         {
             prog.addSwitch(prng.get<u32>() % srcSize, (u32)i);
             //prog.addSwitch(0, i);
@@ -647,7 +647,7 @@ void switch_full_test()
             auto s = prog.mSrcDests[i].mSrc;
             auto d = prog.mSrcDests[i].mDest;
 
-            for (auto j = 0; j < bytes; ++j)
+            for (auto j = 0ull; j < bytes; ++j)
             {
                 if ((dest0(d, j) ^ dest1(d, j)) != src(s, j))
                 {
@@ -658,14 +658,14 @@ void switch_full_test()
             if (print)
             {
                 std::cout << "d[" << d << "] = ";
-                for (auto j = 0; j < bytes; ++j)
+                for (auto j = 0ull; j < bytes; ++j)
                 {
                     if ((dest0(d, j) ^ dest1(d, j)) != src(s, j))
                         std::cout << Color::Red;
                     std::cout << ' ' << std::setw(2) << std::hex << int(dest0(i, j) ^ dest1(i, j)) << ColorDefault;
                 }
                 std::cout << "\ns[" << s << "] = ";
-                for (auto j = 0; j < bytes; ++j)
+                for (auto j = 0ull; j < bytes; ++j)
                     std::cout << ' ' << std::setw(2) << std::hex << int(src(s, j));
 
                 std::cout << std::endl << std::dec;

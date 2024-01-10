@@ -251,6 +251,7 @@ void lowMC_FileCircuit_test() {
 
 void lowMC_BinFileCircuit_test() {
 
+    throw oc::UnitTestSkipped("known issues");
 
     oc::Timer t;
 

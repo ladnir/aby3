@@ -19,12 +19,44 @@ i64 extract(const sPackedBin& A, u64 share, u64 packIdx, u64 wordIdx)
     u64 mask = 1ull << (packIdx % 64);
     for (u64 i = 0; i < 64; ++i)
     {
-        *iter = gsl::narrow<u8>(A.mShares[share](bitIdx, offset) & mask);
+        *iter = (A.mShares[share](bitIdx, offset) & mask);
         ++bitIdx;
         ++iter;
     }
 
     return v;
+}
+
+void Sh3_Encryptor_reshare_test() 
+{
+//    IOService ios;
+//    auto chl01 = Session(ios, "127.0.0.1:1313", SessionMode::Server, "01").addChannel();
+//    auto chl10 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "01").addChannel();
+//    auto chl02 = Session(ios, "127.0.0.1:1313", SessionMode::Server, "02").addChannel();
+//    auto chl20 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "02").addChannel();
+//    auto chl12 = Session(ios, "127.0.0.1:1313", SessionMode::Server, "12").addChannel();
+//    auto chl21 = Session(ios, "127.0.0.1:1313", SessionMode::Client, "12").addChannel();
+//
+//
+//    int trials = 10;
+//    CommPkg comm[3];
+//    comm[0] = { chl02, chl01 };
+//    comm[1] = { chl10, chl12 };
+//    comm[2] = { chl21, chl20 }; 
+//
+//    Sh3Encryptor enc[3];
+//    enc[0].init(0, toBlock(0, 0), toBlock(1, 1));
+//    enc[1].init(1, toBlock(1, 1), toBlock(2, 2));
+//    enc[2].init(2, toBlock(2, 2), toBlock(0, 0)); 
+
+    //u64 rows = 1<<2;
+
+    //auto t0 = std::thread([&]() {
+    //    auto i= 0;
+    //    //auto& e = enc[i];
+    //    auto& c = comm[i]; 
+    //    PRNG prng(ZeroBlock);
+    //});
 }
 
 void Sh3_Encryptor_IO_test()
@@ -105,7 +137,7 @@ void Sh3_Encryptor_IO_test()
 
 
         i64Matrix m(trials, trials), mm(trials, trials);
-        for (u64 i = 0; i < m.size(); ++i)
+        for (u64 i = 0; i < (u64)m.size(); ++i)
             m(i) = i;
 
         si64Matrix mShr(trials, trials);
@@ -322,7 +354,7 @@ void Sh3_Encryptor_asyncIO_test()
 
 
         i64Matrix m(trials, trials), mm(trials, trials);
-        for (u64 i = 0; i < m.size(); ++i)
+        for (u64 i = 0; i < (u64)m.size(); ++i)
             m(i) = i;
 
         si64Matrix mShr(trials, trials);

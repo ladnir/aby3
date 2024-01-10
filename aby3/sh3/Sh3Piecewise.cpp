@@ -42,8 +42,8 @@ namespace aby3
 	//}
 
 	void Sh3Piecewise::eval(
-		const eMatrix<double> & inputs,
-		eMatrix<double> & outputs,
+		const eMatrix<double>& inputs,
+		eMatrix<double>& outputs,
 		u64 D,
 		bool print)
 	{
@@ -60,7 +60,7 @@ namespace aby3
 	}
 
 	oc::Matrix<u8> Sh3Piecewise::getInputRegions(
-		const i64Matrix & inputs,
+		const i64Matrix& inputs,
 		u64 decimal)
 	{
 		oc::Matrix<u8> inputRegions(inputs.rows(), mThresholds.size() + 1);
@@ -88,8 +88,8 @@ namespace aby3
 	}
 
 	void Sh3Piecewise::eval(
-		const i64Matrix & inputs,
-		i64Matrix & outputs,
+		const i64Matrix& inputs,
+		i64Matrix& outputs,
 		u64 decimal,
 		bool print)
 	{
@@ -183,8 +183,8 @@ namespace aby3
 
 	Sh3Task Sh3Piecewise::eval(
 		Sh3Task dep,
-		const si64Matrix & inputs,
-		si64Matrix & outputs,
+		const si64Matrix& inputs,
+		si64Matrix& outputs,
 		u64 D,
 		Sh3Evaluator& evaluator,
 		bool print)
@@ -192,69 +192,69 @@ namespace aby3
 		UPDATE;
 		//auto ret = dep.then([&inputs, &outputs, D, &evaluator, print, this](CommPkg & comm, Sh3Task self) {
 
-			if (inputs.cols() != 1 || outputs.cols() != 1)
-				throw std::runtime_error(LOCATION);
+		if (inputs.cols() != 1 || outputs.cols() != 1)
+			throw std::runtime_error(LOCATION);
 
-			if (outputs.size() != inputs.size())
-				throw std::runtime_error(LOCATION);
+		if (outputs.size() != inputs.size())
+			throw std::runtime_error(LOCATION);
 
-			if (mThresholds.size() == 0)
-				throw std::runtime_error(LOCATION);
+		if (mThresholds.size() == 0)
+			throw std::runtime_error(LOCATION);
 
-			if (mCoefficients.size() != mThresholds.size() + 1)
-				throw std::runtime_error(LOCATION);
-
-
-			mInputRegions.resize(mCoefficients.size());
-			UPDATE;
-			//auto rangeTestTask = getInputRegions(inputs, D, comm, self, print);
-			auto rangeTestTask = getInputRegions(inputs, D, dep.getRuntime().mComm, dep, evaluator.mShareGen, print);
+		if (mCoefficients.size() != mThresholds.size() + 1)
+			throw std::runtime_error(LOCATION);
 
 
+		mInputRegions.resize(mCoefficients.size());
+		UPDATE;
+		//auto rangeTestTask = getInputRegions(inputs, D, comm, self, print);
+		auto rangeTestTask = getInputRegions(inputs, D, dep.getRuntime().mComm, dep, evaluator.mShareGen, print);
 
-			//TODO("!!!!!!!!!!!!!! REMOVE THIS !!!!!!!!!!!!!! ");
+
+
+		//TODO("!!!!!!!!!!!!!! REMOVE THIS !!!!!!!!!!!!!! ");
 //#define Sh3Piecewise_DEBUG
 #ifdef Sh3Piecewise_DEBUG
 			//rangeTestTask.then([&](Sh3Task self){
-			
-					i64Matrix plain_inputs(inputs.rows(), inputs.cols());
-					DebugEnc.revealAll(DebugRt.noDependencies(), inputs, plain_inputs).get();
 
-					i64Matrix plain_outputs(outputs.rows(), outputs.cols());
-					eval(plain_inputs, plain_outputs, D);
+		i64Matrix plain_inputs(inputs.rows(), inputs.cols());
+		DebugEnc.revealAll(DebugRt.noDependencies(), inputs, plain_inputs).get();
 
-					auto true_inputRegions = getInputRegions(plain_inputs, D);
+		i64Matrix plain_outputs(outputs.rows(), outputs.cols());
+		eval(plain_inputs, plain_outputs, D);
 
-					std::vector<i64Matrix> inputRegions__(mCoefficients.size());
-					for (u64 i = 0; i < mCoefficients.size(); ++i)
-					{
-						//inputRegions__[i] = 
-						inputRegions__[i].resize(mInputRegions[i].rows(), 1);
-						DebugEnc.revealAll(DebugRt.noDependencies(), mInputRegions[i], inputRegions__[i]).get();
-						//std::cout << i << std::endl << inputRegions__[i] << std::endl << std::endl;
-					}
+		auto true_inputRegions = getInputRegions(plain_inputs, D);
 
-					for (u64 i = 0; i < inputs.size(); ++i)
-					{
-						oc::ostreamLock oo(std::cout);
+		std::vector<i64Matrix> inputRegions__(mCoefficients.size());
+		for (u64 i = 0; i < mCoefficients.size(); ++i)
+		{
+			//inputRegions__[i] = 
+			inputRegions__[i].resize(mInputRegions[i].rows(), 1);
+			DebugEnc.revealAll(DebugRt.noDependencies(), mInputRegions[i], inputRegions__[i]).get();
+			//std::cout << i << std::endl << inputRegions__[i] << std::endl << std::endl;
+		}
 
-						if (print) oo << i << ":  ";
+		for (u64 i = 0; i < inputs.size(); ++i)
+		{
+			oc::ostreamLock oo(std::cout);
 
-						for (u64 t = 0; t < mInputRegions.size(); ++t)
-						{
-							if (print) oo << inputRegions__[t](i) << ", ";
+			if (print) oo << i << ":  ";
+
+			for (u64 t = 0; t < mInputRegions.size(); ++t)
+			{
+				if (print) oo << inputRegions__[t](i) << ", ";
 
 
-							if (true_inputRegions(i, t) != inputRegions__[t](i))
-							{
-								oo << "bad input region " << i << " " << t << std::endl;
-							}
-						}
-						if (print) oo << std::endl;
-					}
+				if (true_inputRegions(i, t) != inputRegions__[t](i))
+				{
+					oo << "bad input region " << i << " " << t << std::endl;
+				}
+			}
+			if (print) oo << std::endl;
+		}
 		UPDATE;
-			//	}
-			//, "debug-print");
+		//	}
+		//, "debug-print");
 #endif
 		UPDATE;
 		//	}
@@ -270,102 +270,102 @@ namespace aby3
 			//rangeTestTask.get();
 
 
-			functionOutputs.resize(mCoefficients.size());
-			UPDATE;
-			//auto fxEvalTask = getFunctionValues(inputs, comm, self, D, functionOutputs);
-			auto fxEvalTask = getFunctionValues(inputs, dep.getRuntime().mComm, dep, D, functionOutputs);
+		functionOutputs.resize(mCoefficients.size());
+		UPDATE;
+		//auto fxEvalTask = getFunctionValues(inputs, comm, self, D, functionOutputs);
+		auto fxEvalTask = getFunctionValues(inputs, dep.getRuntime().mComm, dep, D, functionOutputs);
 
-			//= dep.then(fxEvalRoutine).getClosure();
-			//auto combineTask = (rangeTestTask && fxEvalTask);
-			auto combineTask = (fxEvalTask);
+		//= dep.then(fxEvalRoutine).getClosure();
+		//auto combineTask = (rangeTestTask && fxEvalTask);
+		auto combineTask = (fxEvalTask);
 
 
-			//std::vector<CompletionHandle> handles(mCoefficients.size());
+		//std::vector<CompletionHandle> handles(mCoefficients.size());
 
-			//auto multRoutine = [this, &outputs, &inputs, D](CommPkg & comm, Sh3Task self)
-			//{
-			outputs.mShares[0].setZero();
-			outputs.mShares[1].setZero();
-			
-			auto multTask = combineTask;
+		//auto multRoutine = [this, &outputs, &inputs, D](CommPkg & comm, Sh3Task self)
+		//{
+		outputs.mShares[0].setZero();
+		outputs.mShares[1].setZero();
 
-			for (u64 c = 0; c < mCoefficients.size(); ++c)
+		auto multTask = combineTask;
+
+		for (u64 c = 0; c < mCoefficients.size(); ++c)
+		{
+			if (mCoefficients[c].size())
 			{
-				if (mCoefficients[c].size())
+				if (mCoefficients[c].size() > 1)
 				{
-					if (mCoefficients[c].size() > 1)
-					{
-						// multiplication by a private value
-						//multTask = multTask && 
-						evaluator.asyncMul(
-							combineTask,
-							functionOutputs[c],
-							mInputRegions[c],
-							functionOutputs[c]).then([&outputs, this, c](Sh3Task self)
-								{
-									outputs = outputs + functionOutputs[c];
-								}
-						).get();
+					// multiplication by a private value
+					//multTask = multTask && 
+					evaluator.asyncMul(
+						combineTask,
+						functionOutputs[c],
+						mInputRegions[c],
+						functionOutputs[c]).then([&outputs, this, c](Sh3Task self)
+							{
+								outputs = outputs + functionOutputs[c];
+							}
+					).get();
 
 
-						//handles[c].get();
-					}
-					else
-					{
-						// multiplication by a public constant
-						functionOutputs[c].resize(inputs.rows(), inputs.cols());
-
-						//multTask = multTask && 
-						evaluator.asyncMul(
-							combineTask,
-							mCoefficients[c][0].getFixedPoint(D),
-							mInputRegions[c],
-							functionOutputs[c]).then([&outputs, this, c](Sh3Task self)
-								{
-									outputs = outputs + functionOutputs[c];
-								}
-						).get();
-						//handles[c].get();
-					} 
-
-					//auto pub = eng.reconstructShare(functionOutputs[c]);
-#ifdef Sh3Piecewise_DEBUG
-					if (print)
-					{
-						i64Matrix plain_inputs(inputs.rows(), inputs.cols());
-						DebugEnc.revealAll(DebugRt.noDependencies(), inputs, plain_inputs).get();
-
-						std::cout << "coef[" << c << "] = ";
-						if (mCoefficients[c].size() > 1)
-							std::cout << mCoefficients[c][1].getInteger() << " " << plain_inputs(0) << " + ";
-
-						if (mCoefficients[c].size() > 0)
-							std::cout << mCoefficients[c][0].getFixedPoint(D) << std::endl;
-					}
-#endif
+					//handles[c].get();
 				}
+				else
+				{
+					// multiplication by a public constant
+					functionOutputs[c].resize(inputs.rows(), inputs.cols());
+
+					//multTask = multTask && 
+					evaluator.asyncMul(
+						combineTask,
+						mCoefficients[c][0].getFixedPoint(D),
+						mInputRegions[c],
+						functionOutputs[c]).then([&outputs, this, c](Sh3Task self)
+							{
+								outputs = outputs + functionOutputs[c];
+							}
+					).get();
+					//handles[c].get();
+				}
+
+				//auto pub = eng.reconstructShare(functionOutputs[c]);
+#ifdef Sh3Piecewise_DEBUG
+				if (print)
+				{
+					i64Matrix plain_inputs(inputs.rows(), inputs.cols());
+					DebugEnc.revealAll(DebugRt.noDependencies(), inputs, plain_inputs).get();
+
+					std::cout << "coef[" << c << "] = ";
+					if (mCoefficients[c].size() > 1)
+						std::cout << mCoefficients[c][1].getInteger() << " " << plain_inputs(0) << " + ";
+
+					if (mCoefficients[c].size() > 0)
+						std::cout << mCoefficients[c][0].getFixedPoint(D) << std::endl;
+				}
+#endif
 			}
+		}
 
 
 
-			//auto combineRoutine = [this, &outputs, print](Sh3Task self)
-			//{
+		//auto combineRoutine = [this, &outputs, print](Sh3Task self)
+		//{
 
-			//	for (u64 c = 0; c < mCoefficients.size(); ++c)
-			//	{
-			//		if (handles[c].mGet)
-			//		{
-			//			handles[c].get();
-			//			outputs = outputs + functionOutputs[c];
+		//	for (u64 c = 0; c < mCoefficients.size(); ++c)
+		//	{
+		//		if (handles[c].mGet)
+		//		{
+		//			handles[c].get();
+		//			outputs = outputs + functionOutputs[c];
 
-			//			if (print && c == 1)
-			//				oc::ostreamLock(std::cout) << "f" << self.getRuntime().mPartyIdx << " c=" << c << ": "
-			//				<< functionOutputs[c].mShares[0](0) << " "
-			//				<< functionOutputs[c].mShares[1](0) << std::endl;
-			//		}
-			//	}
-			//};
-			//char cccc = 0;
+		//			if (print && c == 1)
+		//				oc::ostreamLock(std::cout) << "f" << self.getRuntime().mPartyIdx << " c=" << c << ": "
+		//				<< functionOutputs[c].mShares[0](0) << " "
+		//				<< functionOutputs[c].mShares[1](0) << std::endl;
+		//		}
+		//	}
+		//};
+		//char cccc = 0;
 
 		UPDATE;
 		//	}
@@ -374,18 +374,18 @@ namespace aby3
 		//ret.get();
 
 		//return ret;
-			return dep;
+		return dep;
 	}
 
 
 	Sh3Task Sh3Piecewise::getInputRegions(
-		const si64Matrix & inputs, u64 decimal,
-		CommPkg & comm, Sh3Task & self,
+		const si64Matrix& inputs, u64 decimal,
+		CommPkg& comm, Sh3Task& self,
 		Sh3ShareGen& gen,
 		bool print)
 	{
 
-		// First we want to transform the input into a more efficient prepresentation. 
+		// First we want to transform the input into a more efficient representation. 
 		// Currently we have x0,x1,x2 which sum to the input. We are going to add
 		// x0 and x1 together so that we have a 2-out-of-2 sharing of the input. Party 0 
 		// who holds both of these shares will do the addition. After this, we are 
@@ -404,8 +404,8 @@ namespace aby3
 		// can be insecure. However, in this case its ok.
 
 		auto pIdx = self.getRuntime().mPartyIdx;
-		auto & c0s0 = circuitInput0[0].mShares[0];
-		auto & c0s1 = circuitInput0[0].mShares[1];
+		auto& c0s0 = circuitInput0[0].mShares[0];
+		auto& c0s1 = circuitInput0[0].mShares[1];
 		switch (pIdx)
 		{
 		case 0:
@@ -455,69 +455,69 @@ namespace aby3
 		UPDATE;
 		//auto ret = self.then([&inputs, pIdx, this, decimal, fu = std::move(fu)](CommPkg & comm, Sh3Task self) mutable {
 
-			fu.get();
-			// Now we need to augment the circuitInput0 shares for each of the thresholds.
-			// Currently we have the two shares (x0+x1), x2 and we want the pairs
-			//   (x0+x1)-t0, x2
-			//    ...
-			//   (x0+x1)-tn, x2
-			// We will then add all of these pairs together to get a binary sharing of
-			//   x - t0
-			//    ...
-			//   x - tn
-			// Since we are only interested in the sign of these differences, we only 
-			// compute the MSB of the difference. Also, notice that x2 is shared between
-			// all of the shares. As such we input have one circuitInput1=x2 while we have 
-			// n circuitInputs0.
+		fu.get();
+		// Now we need to augment the circuitInput0 shares for each of the thresholds.
+		// Currently we have the two shares (x0+x1), x2 and we want the pairs
+		//   (x0+x1)-t0, x2
+		//    ...
+		//   (x0+x1)-tn, x2
+		// We will then add all of these pairs together to get a binary sharing of
+		//   x - t0
+		//    ...
+		//   x - tn
+		// Since we are only interested in the sign of these differences, we only 
+		// compute the MSB of the difference. Also, notice that x2 is shared between
+		// all of the shares. As such we input have one circuitInput1=x2 while we have 
+		// n circuitInputs0.
 
-			for (u64 t = 1; t < mThresholds.size(); ++t)
-				circuitInput0[t] = circuitInput0[0];
+		for (u64 t = 1; t < mThresholds.size(); ++t)
+			circuitInput0[t] = circuitInput0[0];
 
-			for (u64 t = 0; t < mThresholds.size(); ++t)
+		for (u64 t = 0; t < mThresholds.size(); ++t)
+		{
+			if (pIdx < 2)
 			{
-				if (pIdx < 2)
-				{
-					auto threshold = mThresholds[t].getFixedPoint(decimal);
+				auto threshold = mThresholds[t].getFixedPoint(decimal);
 
-					auto& v = circuitInput0[t].mShares[pIdx];
-					for (auto& vv : v)
-						vv -= threshold;
-				}
+				auto& v = circuitInput0[t].mShares[pIdx];
+				for (auto& vv : v)
+					vv -= threshold;
 			}
+		}
 
 
-			auto cir = lib.int_Sh3Piecewise_helper(sizeof(i64) * 8, mThresholds.size());
+		auto cir = lib.int_Sh3Piecewise_helper(sizeof(i64) * 8, mThresholds.size());
 
-			binEng.setCir(cir, inputs.size(), gen);
-			binEng.setInput(mThresholds.size(), circuitInput1);
+		binEng.setCir(cir, inputs.size(), gen);
+		binEng.setInput(mThresholds.size(), circuitInput1);
 
-			// set the inputs for all of the circuits
-			for (u64 t = 0; t < mThresholds.size(); ++t)
-				binEng.setInput(t, circuitInput0[t]);
+		// set the inputs for all of the circuits
+		for (u64 t = 0; t < mThresholds.size(); ++t)
+			binEng.setInput(t, circuitInput0[t]);
 
-			binEng.asyncEvaluate(self).then([&](Sh3Task self) {
-				for (u64 t = 0; t < mInputRegions.size(); ++t)
-				{
-					mInputRegions[t].resize(inputs.rows(), inputs.cols());
-					binEng.getOutput(t, mInputRegions[t]);
-				}
-				}
-				, "binEval-continuation")
+		binEng.asyncEvaluate(self).then([&](Sh3Task self) {
+			for (u64 t = 0; t < mInputRegions.size(); ++t)
+			{
+				mInputRegions[t].resize(inputs.rows(), inputs.cols());
+				binEng.getOutput(t, mInputRegions[t]);
+			}
+			}
+			, "binEval-continuation")
 
-				.get();
+			.get();
 			UPDATE;
-				
-		//}, "getInputRegions-part2");
-		//auto closure = ret.getClosure("getInputRegions-closure");
-		//return closure;
-		
-		return self.getRuntime();
+
+			//}, "getInputRegions-part2");
+			//auto closure = ret.getClosure("getInputRegions-closure");
+			//return closure;
+
+			return self.getRuntime();
 
 	}
 
 	Sh3Task Sh3Piecewise::getFunctionValues(
-		const si64Matrix & inputs,
-		CommPkg & comm,
+		const si64Matrix& inputs,
+		CommPkg& comm,
 		Sh3Task self,
 		u64 decimal,
 		span<si64Matrix> outputs)

@@ -16,7 +16,7 @@ void Task_schedule_test(const oc::CLP& cmd)
 {
 
 	Scheduler rt;
-	int counter = 0;
+	//int counter = 0;
 	auto base = rt.nullTask();
 
 	auto task0 = rt.addTask(Type::Round, base);

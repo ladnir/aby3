@@ -188,12 +188,12 @@ void Sh3_BinaryEngine_test(
         i64Matrix aa(width, 1), bb(width, 1);
 
         PRNG prng(ZeroBlock);
-        for (u64 i = 0; i < a.size(); ++i)
+        for (u64 i = 0; i < (u64)a.size(); ++i)
         {
             a(i) = prng.get<i64>() & valMask;
             b(i) = prng.get<i64>() & valMask;
         }
-        ar(0) = prng.get<i64 >();
+        ar(0) = prng.get<i64 >() & valMask;
 
         Sh3Runtime rt(pIdx, comms[pIdx]);
 
@@ -215,7 +215,7 @@ void Sh3_BinaryEngine_test(
 
 #ifdef BINARY_ENGINE_DEBUG
         if (debug)
-            eval.enableDebug(pIdx, debugComm[pIdx].mPrev, debugComm[pIdx].mNext);
+            eval.enableDebug(pIdx, 0, debugComm[pIdx].mPrev, debugComm[pIdx].mNext);
 #endif
 
         for (auto mode : { Manual, Auto, Replicated })
@@ -283,7 +283,8 @@ void Sh3_BinaryEngine_test(
                 {
                     if (c(j) != binOp(a(j), b(j)))
                     {
-                        oc::lout << "pidx: " << rt.mPartyIdx << " mode: " << (int)mode << " debug:" << int(debug) << " failed at " << j << " " << std::hex << c(j) << " != " << std::hex << binOp(a(j), b(j))
+                        oc::lout << "pidx: " << rt.mPartyIdx << " mode: " << (int)mode << " debug:" << int(debug) << " failed at " << j << " " 
+                            << std::hex << c(j) << " != " << std::hex << binOp(a(j), b(j))
                             << " = " << opName << "(" << std::hex << a(j) << ", " << std::hex << b(j) << ")" << std::endl << std::dec;
                         failed = true;
                     }
@@ -304,12 +305,12 @@ void Sh3_BinaryEngine_test(
                     oo << "        " << ccc0 << " " << ccc1 << " " << ccc2 << std::endl;
                     oo << "   recv " << eval.mRecvFutr.size() << std::endl;
 
-                    oo << "   " << eval.mLog.str() << std::endl;
+                    //oo << "   " << eval.mLog.str() << std::endl;
 
-                    oo << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
-                    oo << evals[1].mLog.str() << std::endl;
-                    oo << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
-                    oo << evals[2].mLog.str() << std::endl;
+                    //oo << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+                    //oo << evals[1].mLog.str() << std::endl;
+                    //oo << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+                    //oo << evals[2].mLog.str() << std::endl;
                 }
             }
 
@@ -344,23 +345,24 @@ void Sh3_BinaryEngine_and_test()
         Sh3_BinaryEngine_test(cir, [](i64 a, i64 b) {return a & b; }, false, "AND", mask);
     }
 
+
+
     // na_and
     {
-        auto* cd = new BetaCircuit;
+        BetaCircuit cd;
 
         BetaBundle a(size);
         BetaBundle b(size);
         BetaBundle c(size);
 
-        cd->addInputBundle(a);
-        cd->addInputBundle(b);
-
-        cd->addOutputBundle(c);
+        cd.addInputBundle(a);
+        cd.addInputBundle(b);
+        cd.addOutputBundle(c);
 
         //int_int_bitwiseAnd_build(*cd, a, b, c);
         for (u64 j = 0; j < c.mWires.size(); ++j)
         {
-            cd->addGate(
+            cd.addGate(
                 a.mWires[j],
                 b.mWires[j],
                 GateType::na_And,
@@ -368,11 +370,30 @@ void Sh3_BinaryEngine_and_test()
         }
 
 
-        Sh3_BinaryEngine_test(cd, [](i64 a, i64 b) {
+        Sh3_BinaryEngine_test(&cd, [](i64 a, i64 b) {
             return ~a & b;
             }, false, "na_AND", mask);
 
     }
+
+
+    // copy
+    {
+        BetaCircuit cir;
+
+        BetaBundle a(size);
+        BetaBundle b(size);
+        BetaBundle c(size);
+
+        cir.addInputBundle(a);
+        cir.addInputBundle(b);
+        cir.addOutputBundle(c);
+        cir.addCopy(a, c);
+
+        Sh3_BinaryEngine_test(&cir, [](i64 a, i64 b) {return a; }, true, "copy", mask);
+        Sh3_BinaryEngine_test(&cir, [](i64 a, i64 b) {return a; }, false, "copy", mask);
+    }
+
 
 }
 

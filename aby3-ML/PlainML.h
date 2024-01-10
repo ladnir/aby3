@@ -18,7 +18,7 @@ namespace aby3
 		{
 			auto div = 1ull << shift;
 			eMatrix<double> ret = left * right;
-			for (u64 i = 0; i < ret.size(); ++i)
+			for (u64 i = 0; i < (u64)ret.size(); ++i)
 			{
 				ret(i) /= div;
 			}
@@ -28,7 +28,7 @@ namespace aby3
 
 		eMatrix<double> logisticFunc(eMatrix<double> x)
 		{
-			for (u64 i = 0; i < x.size(); ++i)
+			for (u64 i = 0; i < (u64)x.size(); ++i)
 				x(i) = 1.0 / (1 + std::exp(-x(i)));
 			return x;
 		}

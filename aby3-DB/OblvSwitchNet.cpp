@@ -22,8 +22,8 @@ namespace osuCrypto
 
         sendSelect(programChl, helpChl, std::move(src));
         helpDuplicate(programChl,
-			gsl::narrow<u32>(dest.rows()), 
-			gsl::narrow<u32>(dest.cols()));
+			(dest.rows()), 
+			(dest.cols()));
 
         OblvPermutation oblvPerm;
         oblvPerm.recv(programChl, helpChl, dest, dest.rows(), mTag + "_sendRecv_final");
@@ -110,7 +110,7 @@ namespace osuCrypto
 
         if (type == OutputType::Overwrite)
         {
-            for (auto i = 0; i < perm.size(); ++i)
+            for (auto i = 0ull; i < perm.size(); ++i)
             {
                 perm[i] = prog.mSrcDests[i].mDest;
                 memcpy(&dest(perm[i], 0), &temp(i, 0), dest.cols());
@@ -118,7 +118,7 @@ namespace osuCrypto
         }
         else
         {
-            for (auto i = 0; i < perm.size(); ++i)
+            for (auto i = 0ull; i < perm.size(); ++i)
             {
                 perm[i] = prog.mSrcDests[i].mDest;
                 auto srcPtr = &temp(i, 0);
@@ -165,7 +165,7 @@ namespace osuCrypto
 
         auto size = std::max<u64>(prog.mSrcDests.size(), prog.mSrcSize);
         std::vector<u32> perm1(size, -1);
-        auto switchIdx = 0;
+        auto switchIdx = 0ull;
 
         while (switchIdx < prog.mSrcDests.size())
         {
@@ -200,10 +200,10 @@ namespace osuCrypto
     {
         auto counts = std::move(mCounts);
         auto k = counts.size();
-        auto n = gsl::narrow<int>(mSrcDests.size());
+        auto n = (mSrcDests.size());
 
         // Compute partial sums.
-        for (int i = 0, sum = 0; i < k; ++i) {
+        for (auto i = 0ull, sum = 0ull; i < k; ++i) {
             int tmp = counts[i];
             counts[i] = sum;
             sum += tmp;
@@ -262,7 +262,7 @@ namespace osuCrypto
 
     void OblvSwitchNet::Program::validate()
     {
-        for (auto i = 1; i < mSrcDests.size(); ++i)
+        for (auto i = 1ull; i < mSrcDests.size(); ++i)
         {
             if (mSrcDests[i].mSrc < mSrcDests[i - 1].mSrc)
                 throw std::runtime_error("");
@@ -292,10 +292,10 @@ namespace osuCrypto
             auto i0 = i - p;
             auto i1 = i - !p;
 
-            u32 m0 = m[0][0];
-            u32 m1 = m[1][0];
-            u32 s0 = src(i0, 0);
-            u32 s1 = src(i1, 0);
+            //u32 m0 = m[0][0];
+            //u32 m1 = m[1][0];
+            //u32 s0 = src(i0, 0);
+            //u32 s1 = src(i1, 0);
 
             for (u32 j = 0; j < src.stride(); ++j)
             {
@@ -305,7 +305,7 @@ namespace osuCrypto
 
             prng.get(&src(i, 0), src.stride());
 
-            u32 ss0 = src(i, 0);
+            //u32 ss0 = src(i, 0);
 
             for (u32 j = 0; j < src.stride(); ++j)
             {

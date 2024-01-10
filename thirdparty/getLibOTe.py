@@ -11,7 +11,7 @@ def getLibOTe(install, prefix, par,libOTe, boost, relic):
         os.system("git clone --recursive https://github.com/osu-crypto/libOTe.git")
 
     os.chdir(cwd + "/libOTe")
-    os.system("git checkout 2363505431f744539027a873c2536b9ae3630ff7 --quiet ")
+    os.system("git checkout cf537295c47a3924c13030a9b796cee9d6ebeace ")
     os.system("git submodule update ")
 
     osStr = (platform.system())
@@ -48,7 +48,7 @@ def getLibOTe(install, prefix, par,libOTe, boost, relic):
     cmd =  "python3 build.py " + sudo + " --par=" + str(par) + " " + installCmd + " " + debug
     boostCmd = cmd + " --setup --boost "
     relicCmd = cmd + " --setup --relic "
-    libOTeCmd = cmd + " -- -DENABLE_CIRCUITS=ON " + cmakePrefix;
+    libOTeCmd = cmd + " -DENABLE_CIRCUITS=ON " + cmakePrefix;
     
     
     print("\n\n=========== getLibOTe.py ================")

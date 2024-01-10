@@ -10,13 +10,13 @@ namespace osuCrypto
         mMem.emplace_back();
         auto& mem = mMem.back();
         mInputs.emplace_back(
-			gsl::narrow<int>(mMem.size()) - 1,
+			(int)(mMem.size()) - 1,
 			column, 
-			gsl::narrow<int>(mInputs.size()));
+			(int)(mInputs.size()));
 
         mem.mType = column.mCol.mType;
-        mem.mInputIdx = gsl::narrow<int>(mInputs.size()) - 1;
-        mem.mIdx = gsl::narrow<int>(mMem.size()) - 1;
+        mem.mInputIdx = (mInputs.size()) - 1;
+        mem.mIdx = (mMem.size()) - 1;
 
         if (&column.mTable == mLeftTable)
             mLeftInputs.push_back(&mInputs.back());
@@ -51,8 +51,8 @@ namespace osuCrypto
         if (mLeftTable == nullptr)
             throw std::runtime_error("call joinOn(...) first. " LOCATION);
 
-        if (wire1 >= mMem.size() ||
-            wire2 >= mMem.size())
+        if (wire1 >= (int)mMem.size() ||
+            wire2 >= (int)mMem.size())
             throw RTE_LOC;
 
         selectDetails::Mem mem;
@@ -85,12 +85,12 @@ namespace osuCrypto
         gate.op = op;
         gate.mIn1 = wire1;
         gate.mIn2 = wire2;
-        gate.mOut = gsl::narrow<int>(mMem.size());
+        gate.mOut = (mMem.size());
 
         mGates.push_back(gate);
 
         mem.mGate = &mGates.back();
-        mem.mIdx = gsl::narrow<int>(mMem.size());
+        mem.mIdx = (mMem.size());
 
         mMem.push_back(mem);
 
@@ -103,7 +103,7 @@ namespace osuCrypto
             throw std::runtime_error("call joinOn(...) first. " LOCATION);
 
         if (op != selectDetails::Inverse ||
-            mMem.size() <= wire1)
+            (int)mMem.size() <= wire1)
             throw RTE_LOC;
 
         mMem[wire1].mUsed = true;
@@ -111,14 +111,14 @@ namespace osuCrypto
         selectDetails::Gate gate;
         gate.op = op;
         gate.mIn1 = wire1;
-        gate.mOut = gsl::narrow<int>(mMem.size());
+        gate.mOut = (mMem.size());
         mGates.push_back(gate);
 
 
         selectDetails::Mem mem;
         mem.mType = mMem[wire1].mType;
         mem.mGate = &mGates.back();
-        mem.mIdx = gsl::narrow<int>(mMem.size());
+        mem.mIdx = (mMem.size());
         mMem.push_back(mem);
 
         return mem.mIdx;
@@ -130,7 +130,7 @@ namespace osuCrypto
             throw std::runtime_error("call joinOn(...) first. " LOCATION);
 
         mOutputs.emplace_back(mMem[column.mMemIdx].mIdx, name, -1);
-        mMem[column.mMemIdx].mOutputIdx = gsl::narrow<int>(mOutputs.size()) - 1;
+        mMem[column.mMemIdx].mOutputIdx = (mOutputs.size()) - 1;
 
 
         auto maxPos = -1;
@@ -155,7 +155,7 @@ namespace osuCrypto
             mem[mInputs[i].mMemIdx] = inputs[i];
 
 
-        int outIdx = 0;
+        //int outIdx = 0;
         for (auto& gate : mGates)
         {
             //BetaBundle wires(mMem[gate.mOut].mType->getBitCount());
@@ -175,23 +175,34 @@ namespace osuCrypto
             switch (gate.op)
             {
             case selectDetails::BitwiseOr:
-                lib.int_int_bitwiseOr_build(cir, mem[gate.mIn1], mem[gate.mIn2], mem[gate.mOut]);
+                lib.bitwiseOr_build(cir, mem[gate.mIn1], mem[gate.mIn2], mem[gate.mOut]);
                 break;
             case selectDetails::BitwiseAnd:
-                lib.int_int_bitwiseAnd_build(cir, mem[gate.mIn1], mem[gate.mIn2], mem[gate.mOut]);
+                lib.bitwiseAnd_build(cir, mem[gate.mIn1], mem[gate.mIn2], mem[gate.mOut]);
                 break;
             case selectDetails::LessThan:
-                lib.int_int_lt_build(cir, mem[gate.mIn1], mem[gate.mIn2], mem[gate.mOut]);
+                lib.lessThan_build(cir, mem[gate.mIn1], mem[gate.mIn2], mem[gate.mOut],
+                    oc::BetaLibrary::IntType::TwosComplement, 
+                    oc::BetaLibrary::Optimized::Size);
                 break;
             case selectDetails::Inverse:
-                lib.int_bitInvert_build(cir, mem[gate.mIn1], mem[gate.mOut]);
+                lib.bitwiseInvert_build(cir, mem[gate.mIn1], mem[gate.mOut]);
                 break;
             case selectDetails::Multiply:
 
-                lib.int_int_mult_build(cir, mem[gate.mIn1], mem[gate.mIn2], mem[gate.mOut], oc::BetaLibrary::Optimized::Depth, false);
+                lib.mult_build(cir, mem[gate.mIn1], mem[gate.mIn2], mem[gate.mOut], 
+                    oc::BetaLibrary::Optimized::Depth, 
+                    oc::BetaLibrary::IntType::TwosComplement);
                 break;
             case selectDetails::Add:
-                lib.int_int_add_build_do(cir, mem[gate.mIn1], mem[gate.mIn2], mem[gate.mOut]);
+            {
+                oc::BetaBundle temp(mem[gate.mIn1].size());
+                cir.addTempWireBundle(temp);
+                lib.add_build(cir, mem[gate.mIn1], mem[gate.mIn2], mem[gate.mOut], temp,
+                    oc::BetaLibrary::IntType::TwosComplement,
+                    oc::BetaLibrary::Optimized::Size
+                    );
+            }
                 break;
             default:
                 throw RTE_LOC;

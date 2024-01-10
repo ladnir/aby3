@@ -38,7 +38,7 @@ namespace aby3
 		LogisticModelGen gen;
 
 		eMatrix<double> model(D, 1);
-		for (u64 i = 0; i < D; ++i)
+		for (u64 i = 0; i < (u64)D; ++i)
 		{
 			model(i, 0) = prng.get<int>() % 10;
 			std::cout << model(i, 0) << " ";
@@ -69,7 +69,7 @@ namespace aby3
 
 		SGD_Logistic(params, engine, train_data, train_label, W2, &test_data, &test_label);
 
-		for (u64 i = 0; i < D; ++i)
+		for (u64 i = 0; i < (u64)D; ++i)
 		{
 			std::cout << i << " " << gen.mModel(i, 0) << " " << W2(i, 0) << std::endl;
 		}
@@ -86,7 +86,7 @@ namespace aby3
 		LogisticModelGen gen;
 
 		eMatrix<double> model(dim, 1);
-		for (u64 i = 0; i < std::min(dim, 10); ++i)
+		for (u64 i = 0; i < (u64)std::min(dim, 10); ++i)
 		{
 			model(i, 0) = prng.get<int>() % 10;
 		}
@@ -150,7 +150,7 @@ namespace aby3
 			SGD_Logistic(params, p, train_data, train_label, W2);
 		//val_W2 = p.reveal(W2);
 
-		auto end = std::chrono::system_clock::now();
+		//auto end = std::chrono::system_clock::now();
 
 
 		//engine.sync();
@@ -174,7 +174,7 @@ namespace aby3
 		if (print)
 		{
 
-			for (u64 i = 0; i < dim; ++i)
+			for (u64 i = 0; i < (u64)dim; ++i)
 			{
 				std::cout << i << " " << gen.mModel(i, 0) << " " << w2Val(i, 0) << std::endl;
 			}
@@ -199,7 +199,7 @@ namespace aby3
 		std::vector<std::thread> thrds;
 		for (u64 i = 0; i < 3; ++i)
 		{
-			if (cmd.isSet("p") == false || cmd.get<int>("p") == i)
+			if (cmd.isSet("p") == false || cmd.get<u64>("p") == i)
 			{
 				thrds.emplace_back(std::thread([i, N, D, B, IT, testN, &cmd, &ios]() {
 

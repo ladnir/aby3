@@ -41,3 +41,5 @@ log.txt
 *.vspx
 frontend/My Amplifier Results - frontend/
 frontend/My Advisor Results - frontend/
+
+build/

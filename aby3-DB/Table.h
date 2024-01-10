@@ -172,6 +172,11 @@ namespace osuCrypto
             throw RTE_LOC;
         }
 
+        ColRef operator[](u64 i)
+        {
+            return { *this, mColumns[i] };
+        }
+
 
         u64 rows();
     };
