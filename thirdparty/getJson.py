@@ -16,12 +16,12 @@ def getJson(install, prefix, par):
     osStr = (platform.system())
     cwd = os.getcwd()
     folder = cwd + "/json"
-    url = "https://github.com/nlohmann/json.git  "
+    url = "https://github.com/nlohmann/json.git"
+    json_branch_or_tag = "develop"
 
     if os.path.exists(folder) == False:
-        subprocess.run(("git clone --depth 1 " + url).split(), check=True)
+        subprocess.run(f"git clone --depth 1 --branch {json_branch_or_tag} {url}".split(), check=True)
     os.chdir(folder)
-    #subprocess.run("git checkout 3a0746bf5f601dfed05330aefcb6854354fce07d".split(), check=True)
 
     sudo = ""
     if(osStr == "Windows"):
