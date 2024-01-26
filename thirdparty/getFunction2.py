@@ -19,9 +19,9 @@ def getFunction2(install, prefix, par):
     url = "https://github.com/Naios/function2.git"
 
     if os.path.exists(folder) == False:
-        os.system("git clone --depth 1 " + url)
+        subprocess.run(("git clone --depth 1 " + url).split(), check=True)
     os.chdir(folder)
-    os.system("git checkout 3a0746bf5f601dfed05330aefcb6854354fce07d")
+    subprocess.run("git checkout 3a0746bf5f601dfed05330aefcb6854354fce07d".split(), check=True)
 
     sudo = ""
     if(osStr == "Windows"):
@@ -59,16 +59,16 @@ def getFunction2(install, prefix, par):
         if install and len(prefix) == 0:
             prefix = "/usr/local"
 
-        mkdirCmd = sudo + "mkdir -p " + prefix + "/include/function2/"
-        InstallCmd = sudo + "cp  -rf ./include/function2 " + prefix + "/include" 
+        mkdirCmd = (sudo + "mkdir -p " + prefix + "/include/function2/").split()
+        InstallCmd = (sudo + "cp  -rf ./include/function2 " + prefix + "/include").split()
 
         print("\n=========== getFunction2.py =============")
         print(mkdirCmd)
         print(InstallCmd)
         print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n")
 
-        os.system(mkdirCmd)
-        os.system(InstallCmd)
+        subprocess.run(mkdirCmd, check=True)
+        subprocess.run(InstallCmd, check=True)
 
         #buildDir = "out/unix"
         

@@ -1,6 +1,7 @@
 import os 
 import sys 
 import platform
+import subprocess
 
 
 def getLibOTe(install, prefix, par,libOTe, boost, relic):
@@ -8,11 +9,11 @@ def getLibOTe(install, prefix, par,libOTe, boost, relic):
     cwd = os.getcwd()
     
     if os.path.isdir("libOTe") == False:
-        os.system("git clone --recursive https://github.com/osu-crypto/libOTe.git")
+        subprocess.run("git clone --recursive https://github.com/osu-crypto/libOTe.git".split(), check=True)
 
     os.chdir(cwd + "/libOTe")
-    os.system("git checkout cf537295c47a3924c13030a9b796cee9d6ebeace ")
-    os.system("git submodule update ")
+    subprocess.run("git checkout cf537295c47a3924c13030a9b796cee9d6ebeace".split(), check=True)
+    subprocess.run("git submodule update".split(), check=True)
 
     osStr = (platform.system())
     
@@ -46,9 +47,9 @@ def getLibOTe(install, prefix, par,libOTe, boost, relic):
         cmakePrefix = "-DCMAKE_PREFIX_PATH=" + prefix
 
     cmd =  "python3 build.py " + sudo + " --par=" + str(par) + " " + installCmd + " " + debug
-    boostCmd = cmd + " --setup --boost "
-    relicCmd = cmd + " --setup --relic "
-    libOTeCmd = cmd + " -DENABLE_CIRCUITS=ON " + cmakePrefix;
+    boostCmd = (cmd + " --setup --boost ").split()
+    relicCmd = (cmd + " --setup --relic ").split()
+    libOTeCmd = (cmd + " -DENABLE_CIRCUITS=ON " + cmakePrefix).split()
     
     
     print("\n\n=========== getLibOTe.py ================")
@@ -61,11 +62,11 @@ def getLibOTe(install, prefix, par,libOTe, boost, relic):
     print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n\n")
 
     if boost:
-        os.system(boostCmd)
+        subprocess.run(boostCmd, check=True)
     if relic:
-        os.system(relicCmd)
+        subprocess.run(relicCmd, check=True)
     if libOTe:
-        os.system(libOTeCmd)
+        subprocess.run(libOTeCmd, check=True)
 
     os.chdir(cwd)
     
