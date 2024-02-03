@@ -16,12 +16,12 @@ def getJson(install, prefix, par):
     osStr = (platform.system())
     cwd = os.getcwd()
     folder = cwd + "/json"
-    url = "https://github.com/nlohmann/json.git  "
+    url = "https://github.com/nlohmann/json.git"
+    json_branch_or_tag = "develop"
 
     if os.path.exists(folder) == False:
-        os.system("git clone --depth 1 " + url)
+        subprocess.run(f"git clone --depth 1 --branch {json_branch_or_tag} {url}".split(), check=True)
     os.chdir(folder)
-    #os.system("git checkout 3a0746bf5f601dfed05330aefcb6854354fce07d")
 
     sudo = ""
     if(osStr == "Windows"):
@@ -59,16 +59,16 @@ def getJson(install, prefix, par):
         if install and len(prefix) == 0:
             prefix = "/usr/local"
         
-        mkdirCmd = sudo + "mkdir -p " + prefix + "/include/nlohmann/"
-        InstallCmd = sudo + "cp -rf ./include/nlohmann " + prefix + "/include" 
+        mkdirCmd = (sudo + "mkdir -p " + prefix + "/include/nlohmann/").split()
+        InstallCmd = (sudo + "cp -rf ./include/nlohmann " + prefix + "/include").split()
 
         print("\n=========== getJson.py =============")
         print(mkdirCmd)
         print(InstallCmd)        
         print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n")
 
-        os.system(mkdirCmd)
-        os.system(InstallCmd)
+        subprocess.run(mkdirCmd, check=True)
+        subprocess.run(InstallCmd, check=True)
 
 
 

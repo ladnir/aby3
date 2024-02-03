@@ -42,7 +42,11 @@ python3 build.py
 
 To see all the command line options, execute the program 
  
-`bin/frontend`
+`out/build/linux/frontend`
+
+or
+
+`out/build/x64-Release/frontend/frontend`
 
 The library can be linked by linking the binraries in `lib/` and `thirdparty/win` or `thirdparty/unix` depending on the platform.
 

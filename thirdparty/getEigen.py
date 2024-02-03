@@ -77,16 +77,16 @@ def getEigen(install, prefix, par):
         if install and len(prefix) == 0:
             prefix = "/usr/local"
 
-        mkdirCmd = sudo + "mkdir -p " + prefix + "/include/Eigen/"
-        InstallCmd = sudo + "cp  -rf ./Eigen " + prefix + "/include" 
+        mkdirCmd = (sudo + "mkdir -p " + prefix + "/include/Eigen/").split()
+        InstallCmd = (sudo + "cp  -rf ./Eigen " + prefix + "/include").split()
 
         print("\n=========== getEigen.py =============")
         print(mkdirCmd)
         print(InstallCmd)
         print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n")
 
-        os.system(mkdirCmd)
-        os.system(InstallCmd)
+        subprocess.run(mkdirCmd, check=True)
+        subprocess.run(InstallCmd, check=True)
 
         #buildDir = "out/unix"
         

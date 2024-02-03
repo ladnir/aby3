@@ -2,6 +2,7 @@ import os
 import platform
 import sys
 import multiprocessing
+import subprocess
 
 if __name__ == "__main__":
     import thirdparty.getEigen as getEigen
@@ -78,9 +79,9 @@ def Build(mainArgs, cmakeArgs,install, prefix, par):
 
 
 
-    mkDirCmd = "mkdir -p {0}".format(buildDir); 
-    CMakeCmd = "cmake -S . -B {0} {1}".format(buildDir, argStr)
-    BuildCmd = "cmake --build {0} {1} {2} ".format(buildDir, config, parallel)
+    mkDirCmd = "mkdir -p {0}".format(buildDir).split()
+    CMakeCmd = "cmake -S . -B {0} {1}".format(buildDir, argStr).split()
+    BuildCmd = "cmake --build {0} {1} {2} ".format(buildDir, config, parallel).split()
 
 
     #InstallCmd = ""
@@ -104,13 +105,13 @@ def Build(mainArgs, cmakeArgs,install, prefix, par):
     #    print(InstallCmd)
     print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n")
 
-    os.system(mkDirCmd)
-    os.system(CMakeCmd)
-    os.system(BuildCmd)
+    subprocess.run(mkDirCmd, check=True)
+    subprocess.run(CMakeCmd, check=True)
+    subprocess.run(BuildCmd, check=True)
     #if len(sudo) > 0:
     #    print("installing libraries: {0}".format(InstallCmd))
     #
-    #os.system(InstallCmd)
+    #subprocess.run(InstallCmd, check=True)
 
 
 def getInstallArgs(args):
