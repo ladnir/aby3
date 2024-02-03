@@ -12,6 +12,88 @@ namespace osuCrypto
 }
 
 
+
+void xtabs_test(u64 partyIdx, std::vector<int> ids, std::vector<int> values, int nCats)
+{
+    //std::cout << "testing xtabs..." << std::endl;
+
+    IOService ios;
+
+    DBServer srv;
+
+    PRNG prng(ZeroBlock);
+
+    if (partyIdx == 0)
+    {
+        Session s01(ios, "127.0.0.1:3030", SessionMode::Server, "01");
+        Session s02(ios, "127.0.0.1:3031", SessionMode::Server, "02");
+        srv.init(0, s02, s01, prng);
+    }
+    else if (partyIdx == 1)
+    {
+        Session s10(ios, "127.0.0.1:3030", SessionMode::Client, "01");
+        Session s12(ios, "127.0.0.1:3032", SessionMode::Server, "12");
+        srv.init(1, s10, s12, prng);
+    }
+    else
+    {
+        Session s20(ios, "127.0.0.1:3031", SessionMode::Client, "02");
+        Session s21(ios, "127.0.0.1:3032", SessionMode::Client, "12");
+        srv.init(2, s21, s20, prng);
+    }
+
+    auto keyBitCount = srv.mKeyBitCount;
+    std::vector<ColumnInfo>
+        catCols = { ColumnInfo{"key", TypeID::IntID, keyBitCount},
+                   ColumnInfo{"cat", TypeID::IntID, keyBitCount} },
+        valCols = { ColumnInfo{"key", TypeID::IntID, keyBitCount},
+                   ColumnInfo{"val", TypeID::IntID, keyBitCount} };
+
+    u64 rows = ids.size();
+    assert(ids.size() == rows);
+    assert(values.size() == rows);
+
+    Table catData(rows, catCols), valData(rows, valCols);
+
+    // initializes data into Table (still in the clear)
+    for (u64 i = 0; i < rows; ++i)
+    {
+        if (partyIdx == 0)
+        {
+            catData.mColumns[0].mData(i, 0) = ids[i];
+            catData.mColumns[0].mData(i, 1) = values[i];
+        }
+        else if (partyIdx == 1)
+        {
+            valData.mColumns[0].mData(i, 0) = ids[i];
+            valData.mColumns[0].mData(i, 1) = values[i];
+        }
+    }
+
+    SharedTable catTable, valTable;
+    catTable = (partyIdx == 0) ? srv.localInput(catData) : srv.remoteInput(0);
+    valTable = (partyIdx == 1) ? srv.localInput(valData) : srv.remoteInput(1);
+
+    auto res = srv.join(catTable["key"], valTable["key"], { catTable["cat"], valTable["val"] });
+    //std::cout << "not reached " << std::endl;
+}
+
+void xtabs_test()
+{
+    std::vector<int> ids = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+    std::vector<int> values = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+    int nCats = 10;
+    std::thread t0([&] {xtabs_test(0, ids, values, nCats); });
+    std::thread t1([&] {xtabs_test(1, ids, values, nCats); });
+    std::thread t2([&] {xtabs_test(2, ids, values, nCats); });
+
+
+    t0.join();
+    t1.join();
+    t2.join();
+}
+
+
 std::string hexString(u8* ptr, u32 size)
 {
     std::stringstream ss;

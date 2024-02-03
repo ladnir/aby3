@@ -44,7 +44,8 @@ namespace osuCrypto
                 auto srcBegin = &src(i, 0);
                 auto srcEnd = srcBegin + src.cols();
                 auto destBegin = &src(idx, 0);
-                std::swap_ranges(srcBegin, srcEnd, destBegin);
+                if(i != idx)
+                    std::swap_ranges(srcBegin, srcEnd, destBegin);
 
                 //std::cout << "data[" << i << "] = ";
                 //for (u32 k = 0; k < src.cols(); ++k)

@@ -1,5 +1,7 @@
 #include "UnitTests.h"
 
+void xtabs_test();
+
 oc::TestCollection DB_tests([](oc::TestCollection& tc) {
     tc.add("lowMC_Circuit_test           ", lowMC_Circuit_test);
     tc.add("lowMC_FileCircuit_test       ", lowMC_FileCircuit_test);
@@ -19,4 +21,5 @@ oc::TestCollection DB_tests([](oc::TestCollection& tc) {
     tc.add("DB_Intersect_sl_test         ", DB_Intersect_sl_test);
     tc.add("DB_Intersect_ls_test         ", DB_Intersect_ls_test);
     tc.add("DB_leftUnion_test            ", DB_leftUnion_test);
+    tc.add("xtabs_test                   ", xtabs_test);
 });

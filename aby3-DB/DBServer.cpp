@@ -1415,9 +1415,10 @@ namespace osuCrypto
 
         std::vector<std::pair<int, bool>> leftInputOrder(leftCircuitInput.size());
         std::vector<int> rightInputOrder(rightCircuitInput.size());
+        std::vector<int> rightInputSource(rightCircuitInput.size());
         auto leftIter = leftInputOrder.begin();
         auto rightIter = rightInputOrder.begin();
-
+        auto rightInputSourceIter = rightInputSource.begin();
         for (u64 i = 0, j = 0; i < query.mInputs.size(); ++i)
         {
             if (query.isCircuitInput(query.mInputs[i]))
@@ -1425,7 +1426,10 @@ namespace osuCrypto
                 if (&query.mInputs[i].mCol.mTable == query.mLeftTable)
                     *leftIter++ = { (int)j++, query.mMem[query.mInputs[i].mMemIdx].mUsed };
                 else
+                {
                     *rightIter++ = j++;
+                    *rightInputSourceIter++ = i;
+                }
             }
         }
 
@@ -1484,7 +1488,8 @@ namespace osuCrypto
         for (u64 i = 0; i < rightInputOrder.size(); ++i)
         {
             auto inputPos = rightInputOrder[i];
-            auto input = query.mInputs[inputPos];
+            auto inputSrc = rightInputSource[i];
+            auto& input = query.mInputs[inputSrc];
             auto& mem = query.mMem[input.mMemIdx];
 
             if (mem.isOutput())
@@ -1494,7 +1499,7 @@ namespace osuCrypto
             }
             else if (mem.mUsed)
             {
-                midBundles[inputPos].mWires.resize(query.mInputs[inputPos].mCol.mCol.getBitCount());
+                midBundles[inputPos].mWires.resize(input.mCol.mCol.getBitCount());
                 r.addTempWireBundle(midBundles[inputPos]);
             }
         }
