@@ -19,7 +19,7 @@ A tutorial can be found [here](https://github.com/ladnir/aby3/blob/master/fronte
 
 This codebase should **NOT** be considered fully secure. It has not had a security review and there are still several security related issues that have not been fully implemented. Only use this codebase as a proof-of-concept or to benchmark the perfromance. Future work is required for this implementation to be considered secure. 
 
-Moreover, some features have not been fully developed and contains bugs. For example, the task scheduler sometime fails. This is a known issue.
+Moreover, some features have not been fully developed and contains bugs. For example, the task scheduler sometime fails. This is a known issue. **Consider using [MP-SPDZ](https://github.com/data61/MP-SPDZ) if you want a framework that will be well supported**.
 
 ## Build
  
