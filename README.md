@@ -63,11 +63,11 @@ After completing Step 1, modify the following file:
 
 `thirdparty/libOTe/CMakeLists.txt`
 
-Change:
+Change
 
 `set(LIBOTE_STD_VER 17)`
 
-To:
+to:
 
 `set(LIBOTE_STD_VER 20)`
 
@@ -83,11 +83,11 @@ Modify the following file:
 
 `thirdparty/libOTe/out/coproto/thirdparty/getBoost.cmake`
 
-Change:
+Change
 
 `set(URL     "https://boostorg.jfrog.io/artifactory/main/release/1.${BOOST_VERSION}.0/source/boost_1_${BOOST_VERSION}_0.tar.bz2")`
 
-To:
+to:
 
 `set(URL "https://archives.boost.io/release/1.84.0/source/boost_1_84_0.tar.bz2")`
 
