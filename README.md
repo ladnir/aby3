@@ -50,6 +50,53 @@ or
 
 The library can be linked by linking the binraries in `lib/` and `thirdparty/win` or `thirdparty/unix` depending on the platform.
 
+## Additional Notes (C++20 Compatibility & Build Fix)
+
+When building on certain environments (e.g., newer compilers or macOS), the default C++ standard setting in libOTe may cause compatibility issues with the macoro library.
+
+### Step 1: Initial Setup
+`python3 build.py --setup`
+
+### Step 2: Fix C++ Standard Version
+
+After completing Step 1, modify the following file:
+
+`thirdparty/libOTe/CMakeLists.txt`
+
+Change:
+
+`set(LIBOTE_STD_VER 17)`
+
+To:
+
+`set(LIBOTE_STD_VER 20)`
+
+This resolves the incompatibility issue between the C++ standard version and the macoro dependency.
+
+Then re-run:
+
+`python3 build.py --setup`
+
+### Step 3: Fix Boost Download Source
+
+Modify the following file:
+
+`thirdparty/libOTe/out/coproto/thirdparty/getBoost.cmake`
+
+Change:
+
+`set(URL     "https://boostorg.jfrog.io/artifactory/main/release/1.${BOOST_VERSION}.0/source/boost_1_${BOOST_VERSION}_0.tar.bz2")`
+
+To:
+
+`set(URL "https://archives.boost.io/release/1.84.0/source/boost_1_84_0.tar.bz2")`
+
+⚠ Note:
+
+The Boost download may take a long time (approximately 40 minutes).
+
+Alternatively, you may manually download the archive from the link above using a browser and extract it locally.
+
 ## Help
  
 Contact Peter Rindal peterrindal@gmail.com for any assistance on building  or running the library.
