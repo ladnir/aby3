@@ -1,0 +1,51 @@
+
+set(bitpolymul_VERSION_MAJOR     1)
+set(bitpolymul_VERSION_MINOR     0)
+set(bitpolymul_VERSION_PATCH     1)
+
+set(BITPOLYMUL_ASAN OFF)
+set(BITPOLYMUL_PIC OFF)
+
+unset(bitpolymul_debug_FOUND CACHE)
+unset(bitpolymul_Debug_FOUND CACHE)
+unset(bitpolymul_DEBUG_FOUND CACHE)
+unset(bitpolymul_release_FOUND CACHE)
+unset(bitpolymul_Release_FOUND CACHE)
+unset(bitpolymul_RELEASE_FOUND CACHE)
+unset(bitpolymul_relwithdebinfo_FOUND CACHE)
+unset(bitpolymul_RelWithDebInfo_FOUND CACHE)
+unset(bitpolymul_RELWITHDEBINFO_FOUND CACHE)
+string( TOLOWER "Release" CMAKE_BUILD_TYPE_lower )
+if(CMAKE_BUILD_TYPE_lower STREQUAL "debug")
+	set(bitpolymul_debug_FOUND true)
+	set(bitpolymul_Debug_FOUND true)
+	set(bitpolymul_DEBUG_FOUND true)
+endif()
+if(CMAKE_BUILD_TYPE_lower STREQUAL "release")
+	set(bitpolymul_release_FOUND true)
+	set(bitpolymul_Release_FOUND true)
+	set(bitpolymul_RELEASE_FOUND true)
+endif()
+if(CMAKE_BUILD_TYPE_lower STREQUAL "relwithdebinfo")
+	set(bitpolymul_relwithdebinfo_FOUND true)
+	set(bitpolymul_RelWithDebInfo_FOUND true)
+	set(bitpolymul_RELWITHDEBINFO_FOUND true)
+endif()
+
+set(bitpolymul_asan_FOUND OFF)
+set(bitpolymul_pic_FOUND OFF)
+
+if(NOT BITPOLYMUL_PIC)
+	set(bitpolymul_no_pic_FOUND true)
+else()
+	set(bitpolymul_no_pic_FOUND false)
+endif()
+
+if(NOT BITPOLYMUL_ASAN)
+	set(bitpolymul_no_asan_FOUND true)
+else()
+	set(bitpolymul_no_asan_FOUND false)
+endif()
+
+
+
